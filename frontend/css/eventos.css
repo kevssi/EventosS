@@ -314,6 +314,16 @@
     max-width: none;
   }
 
+  .evento-imagen {
+    background: linear-gradient(180deg, #081a3f 0%, #071433 100%);
+    height: 260px;
+  }
+
+  .evento-imagen img {
+    object-fit: contain;
+    object-position: center top;
+  }
+
   .evento-contenido {
     padding: 16px;
   }
@@ -333,7 +343,7 @@
   }
 
   .evento-imagen {
-    height: 180px;
+    height: 220px;
   }
 
   .evento-categoria {
