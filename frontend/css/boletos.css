@@ -20,7 +20,6 @@
   background: linear-gradient(180deg, rgba(5, 13, 29, 0.78) 0%, rgba(5, 13, 29, 0.86) 100%);
 }
 
-.navbar,
 .compra-container {
   position: relative;
   z-index: 1;

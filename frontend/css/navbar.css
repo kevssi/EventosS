@@ -5,7 +5,7 @@
   box-shadow: 0 14px 34px rgba(2, 10, 24, 0.45);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1200;
   backdrop-filter: blur(10px);
 }
 
@@ -321,7 +321,7 @@ body.navbar-mobile-open {
   border-radius: 10px;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 1;
+  z-index: 1250;
   margin-top: 0;
 }
 
@@ -519,7 +519,7 @@ body.navbar-mobile-open {
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 220;
+    z-index: 1300;
     background: rgba(3, 6, 12, 0.62);
     opacity: 0;
     pointer-events: none;
