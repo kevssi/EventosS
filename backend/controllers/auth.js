@@ -99,8 +99,8 @@ exports.login = async (req, res) => {
         rol: rolNormalizado,
         rol_id: Number.isNaN(Number(usuario.rol)) ? null : Number(usuario.rol)
       },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE }
+      process.env.JWT_SECRET || 'mi_super_secreto_eventos_2026',
+      { expiresIn: 86400 }
     );
 
     // Guardar sesión en BD
