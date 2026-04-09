@@ -1,6 +1,30 @@
 // Módulo de autenticación
 const AuthModule = {
   lucideScriptPromise: null,
+  lucideCdnUrls: [
+    'https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js',
+    'https://unpkg.com/lucide@latest/dist/umd/lucide.js'
+  ],
+
+  loadScriptWithFallback(urls, index = 0) {
+    return new Promise((resolve, reject) => {
+      if (index >= urls.length) {
+        reject(new Error('No se pudo cargar Lucide desde ningun CDN.'));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = urls[index];
+      script.defer = true;
+      script.setAttribute('data-lucide-script', '1');
+      script.onload = () => resolve();
+      script.onerror = () => {
+        script.remove();
+        this.loadScriptWithFallback(urls, index + 1).then(resolve).catch(reject);
+      };
+      document.head.appendChild(script);
+    });
+  },
 
   ensureLucideLoaded() {
     if (window.lucide) {
@@ -14,18 +38,19 @@ const AuthModule = {
     this.lucideScriptPromise = new Promise((resolve, reject) => {
       const existing = document.querySelector('script[data-lucide-script="1"]');
       if (existing) {
+        if (window.lucide) {
+          resolve();
+          return;
+        }
+
         existing.addEventListener('load', () => resolve(), { once: true });
         existing.addEventListener('error', () => reject(new Error('No se pudo cargar Lucide.')), { once: true });
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/lucide@latest/dist/umd/lucide.js';
-      script.defer = true;
-      script.setAttribute('data-lucide-script', '1');
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('No se pudo cargar Lucide.'));
-      document.head.appendChild(script);
+      this.loadScriptWithFallback(this.lucideCdnUrls)
+        .then(resolve)
+        .catch(reject);
     });
 
     return this.lucideScriptPromise;
