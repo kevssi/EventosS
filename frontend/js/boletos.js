@@ -58,31 +58,6 @@ const BoletosModule = {
     return localImage || evento.imagen_url || generatedImage || this.fallbackImage;
   },
 
-  slugifyText(value) {
-    if (!value) return '';
-    return value
-      .toString()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  },
-
-  obtenerImagenLugar(evento) {
-    const imagenEvento = this.obtenerImagenEvento(evento);
-    const mapaLugarDirecto = evento?.imagen_lugar_url || evento?.mapa_lugar_url || evento?.imagen_lugar || null;
-
-    if (mapaLugarDirecto) {
-      return mapaLugarDirecto;
-    }
-
-    const slugLugar = this.slugifyText(evento?.ubicacion);
-    const mapaPorLugar = slugLugar ? `/publi/lugares/${slugLugar}.jpg` : null;
-
-    return mapaPorLugar || imagenEvento || this.fallbackImage;
-  },
-
   async init() {
     this.idEventoActual = this.obtenerIdEvento();
     this.cargarCarritoEvento();
@@ -186,7 +161,6 @@ const BoletosModule = {
     const tiposBoletos = this.evento.tipos_boleto;
 
     const imagenSrc = this.obtenerImagenEvento(this.evento);
-    const imagenLugarSrc = this.obtenerImagenLugar(this.evento);
     const imagenBg = String(imagenSrc || '').replace(/'/g, '%27').replace(/"/g, '%22');
 
     let pageBg = document.querySelector('.detalle-evento-page-bg');
@@ -224,35 +198,6 @@ const BoletosModule = {
 
           <div class="evento-descripcion">
             ${this.evento.descripcion || 'Sin descripción disponible'}
-          </div>
-        </div>
-      </div>
-
-      <div class="lugar-areas-card">
-        <div class="lugar-areas-header">
-          <h3>Mapa del Lugar y Selección de Área</h3>
-          <p>Selecciona tu área para ubicar el tipo de boleto.</p>
-        </div>
-        <div class="lugar-areas-grid">
-          <div class="lugar-mapa-wrap">
-            <img
-              id="imagenLugarEvento"
-              src="${imagenLugarSrc}"
-              alt="Mapa o imagen del lugar de ${this.evento.ubicacion}"
-              onerror="this.onerror=null;this.src='${imagenSrc || this.fallbackImage}';"
-            >
-          </div>
-          <div class="area-selector-wrap">
-            <label for="selectorAreaEvento">Área</label>
-            <select id="selectorAreaEvento" ${tiposBoletos.length ? '' : 'disabled'}>
-              <option value="">Selecciona un área...</option>
-              ${tiposBoletos.map((tipo) => `
-                <option value="${tipo.id}">${tipo.nombre} - $${parseFloat(tipo.precio).toFixed(2)}</option>
-              `).join('')}
-            </select>
-            <small>
-              ${tiposBoletos.length ? 'Al elegir un área, te llevamos a ese boleto para que ajustes cantidad.' : 'No hay áreas configuradas para este evento.'}
-            </small>
           </div>
         </div>
       </div>
@@ -315,34 +260,7 @@ const BoletosModule = {
     `;
     }).join('');
 
-    this.bindSelectorAreaConBoletos();
     this.actualizarResumen();
-  },
-
-  bindSelectorAreaConBoletos() {
-    const selectorArea = document.querySelector('#selectorAreaEvento');
-    if (!selectorArea) return;
-
-    selectorArea.onchange = () => {
-      const tipoId = Number(selectorArea.value || 0);
-      if (!tipoId) return;
-      this.moverAArea(tipoId);
-    };
-  },
-
-  moverAArea(tipoId) {
-    const targetCard = document.querySelector(`#tipoBoleto-${tipoId}`);
-    if (!targetCard) return;
-
-    document.querySelectorAll('.tipo-boleto').forEach((card) => card.classList.remove('tipo-boleto-activo'));
-    targetCard.classList.add('tipo-boleto-activo');
-    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    const input = targetCard.querySelector('.cantidad-input');
-    if (input) {
-      input.focus();
-      input.select();
-    }
   },
 
   cambiarCantidad(tipoId, delta) {
