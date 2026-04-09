@@ -343,9 +343,36 @@ const NavbarModule = {
     if (utility) utility.remove();
   },
 
-  actualizarNavbar() {
+  resolveUserRoleValue(usuario) {
+    if (!usuario) return '';
+    return usuario.rol ?? usuario.role ?? usuario.rol_id ?? usuario.id_rol ?? usuario.idRol ?? '';
+  },
+
+  async syncUsuarioDesdePerfil(usuarioLocal) {
+    try {
+      if (!api?.obtenerPerfil) return usuarioLocal;
+
+      const response = await api.obtenerPerfil();
+      const perfil = response?.usuario;
+      if (!perfil) return usuarioLocal;
+
+      const merged = {
+        ...usuarioLocal,
+        ...perfil,
+        rol: perfil.rol ?? usuarioLocal?.rol,
+        rol_id: perfil.rol_id ?? usuarioLocal?.rol_id
+      };
+
+      localStorage.setItem('usuario', JSON.stringify(merged));
+      return merged;
+    } catch (_error) {
+      return usuarioLocal;
+    }
+  },
+
+  async actualizarNavbar() {
     const token = api.obtenerToken();
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    let usuario = JSON.parse(localStorage.getItem('usuario'));
     const navbarUser = document.querySelector('.navbar-user');
     const navbarMenu = document.querySelector('.navbar-menu');
 
@@ -353,13 +380,16 @@ const NavbarModule = {
 
     // Actualizar usuario
     if (token && usuario) {
+      usuario = await this.syncUsuarioDesdePerfil(usuario);
+      const roleValue = this.resolveUserRoleValue(usuario);
+
       this.ensureAdminOnDashboard(usuario);
       this.removePreAuthUtilityBar();
       this.teardownMobileMenuBehavior();
 
       const inicioPath = this.isInPages() ? '../index.html' : 'index.html';
-      const isAdmin = this.isAdminRole(usuario.rol);
-      const isOrganizador = this.isOrganizadorRole(usuario.rol);
+      const isAdmin = this.isAdminRole(roleValue);
+      const isOrganizador = this.isOrganizadorRole(roleValue);
 
       if (navbarMenu) {
         if (isAdmin) {
@@ -386,7 +416,7 @@ const NavbarModule = {
         <div class="navbar-account">
           <div class="user-info">
             <div class="user-name">${usuario.nombre}</div>
-            <div class="user-role">${this.getRoleLabel(usuario.rol)}</div>
+            <div class="user-role">${this.getRoleLabel(roleValue)}</div>
           </div>
           <div class="dropdown">
             <button class="btn btn-primary navbar-menu-toggle" id="btnDropdown" type="button">
@@ -495,8 +525,8 @@ const NavbarModule = {
       '2': 'Organizador',
       '3': 'Administrador'
     };
-    const normalized = (rol ?? '').toString().toLowerCase();
-    return roles[normalized] || rol;
+    const normalized = (rol ?? '').toString().trim().toLowerCase();
+    return roles[normalized] || (normalized ? normalized : 'Comprador');
   },
 
   actualizarMenu(navbarMenu, token, usuario) {
@@ -504,9 +534,12 @@ const NavbarModule = {
 
     const btnMisBoletosParent = navbarMenu.querySelector('.menu-mis-boletos');
     const btnMisOrdenasParent = navbarMenu.querySelector('.menu-mis-ordenes');
+    const btnMisEventosParent = navbarMenu.querySelector('.menu-mis-eventos');
+    const isOrganizador = this.isOrganizadorRole(this.resolveUserRoleValue(usuario));
     
     const bolletosPath = this.resolvePath('mis-boletos.html');
     const ordenesPath = this.resolvePath('mis-ordenes.html');
+    const misEventosPath = this.resolvePath('mis-eventos.html');
     
     if (!btnMisBoletosParent) {
       const li = document.createElement('li');
@@ -518,6 +551,13 @@ const NavbarModule = {
       const li = document.createElement('li');
       li.className = 'menu-mis-ordenes';
       li.innerHTML = `<a href="${ordenesPath}">Mis Órdenes</a>`;
+      navbarMenu.appendChild(li);
+    }
+
+    if (isOrganizador && !btnMisEventosParent) {
+      const li = document.createElement('li');
+      li.className = 'menu-mis-eventos';
+      li.innerHTML = `<a href="${misEventosPath}">Mis Eventos</a>`;
       navbarMenu.appendChild(li);
     }
   }

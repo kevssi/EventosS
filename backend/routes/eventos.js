@@ -6,6 +6,7 @@ const { authMiddleware, requireOrganizadorOrAdmin } = require('../middleware/aut
 // Rutas públicas
 router.get('/categorias/listar', eventosController.listarCategorias);
 router.get('/imagen-artista', eventosController.obtenerImagenArtista);
+router.get('/mis-eventos/listar', authMiddleware, requireOrganizadorOrAdmin, eventosController.listarMisEventos);
 router.get('/', eventosController.listarEventos);
 router.get('/:id', eventosController.obtenerEvento);
 

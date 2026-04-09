@@ -54,6 +54,10 @@ class APIClient {
     return this.request('/auth/logout', { method: 'POST' });
   }
 
+  obtenerPerfil() {
+    return this.request('/auth/perfil');
+  }
+
   // EVENTOS
   listarEventos(options = {}) {
     const normalized = typeof options === 'object' && options !== null
@@ -109,6 +113,10 @@ class APIClient {
 
   listarCategorias() {
     return this.request('/eventos/categorias/listar');
+  }
+
+  listarMisEventos() {
+    return this.request('/eventos/mis-eventos/listar');
   }
 
   obtenerImagenArtista(artista) {

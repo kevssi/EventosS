@@ -149,6 +149,40 @@ exports.logout = async (req, res) => {
   }
 };
 
+// Obtener perfil actual (rol sincronizado desde BD)
+exports.obtenerPerfil = async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.query(
+      'SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = ? LIMIT 1',
+      [req.user.id]
+    );
+    await connection.release();
+
+    const usuario = rows?.[0];
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const rolNormalizado = normalizeRole(usuario.rol);
+
+    return res.json({
+      success: true,
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        telefono: usuario.telefono,
+        rol: rolNormalizado,
+        rol_id: Number.isNaN(Number(usuario.rol)) ? null : Number(usuario.rol)
+      }
+    });
+  } catch (error) {
+    console.error('Error en obtenerPerfil:', error);
+    return res.status(500).json({ error: 'Error al obtener perfil' });
+  }
+};
+
 const resolverClientIdMercadoPago = (inputClientId) => (
   inputClientId
   || process.env.MERCADOPAGO_OAUTH_CLIENT_ID

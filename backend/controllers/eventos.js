@@ -197,6 +197,22 @@ const recalcularDisponibilidadEventos = async (connection, eventos = []) => {
   return actualizados;
 };
 
+const resolveOrganizerColumn = async (connection) => {
+  const candidateColumns = ['id_organizador', 'id_usuario', 'id_creador', 'id_usuario_creador'];
+
+  const [rows] = await connection.query(
+    `
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'eventos'
+    `
+  );
+
+  const available = new Set((rows || []).map((row) => row.COLUMN_NAME));
+  return candidateColumns.find((col) => available.has(col)) || null;
+};
+
 const fetchEventosFallback = async (connection, idCategoria) => {
   const [rows] = await connection.query(
     `
@@ -332,6 +348,62 @@ exports.obtenerEvento = async (req, res) => {
   } catch (error) {
     console.error('Error en obtenerEvento:', error);
     res.status(500).json({ error: 'Error al obtener evento' });
+  }
+};
+
+// Listar eventos del organizador autenticado
+exports.listarMisEventos = async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const organizerColumn = await resolveOrganizerColumn(connection);
+
+    if (!organizerColumn) {
+      await connection.release();
+      return res.json({ success: true, eventos: [] });
+    }
+
+    const [rows] = await connection.query(
+      `
+        SELECT
+          e.id,
+          e.titulo,
+          e.descripcion,
+          e.fecha_inicio,
+          e.fecha_fin,
+          e.ubicacion,
+          e.capacidad,
+          e.imagen_url,
+          e.estado,
+          c.nombre AS categoria,
+          COALESCE(SUM(tb.cantidad), 0) AS boletos_disponibles,
+          COALESCE(MIN(tb.precio), 0) AS precio_desde
+        FROM eventos e
+        LEFT JOIN categorias_evento c ON c.id = e.id_categoria
+        LEFT JOIN tipos_boleto tb ON tb.id_evento = e.id
+        WHERE e.${organizerColumn} = ?
+        GROUP BY
+          e.id,
+          e.titulo,
+          e.descripcion,
+          e.fecha_inicio,
+          e.fecha_fin,
+          e.ubicacion,
+          e.capacidad,
+          e.imagen_url,
+          e.estado,
+          c.nombre
+        ORDER BY e.fecha_inicio DESC
+      `,
+      [req.user.id]
+    );
+
+    const eventos = await recalcularDisponibilidadEventos(connection, rows || []);
+    await connection.release();
+
+    return res.json({ success: true, eventos });
+  } catch (error) {
+    console.error('Error en listarMisEventos:', error);
+    return res.status(500).json({ error: 'Error al listar mis eventos' });
   }
 };
 

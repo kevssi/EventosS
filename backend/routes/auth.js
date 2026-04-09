@@ -13,6 +13,7 @@ router.post('/mercadopago/oauth/token', authController.intercambiarCodigoOAuthMe
 
 // Rutas protegidas
 router.post('/logout', authMiddleware, authController.logout);
+router.get('/perfil', authMiddleware, authController.obtenerPerfil);
 router.post('/mercadopago/oauth/token/guardar', authMiddleware, authController.guardarTokenOAuthMercadoPago);
 router.post('/mercadopago/oauth/refresh', authMiddleware, authController.intercambiarRefreshTokenOAuthMercadoPago);
 router.get('/mercadopago/oauth/token', authMiddleware, authController.obtenerEstadoTokenOAuthMercadoPago);
