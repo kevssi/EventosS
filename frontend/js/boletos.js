@@ -186,14 +186,14 @@ const BoletosModule = {
         </div>
         <div class="evento-detalle-contenido">
           <h2>${this.evento.titulo}</h2>
-          ${this.evento.categoria ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 15px;">🏷️ ${this.evento.categoria}</p>` : ''}
+          ${this.evento.categoria ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 15px;"><span class="icon-label"><i data-lucide="tag"></i><span>${this.evento.categoria}</span></span></p>` : ''}
           
           <div class="evento-detalle-info">
-            <p>📅 <strong>${new Date(this.evento.fecha_inicio).toLocaleDateString('es-es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></p>
-            <p>🕐 <strong>${new Date(this.evento.fecha_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></p>
-            <p>📍 <strong>${this.evento.ubicacion}</strong></p>
-            <p>👤 <strong>Organizador: ${this.evento.organizador}</strong></p>
-            <p>👥 <strong>Capacidad: ${this.evento.capacidad} personas</strong></p>
+            <p><span class="icon-label"><i data-lucide="calendar-days"></i><strong>${new Date(this.evento.fecha_inicio).toLocaleDateString('es-es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></span></p>
+            <p><span class="icon-label"><i data-lucide="clock-3"></i><strong>${new Date(this.evento.fecha_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span></p>
+            <p><span class="icon-label"><i data-lucide="map-pin"></i><strong>${this.evento.ubicacion}</strong></span></p>
+            <p><span class="icon-label"><i data-lucide="user-round"></i><strong>Organizador: ${this.evento.organizador}</strong></span></p>
+            <p><span class="icon-label"><i data-lucide="users"></i><strong>Capacidad: ${this.evento.capacidad} personas</strong></span></p>
           </div>
 
           <div class="evento-descripcion">
@@ -218,6 +218,7 @@ const BoletosModule = {
     `;
 
     this.renderTiposBoletos(tiposBoletos);
+    window.NavbarModule?.renderLucideIcons?.(container);
   },
 
   renderTiposBoletos(tipos) {
@@ -240,7 +241,7 @@ const BoletosModule = {
             <button type="button"
               class="cantidad-arrow cantidad-arrow-left"
               aria-label="Quitar boleto"
-              onclick="BoletosModule.cambiarCantidad(${tipo.id}, -1)">◀</button>
+              onclick="BoletosModule.cambiarCantidad(${tipo.id}, -1)"><i data-lucide="chevron-left"></i></button>
             <input type="number" 
              class="cantidad-input cantidad-${tipo.id}" 
              data-tipo-id="${tipo.id}"
@@ -252,7 +253,7 @@ const BoletosModule = {
             <button type="button"
               class="cantidad-arrow cantidad-arrow-right"
               aria-label="Agregar boleto"
-              onclick="BoletosModule.cambiarCantidad(${tipo.id}, 1)">▶</button>
+              onclick="BoletosModule.cambiarCantidad(${tipo.id}, 1)"><i data-lucide="chevron-right"></i></button>
           </div>
           <small>boletos</small>
         </div>
@@ -261,6 +262,7 @@ const BoletosModule = {
     }).join('');
 
     this.actualizarResumen();
+    window.NavbarModule?.renderLucideIcons?.(container);
   },
 
   cambiarCantidad(tipoId, delta) {
@@ -415,10 +417,11 @@ const BoletosModule = {
     if (container) {
       container.innerHTML = `
         <div class="alert alert-error">
-          <span>⚠️</span>
+          <span><i data-lucide="triangle-alert"></i></span>
           <span>${mensaje}</span>
         </div>
       `;
+      window.NavbarModule?.renderLucideIcons?.(container);
     }
   }
 };

@@ -350,6 +350,11 @@
   background: rgba(24, 203, 255, 0.16);
 }
 
+.cantidad-arrow .lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .cantidad-input {
   width: 124px;
   min-width: 124px;

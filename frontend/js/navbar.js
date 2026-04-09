@@ -1,5 +1,47 @@
 // Módulo para manejo de navegación
 const NavbarModule = {
+  lucideScriptPromise: null,
+
+  ensureLucideLoaded() {
+    if (window.lucide) {
+      return Promise.resolve();
+    }
+
+    if (this.lucideScriptPromise) {
+      return this.lucideScriptPromise;
+    }
+
+    this.lucideScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-lucide-script="1"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('No se pudo cargar Lucide.')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/lucide@latest';
+      script.defer = true;
+      script.setAttribute('data-lucide-script', '1');
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('No se pudo cargar Lucide.'));
+      document.head.appendChild(script);
+    });
+
+    return this.lucideScriptPromise;
+  },
+
+  renderLucideIcons(scope = document) {
+    if (!window.lucide?.createIcons) return;
+    window.lucide.createIcons({
+      attrs: {
+        'stroke-width': 2,
+        class: 'lucide-icon'
+      },
+      nameAttr: 'data-lucide'
+    });
+  },
+
   isAdminRole(rol) {
     const value = (rol ?? '').toString().trim().toLowerCase();
     return value === 'administrador' || value === 'admin' || value === '3';
@@ -25,7 +67,9 @@ const NavbarModule = {
   init() {
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
     this.handleMobileKeydown = this.handleMobileKeydown.bind(this);
-    this.actualizarNavbar();
+    this.ensureLucideLoaded()
+      .catch(() => null)
+      .finally(() => this.actualizarNavbar());
   },
 
   async logout(event) {
@@ -263,6 +307,7 @@ const NavbarModule = {
       `;
 
       this.setupDropdownBehavior();
+      this.renderLucideIcons(document);
     } else {
       this.teardownDropdownBehavior();
       this.ensurePreAuthUtilityBar();
@@ -297,15 +342,15 @@ const NavbarModule = {
 
       navbarUser.innerHTML = `
         <div class="navbar-mobile-controls">
-          <button class="navbar-mobile-trigger" data-mobile-menu-open type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+          <button class="navbar-mobile-trigger" data-mobile-menu-open type="button" aria-label="Abrir menú" aria-expanded="false"><i data-lucide="menu"></i></button>
           <a class="navbar-mobile-account" href="${loginPath}" aria-label="Ingresar">
-            <span class="navbar-mobile-user-icon">◯</span>
+            <span class="navbar-mobile-user-icon"><i data-lucide="circle-user-round"></i></span>
           </a>
         </div>
         <form class="navbar-search" action="${inicioPath}" method="get">
           <label for="navbarSearchInput">Buscar</label>
           <input id="navbarSearchInput" name="q" type="text" placeholder="Artista, evento o inmueble">
-          <button type="submit" aria-label="Buscar">🔍</button>
+          <button type="submit" aria-label="Buscar"><i data-lucide="search"></i></button>
         </form>
         <div class="navbar-auth-links navbar-auth-links-main">
           <a href="${loginPath}" class="btn btn-primary navbar-auth-link">Ingresa</a>
@@ -324,10 +369,10 @@ const NavbarModule = {
         <div class="navbar-mobile-panel">
           <div class="navbar-mobile-panel-header">
             <span class="navbar-mobile-panel-brand">eventos+</span>
-            <button type="button" class="navbar-mobile-close" data-mobile-menu-close aria-label="Cerrar menú">✕</button>
+            <button type="button" class="navbar-mobile-close" data-mobile-menu-close aria-label="Cerrar menú"><i data-lucide="x"></i></button>
           </div>
           <nav class="navbar-mobile-links">
-            ${mobileItems.map((item) => `<a href="${item.href}">${item.label}<span>›</span></a>`).join('')}
+            ${mobileItems.map((item) => `<a href="${item.href}">${item.label}<span><i data-lucide="chevron-right"></i></span></a>`).join('')}
           </nav>
           <a class="navbar-mobile-help" href="#">Ayuda</a>
         </div>
@@ -335,6 +380,7 @@ const NavbarModule = {
 
       document.body.appendChild(mobileDrawer);
       this.setupMobileMenuBehavior();
+      this.renderLucideIcons(document);
     }
   },
 

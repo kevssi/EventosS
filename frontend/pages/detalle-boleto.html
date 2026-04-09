@@ -25,7 +25,7 @@
 
     <div class="container compra-container" style="padding-top: 24px; padding-bottom: 32px;">
         <div style="margin-bottom: 20px;">
-            <a href="mis-boletos.html" style="color: var(--primary); text-decoration: none;">← Volver a mis boletos</a>
+            <a href="mis-boletos.html" style="color: var(--primary); text-decoration: none;"><span class="icon-label"><i data-lucide="arrow-left"></i><span>Volver a mis boletos</span></span></a>
         </div>
 
         <div id="detalleBoletoContainer" class="card">
@@ -126,6 +126,8 @@
                         <code style="display: block; font-size: 15px; font-weight: 700; letter-spacing: 1px;">${boleto.codigo_qr || 'No disponible'}</code>
                     </div>
                 `;
+
+                window.NavbarModule?.renderLucideIcons?.(container);
             },
 
             mostrarError(mensaje) {
@@ -134,10 +136,12 @@
 
                 container.innerHTML = `
                     <div class="alert alert-error">
-                        <span>⚠️</span>
+                        <span><i data-lucide="triangle-alert"></i></span>
                         <span>${mensaje}</span>
                     </div>
                 `;
+
+                window.NavbarModule?.renderLucideIcons?.(container);
             }
         };
 

@@ -277,12 +277,12 @@ const EventosModule = {
           ${evento.categoria ? `<div class="evento-categoria">${evento.categoria}</div>` : ''}
           <h3 class="evento-titulo">${evento.titulo}</h3>
           <div class="evento-info">
-            <div class="evento-info-item">📅 ${new Date(evento.fecha_inicio).toLocaleDateString()}</div>
-            <div class="evento-info-item">🕐 ${new Date(evento.fecha_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            <div class="evento-info-item">📍 ${evento.ubicacion}</div>
+            <div class="evento-info-item"><span class="icon-label"><i data-lucide="calendar-days"></i><span>${new Date(evento.fecha_inicio).toLocaleDateString()}</span></span></div>
+            <div class="evento-info-item"><span class="icon-label"><i data-lucide="clock-3"></i><span>${new Date(evento.fecha_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></span></div>
+            <div class="evento-info-item"><span class="icon-label"><i data-lucide="map-pin"></i><span>${evento.ubicacion}</span></span></div>
           </div>
           <div class="evento-disponibilidad">
-            ✓ ${evento.boletos_disponibles} boletos disponibles
+            <span class="icon-label"><i data-lucide="circle-check"></i><span>${evento.boletos_disponibles} boletos disponibles</span></span>
           </div>
           <div class="evento-precio">
             Desde $${evento.precio_desde}
@@ -297,6 +297,7 @@ const EventosModule = {
     `).join('');
 
     this.actualizarResumenExplora(eventosAMostrar.length);
+    window.NavbarModule?.renderLucideIcons?.(container);
 
     this.configurarFallbackImagenes();
   },
@@ -354,10 +355,11 @@ const EventosModule = {
     if (container) {
       container.innerHTML = `
         <div class="alert alert-error">
-          <span>⚠️</span>
+          <span><i data-lucide="triangle-alert"></i></span>
           <span>${mensaje}</span>
         </div>
       `;
+      window.NavbarModule?.renderLucideIcons?.(container);
     }
   }
 };

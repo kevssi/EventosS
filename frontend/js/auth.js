@@ -1,5 +1,47 @@
 // Módulo de autenticación
 const AuthModule = {
+  lucideScriptPromise: null,
+
+  ensureLucideLoaded() {
+    if (window.lucide) {
+      return Promise.resolve();
+    }
+
+    if (this.lucideScriptPromise) {
+      return this.lucideScriptPromise;
+    }
+
+    this.lucideScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-lucide-script="1"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('No se pudo cargar Lucide.')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/lucide@latest';
+      script.defer = true;
+      script.setAttribute('data-lucide-script', '1');
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('No se pudo cargar Lucide.'));
+      document.head.appendChild(script);
+    });
+
+    return this.lucideScriptPromise;
+  },
+
+  renderLucideIcons() {
+    if (!window.lucide?.createIcons) return;
+    window.lucide.createIcons({
+      attrs: {
+        'stroke-width': 2,
+        class: 'lucide-icon'
+      },
+      nameAttr: 'data-lucide'
+    });
+  },
+
   isAdminRole(rol) {
     const value = (rol ?? '').toString().trim().toLowerCase();
     return value === 'administrador' || value === 'admin' || value === '3';
@@ -21,6 +63,7 @@ const AuthModule = {
   },
 
   init() {
+    this.ensureLucideLoaded().catch(() => null);
     this.setupEventListeners();
     this.checkAuth();
   },
@@ -139,11 +182,12 @@ const AuthModule = {
   showError(message) {
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-error';
-    alertDiv.innerHTML = `<span>⚠️</span><span>${message}</span>`;
+    alertDiv.innerHTML = `<span><i data-lucide="triangle-alert"></i></span><span>${message}</span>`;
     
     const form = document.querySelector('form');
     if (form) {
       form.prepend(alertDiv);
+      this.renderLucideIcons();
       setTimeout(() => alertDiv.remove(), 5000);
     }
   },
@@ -151,11 +195,12 @@ const AuthModule = {
   showSuccess(message) {
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-success';
-    alertDiv.innerHTML = `<span>✓</span><span>${message}</span>`;
+    alertDiv.innerHTML = `<span><i data-lucide="circle-check"></i></span><span>${message}</span>`;
     
     const form = document.querySelector('form');
     if (form) {
       form.prepend(alertDiv);
+      this.renderLucideIcons();
     }
   }
 };

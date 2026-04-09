@@ -194,7 +194,7 @@ const AdminModule = {
 
         ${this.solicitudesError ? `
           <div class="alert alert-error" style="margin-top: 10px;">
-            <span>⚠️</span>
+            <span><i data-lucide="triangle-alert"></i></span>
             <span>${this.solicitudesError}</span>
           </div>
         ` : ''}
@@ -245,6 +245,8 @@ const AdminModule = {
         `}
       </div>
     `;
+
+    window.NavbarModule?.renderLucideIcons?.(container);
   },
 
   async filtrarSolicitudes(estado) {

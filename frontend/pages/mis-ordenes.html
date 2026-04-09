@@ -223,6 +223,8 @@
                         </td>
                     </tr>
                 `).join('');
+
+                window.NavbarModule?.renderLucideIcons?.(tbody);
             },
 
             async cancelar(idOrden) {
@@ -245,12 +247,14 @@
                     <tr>
                         <td class="ordenes-full-row" colspan="8">
                             <div class="alert alert-error">
-                                <span>⚠️</span>
+                                <span><i data-lucide="triangle-alert"></i></span>
                                 <span>Error al cargar las órdenes</span>
                             </div>
                         </td>
                     </tr>
                 `;
+
+                window.NavbarModule?.renderLucideIcons?.(tbody);
             }
         };
 

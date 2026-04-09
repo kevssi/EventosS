@@ -169,11 +169,13 @@
                 container.innerHTML = `
                     <div style="grid-column: 1 / -1;">
                         <div class="alert alert-error">
-                            <span>⚠️</span>
+                            <span><i data-lucide="triangle-alert"></i></span>
                             <span>${mensaje}</span>
                         </div>
                     </div>
                 `;
+
+                window.NavbarModule?.renderLucideIcons?.(container);
             }
         };
 
