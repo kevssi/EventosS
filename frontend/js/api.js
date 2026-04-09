@@ -1,0 +1,295 @@
+// Configuración de API
+const API_URL = 'http://localhost:5000/api';
+
+class APIClient {
+  constructor() {
+    this.token = localStorage.getItem('token');
+  }
+
+  async request(endpoint, options = {}) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error en la solicitud');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error en API:', error);
+      throw error;
+    }
+  }
+
+  // AUTENTICACIÓN
+  registrar(nombre, email, password, telefono) {
+    return this.request('/auth/registrar', {
+      method: 'POST',
+      body: JSON.stringify({ nombre, email, password, telefono })
+    });
+  }
+
+  login(email, password) {
+    return this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+  }
+
+  logout() {
+    return this.request('/auth/logout', { method: 'POST' });
+  }
+
+  obtenerPerfil() {
+    return this.request('/auth/perfil');
+  }
+
+  actualizarPerfil(nombre, telefono) {
+    return this.request('/auth/perfil', {
+      method: 'PUT',
+      body: JSON.stringify({ nombre, telefono })
+    });
+  }
+
+  // EVENTOS
+  listarEventos(options = {}) {
+    const normalized = typeof options === 'object' && options !== null
+      ? options
+      : { id_categoria: options };
+
+    const searchParams = new URLSearchParams();
+
+    if (normalized.id_categoria) {
+      searchParams.set('id_categoria', normalized.id_categoria);
+    }
+
+    if (normalized.q) {
+      searchParams.set('q', normalized.q);
+    }
+
+    if (normalized.tipo) {
+      searchParams.set('tipo', normalized.tipo);
+    }
+
+    if (normalized.limit) {
+      searchParams.set('limit', normalized.limit);
+    }
+
+    const params = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request(`/eventos${params}`);
+  }
+
+  obtenerEvento(id) {
+    return this.request(`/eventos/${id}`);
+  }
+
+  crearEvento(evento) {
+    return this.request('/eventos', {
+      method: 'POST',
+      body: JSON.stringify(evento)
+    });
+  }
+
+  actualizarEvento(id, evento) {
+    return this.request(`/eventos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(evento)
+    });
+  }
+
+  cancelarEvento(id, motivo) {
+    return this.request(`/eventos/${id}/cancelar`, {
+      method: 'DELETE',
+      body: JSON.stringify({ motivo })
+    });
+  }
+
+  listarCategorias() {
+    return this.request('/eventos/categorias/listar');
+  }
+
+  obtenerImagenArtista(artista) {
+    const query = new URLSearchParams({ artista: artista || '' }).toString();
+    return this.request(`/eventos/imagen-artista?${query}`);
+  }
+
+  // BOLETOS
+  listarTiposBoleto(id_evento) {
+    return this.request(`/boletos/tipos/${id_evento}`);
+  }
+
+  verificarDisponibilidad(id_tipo_boleto, cantidad) {
+    return this.request('/boletos/verificar-disponibilidad', {
+      method: 'POST',
+      body: JSON.stringify({ id_tipo_boleto, cantidad })
+    });
+  }
+
+  comprarBoletos(id_tipo_boleto, cantidad) {
+    return this.request('/boletos/comprar', {
+      method: 'POST',
+      body: JSON.stringify({ id_tipo_boleto, cantidad })
+    });
+  }
+
+  confirmarPago(id_orden, metodo, estado_pago, referencia_externa) {
+    return this.request('/boletos/pago/confirmar', {
+      method: 'POST',
+      body: JSON.stringify({ id_orden, metodo, estado_pago, referencia_externa })
+    });
+  }
+
+  crearPreferenciaMercadoPago(payload) {
+    return this.request('/boletos/pago/mercadopago/preferencia', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  vincularOAuthMercadoPago(code, redirect_uri, code_verifier) {
+    return this.request('/auth/mercadopago/oauth/vincular', {
+      method: 'POST',
+      body: JSON.stringify({ code, redirect_uri, code_verifier })
+    });
+  }
+
+  misBoletos() {
+    return this.request('/boletos/mis-boletos');
+  }
+
+  detalleBoleto(id) {
+    return this.request(`/boletos/detalle/${id}`);
+  }
+
+  usarBoleto(codigo_qr) {
+    return this.request('/boletos/usar', {
+      method: 'POST',
+      body: JSON.stringify({ codigo_qr })
+    });
+  }
+
+  misOrdenes() {
+    return this.request('/boletos/ordenes/listar');
+  }
+
+  cancelarOrden(id) {
+    return this.request(`/boletos/ordenes/${id}/cancelar`, {
+      method: 'DELETE'
+    });
+  }
+
+  // REPORTES
+  reporteVentasEvento(id_evento) {
+    return this.request(`/reportes/evento/${id_evento}`);
+  }
+
+  subirImagen(formData) {
+    return fetch(`${API_URL.replace('/api', '')}/api/imagenes/upload`, {
+      method: 'POST',
+      headers: {
+        Authorization: this.token ? `Bearer ${this.token}` : ''
+      },
+      body: formData
+    }).then(async (response) => {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Error al subir imagen');
+      }
+      return response.json();
+    });
+  }
+
+  reporteGeneralAdmin() {
+    return this.request('/reportes/admin/general');
+  }
+
+  listarUsuarios() {
+    return this.request('/reportes/admin/usuarios');
+  }
+
+  desactivarUsuario(id_usuario, activo) {
+    return this.request('/reportes/admin/desactivar-usuario', {
+      method: 'POST',
+      body: JSON.stringify({ id_usuario, activo })
+    });
+  }
+
+  // ADMIN - SOLICITUDES DE ORGANIZADOR
+  enviarSolicitudOrganizador(payload) {
+    return this.request('/admin/solicitudes-organizador', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  miSolicitudOrganizador() {
+    return this.request('/admin/solicitudes-organizador/mia');
+  }
+
+  listarSolicitudesOrganizador(estado = null) {
+    const params = estado ? `?estado=${encodeURIComponent(estado)}` : '';
+    return this.request(`/admin/solicitudes-organizador${params}`);
+  }
+
+  aprobarSolicitudOrganizador(id) {
+    return this.request(`/admin/solicitudes-organizador/${id}/aprobar`, {
+      method: 'POST'
+    });
+  }
+
+  rechazarSolicitudOrganizador(id, motivo_rechazo) {
+    return this.request(`/admin/solicitudes-organizador/${id}/rechazar`, {
+      method: 'POST',
+      body: JSON.stringify({ motivo_rechazo })
+    });
+  }
+
+  listarAdministradores() {
+    return this.request('/admin/administradores');
+  }
+
+  crearAdministrador(payload) {
+    return this.request('/admin/administradores', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  cambiarPasswordAdministrador(id, password) {
+    return this.request(`/admin/administradores/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password })
+    });
+  }
+
+  setToken(token) {
+    this.token = token;
+    localStorage.setItem('token', token);
+  }
+
+  limpiarToken() {
+    this.token = null;
+    localStorage.removeItem('token');
+  }
+
+  obtenerToken() {
+    return this.token;
+  }
+}
+
+// Instancia global
+const api = new APIClient();

@@ -1,0 +1,531 @@
+const pool = require('../config/database');
+const https = require('https');
+
+const fetchJson = (url, timeoutMs = 5000) => new Promise((resolve, reject) => {
+  const request = https.get(url, (response) => {
+    let body = '';
+
+    response.on('data', (chunk) => {
+      body += chunk;
+    });
+
+    response.on('end', () => {
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        reject(new Error(`HTTP ${response.statusCode}`));
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(body));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+
+  request.setTimeout(timeoutMs, () => {
+    request.destroy(new Error('Timeout'));
+  });
+
+  request.on('error', reject);
+});
+
+const normalizeText = (value) =>
+  (value || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const matchesTipo = (evento, tipo) => {
+  if (!tipo) return true;
+
+  const categoria = normalizeText(evento.categoria);
+  const requested = normalizeText(tipo);
+
+  if (requested === 'musica' || requested === 'conciertos') {
+    return [
+      'music',
+      'concierto',
+      'pop',
+      'rock',
+      'urbano',
+      'trap',
+      'regional',
+      'electronic',
+      'electronica'
+    ].some((token) => categoria.includes(token));
+  }
+
+  if (requested === 'expos') {
+    return categoria.includes('expo');
+  }
+
+  return categoria.includes(requested);
+};
+
+const getSearchScore = (evento, query) => {
+  if (!query) return 0;
+
+  const text = normalizeText([
+    evento.titulo,
+    evento.descripcion,
+    evento.ubicacion,
+    evento.categoria
+  ].filter(Boolean).join(' '));
+
+  if (!text) return 9999;
+  if (text === query) return 0;
+  if (text.startsWith(query)) return 1;
+  if (text.includes(query)) return 2;
+
+  const title = normalizeText(evento.titulo);
+  if (title === query) return 0;
+  if (title.startsWith(query)) return 1;
+  if (title.includes(query)) return 2;
+
+  return 9999;
+};
+
+const normalizeArtistName = (value) =>
+  normalizeText(value)
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const tokenizeArtist = (value) => {
+  const stopwords = new Set(['the', 'and', 'y', 'feat', 'ft', 'tour', 'world', 'night', 'live', 'music', 'b2b']);
+  return normalizeArtistName(value)
+    .split(' ')
+    .filter((token) => token.length >= 3 && !stopwords.has(token));
+};
+
+const esCoincidenciaArtista = (buscado, encontrado) => {
+  const expected = normalizeArtistName(buscado);
+  const candidate = normalizeArtistName(encontrado);
+
+  if (!expected || !candidate) return false;
+  if (expected === candidate) return true;
+  if (expected.includes(candidate) || candidate.includes(expected)) return true;
+
+  const tokens = tokenizeArtist(expected);
+  if (tokens.length === 0) return false;
+
+  const matches = tokens.filter((token) => candidate.includes(token)).length;
+  const required = tokens.length >= 2 ? 2 : 1;
+  return matches >= required;
+};
+
+const construirFallbackImagen = (termino = 'evento') => {
+  const texto = encodeURIComponent((termino || 'Evento').toString().slice(0, 32));
+  return `https://dummyimage.com/1200x700/123767/ffffff.png&text=${texto}`;
+};
+
+const obtenerDisponiblesDesdeResultado = (row = {}) => {
+  const candidates = [
+    row.disponibles,
+    row.cantidad_disponible,
+    row.stock_disponible,
+    row.boletos_disponibles,
+    row.disponibilidad_actual
+  ];
+
+  for (const value of candidates) {
+    const n = Number(value);
+    if (!Number.isNaN(n)) return n;
+  }
+
+  return null;
+};
+
+const recalcularDisponibilidadEventos = async (connection, eventos = []) => {
+  const actualizados = [];
+
+  for (const evento of eventos) {
+    const eventoNormalizado = { ...evento };
+    const idEvento = Number(eventoNormalizado.id);
+
+    if (Number.isNaN(idEvento) || idEvento <= 0) {
+      actualizados.push(eventoNormalizado);
+      continue;
+    }
+
+    try {
+      const [tiposResult] = await connection.query('CALL sp_listar_tipos_boleto(?)', [idEvento]);
+      const tipos = tiposResult?.[0] || [];
+
+      let totalDisponibles = 0;
+      let precioMin = Number.POSITIVE_INFINITY;
+
+      for (const tipo of tipos) {
+        const tipoId = Number(tipo.id);
+        if (Number.isNaN(tipoId) || tipoId <= 0) continue;
+
+        let disponibles = Number(tipo.disponibles ?? tipo.cantidad_disponible ?? tipo.cantidad ?? 0);
+
+        try {
+          const [dispResult] = await connection.query('CALL sp_verificar_disponibilidad(?, ?)', [tipoId, 1]);
+          const dispRow = dispResult?.[0]?.[0] || {};
+          const verificado = obtenerDisponiblesDesdeResultado(dispRow);
+          if (verificado !== null) {
+            disponibles = verificado;
+          }
+        } catch (errorDisponibilidad) {
+          // Si falla validacion puntual, usamos el valor existente del tipo.
+        }
+
+        totalDisponibles += Math.max(0, Number.isNaN(disponibles) ? 0 : disponibles);
+
+        const precioTipo = Number(tipo.precio);
+        if (!Number.isNaN(precioTipo) && precioTipo >= 0) {
+          precioMin = Math.min(precioMin, precioTipo);
+        }
+      }
+
+      eventoNormalizado.boletos_disponibles = totalDisponibles;
+      if (Number.isFinite(precioMin)) {
+        eventoNormalizado.precio_desde = precioMin;
+      }
+    } catch (errorEvento) {
+      // Si falla para un evento puntual, conservamos lo que ya venia.
+    }
+
+    actualizados.push(eventoNormalizado);
+  }
+
+  return actualizados;
+};
+
+const fetchEventosFallback = async (connection, idCategoria) => {
+  const [rows] = await connection.query(
+    `
+      SELECT
+        e.id,
+        e.titulo,
+        e.descripcion,
+        e.fecha_inicio,
+        e.fecha_fin,
+        e.ubicacion,
+        e.capacidad,
+        e.imagen_url,
+        e.estado,
+        c.nombre AS categoria,
+        COALESCE(SUM(tb.cantidad), 0) AS boletos_disponibles,
+        COALESCE(MIN(tb.precio), 0) AS precio_desde
+      FROM eventos e
+      LEFT JOIN categorias_evento c ON c.id = e.id_categoria
+      LEFT JOIN tipos_boleto tb ON tb.id_evento = e.id
+      WHERE (? IS NULL OR e.id_categoria = ?)
+        AND e.estado IN ('publicado', 'activo', 'borrador')
+      GROUP BY
+        e.id,
+        e.titulo,
+        e.descripcion,
+        e.fecha_inicio,
+        e.fecha_fin,
+        e.ubicacion,
+        e.capacidad,
+        e.imagen_url,
+        e.estado,
+        c.nombre
+      ORDER BY e.fecha_inicio ASC
+    `,
+    [idCategoria, idCategoria]
+  );
+
+  return rows;
+};
+
+// Listar eventos con filtro opcional por categoría
+exports.listarEventos = async (req, res) => {
+  const { id_categoria, q, tipo, limit } = req.query;
+
+  try {
+    const connection = await pool.getConnection();
+    const parsedCategoria = id_categoria ? parseInt(id_categoria, 10) : null;
+    const [resultado] = await connection.query(
+      'CALL sp_listar_eventos(?)',
+      [parsedCategoria]
+    );
+
+    const searchQuery = normalizeText(q);
+    let eventos = resultado[0] || [];
+
+    // ERROR: el SP puede no aplicar id_categoria en algunos despliegues.
+    // Forzamos filtrado por categoría usando fetchEventosFallback cuando id_categoria está presente.
+    if (parsedCategoria) {
+      eventos = await fetchEventosFallback(connection, parsedCategoria);
+    } else if (eventos.length === 0) {
+      eventos = await fetchEventosFallback(connection, parsedCategoria);
+    }
+
+    eventos = await recalcularDisponibilidadEventos(connection, eventos);
+
+    await connection.release();
+
+    if (tipo) {
+      eventos = eventos.filter((evento) => matchesTipo(evento, tipo));
+    }
+
+    if (searchQuery) {
+      eventos = eventos
+        .map((evento) => ({
+          evento,
+          score: getSearchScore(evento, searchQuery)
+        }))
+        .filter((item) => item.score < 9999)
+        .sort((a, b) => a.score - b.score)
+        .map((item) => item.evento);
+    }
+
+    const numericLimit = parseInt(limit, 10);
+    if (!Number.isNaN(numericLimit) && numericLimit > 0) {
+      eventos = eventos.slice(0, numericLimit);
+    }
+
+    res.json({
+      success: true,
+      eventos
+    });
+  } catch (error) {
+    console.error('Error en listarEventos:', error);
+    res.status(500).json({ error: 'Error al listar eventos' });
+  }
+};
+
+// Obtener detalle de un evento
+exports.obtenerEvento = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const connection = await pool.getConnection();
+    const [resultado] = await connection.query(
+      'CALL sp_obtener_evento(?)',
+      [parseInt(id)]
+    );
+
+    await connection.release();
+
+    if (resultado[0].length > 0) {
+      res.json({
+        success: true,
+        evento: resultado[0][0],
+        tipos_boleto: resultado[1]
+      });
+    } else {
+      res.status(404).json({ error: 'Evento no encontrado' });
+    }
+  } catch (error) {
+    console.error('Error en obtenerEvento:', error);
+    res.status(500).json({ error: 'Error al obtener evento' });
+  }
+};
+
+// Crear evento (solo organizadores)
+exports.crearEvento = async (req, res) => {
+  const {
+    titulo,
+    descripcion,
+    fecha_inicio,
+    fecha_fin,
+    ubicacion,
+    capacidad,
+    id_categoria,
+    imagen_url
+  } = req.body;
+
+  if (!titulo || !fecha_inicio || !ubicacion || !capacidad) {
+    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+    const [resultado] = await connection.query(
+      'CALL sp_crear_evento(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        req.user.id,
+        titulo,
+        descripcion || null,
+        fecha_inicio,
+        fecha_fin || null,
+        ubicacion,
+        parseInt(capacidad),
+        id_categoria ? parseInt(id_categoria) : null,
+        imagen_url || null
+      ]
+    );
+
+    await connection.release();
+
+    if (resultado[0][0].resultado === 'ok') {
+      res.status(201).json({
+        success: true,
+        message: resultado[0][0].mensaje,
+        id_evento: resultado[0][0].id_evento
+      });
+    } else {
+      res.status(403).json({
+        success: false,
+        message: resultado[0][0].mensaje
+      });
+    }
+  } catch (error) {
+    console.error('Error en crearEvento:', error);
+    res.status(500).json({ error: 'Error al crear evento' });
+  }
+};
+
+// Actualizar evento
+exports.actualizarEvento = async (req, res) => {
+  const { id } = req.params;
+  const {
+    titulo,
+    descripcion,
+    fecha_inicio,
+    fecha_fin,
+    ubicacion,
+    capacidad,
+    imagen_url,
+    estado
+  } = req.body;
+
+  if (!titulo || !fecha_inicio || !ubicacion || !capacidad) {
+    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+    const [resultado] = await connection.query(
+      'CALL sp_actualizar_evento(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        parseInt(id),
+        req.user.id,
+        titulo,
+        descripcion || null,
+        fecha_inicio,
+        fecha_fin || null,
+        ubicacion,
+        parseInt(capacidad),
+        imagen_url || null,
+        estado || 'borrador'
+      ]
+    );
+
+    await connection.release();
+
+    res.json({
+      success: true,
+      message: resultado[0][0].mensaje
+    });
+  } catch (error) {
+    console.error('Error en actualizarEvento:', error);
+    res.status(500).json({ error: 'Error al actualizar evento' });
+  }
+};
+
+// Cancelar evento
+exports.cancelarEvento = async (req, res) => {
+  const { id } = req.params;
+  const { motivo } = req.body;
+
+  try {
+    const connection = await pool.getConnection();
+    const [resultado] = await connection.query(
+      'CALL sp_cancelar_evento(?, ?, ?)',
+      [parseInt(id), req.user.id, motivo || 'Sin especificar']
+    );
+
+    await connection.release();
+
+    if (resultado[0][0].resultado === 'ok') {
+      res.json({
+        success: true,
+        message: resultado[0][0].mensaje
+      });
+    } else {
+      res.status(403).json({
+        success: false,
+        message: resultado[0][0].mensaje
+      });
+    }
+  } catch (error) {
+    console.error('Error en cancelarEvento:', error);
+    res.status(500).json({ error: 'Error al cancelar evento' });
+  }
+};
+
+// Listar categorías
+exports.listarCategorias = async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [resultado] = await connection.query(
+      'CALL sp_listar_categorias()'
+    );
+
+    await connection.release();
+
+    res.json({
+      success: true,
+      categorias: resultado[0]
+    });
+  } catch (error) {
+    console.error('Error en listarCategorias:', error);
+    res.status(500).json({ error: 'Error al listar categorías' });
+  }
+};
+
+exports.obtenerImagenArtista = async (req, res) => {
+  const artista = (req.query.artista || '').toString().trim();
+
+  if (!artista) {
+    return res.status(400).json({
+      success: false,
+      error: 'El parámetro artista es requerido'
+    });
+  }
+
+  const fallback = construirFallbackImagen(artista);
+
+  try {
+    const deezerUrl = `https://api.deezer.com/search/artist?q=${encodeURIComponent(artista)}&limit=1`;
+    const deezerData = await fetchJson(deezerUrl);
+    const nombreDeezer = deezerData?.data?.[0]?.name;
+    const imagenDeezer = deezerData?.data?.[0]?.picture_xl || deezerData?.data?.[0]?.picture_big;
+
+    if (imagenDeezer && esCoincidenciaArtista(artista, nombreDeezer)) {
+      return res.json({
+        success: true,
+        image_url: imagenDeezer,
+        source: 'deezer',
+        artist_match: nombreDeezer
+      });
+    }
+  } catch (error) {
+    console.warn('No se pudo obtener imagen en Deezer:', artista, error.message);
+  }
+
+  try {
+    const iTunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(artista)}&entity=musicArtist&limit=1`;
+    const iTunesData = await fetchJson(iTunesUrl);
+    const nombreITunes = iTunesData?.results?.[0]?.artistName;
+    const artwork = iTunesData?.results?.[0]?.artworkUrl100;
+
+    if (artwork && esCoincidenciaArtista(artista, nombreITunes)) {
+      return res.json({
+        success: true,
+        image_url: artwork.replace('100x100bb.jpg', '1200x1200bb.jpg'),
+        source: 'itunes',
+        artist_match: nombreITunes
+      });
+    }
+  } catch (error) {
+    console.warn('No se pudo obtener imagen en iTunes:', artista, error.message);
+  }
+
+  return res.json({
+    success: true,
+    image_url: fallback,
+    source: 'fallback'
+  });
+};

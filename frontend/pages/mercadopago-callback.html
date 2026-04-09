@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinculando Mercado Pago...</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../css/global.css">
+  <style>
+    .mp-callback-wrap {
+      min-height: 70vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .mp-callback-card {
+      width: min(640px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .mp-callback-title {
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+    }
+
+    .mp-callback-msg {
+      color: var(--text-light);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <main class="mp-callback-wrap">
+    <section class="mp-callback-card">
+      <h1 class="mp-callback-title">Vinculando Mercado Pago</h1>
+      <p id="mpStatus" class="mp-callback-msg">Procesando autorizacion...</p>
+      <a id="mpBack" class="btn btn-primary" href="detalle-evento.html" style="display:none;">Volver a compra</a>
+    </section>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script>
+    (async () => {
+      const status = document.getElementById('mpStatus');
+      const back = document.getElementById('mpBack');
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const error = params.get('error');
+
+      const redirectUri = window.location.origin + '/pages/mercadopago-callback.html';
+
+      if (error) {
+        status.textContent = 'Mercado Pago devolvio un error: ' + error;
+        back.style.display = 'inline-flex';
+        return;
+      }
+
+      if (!code) {
+        status.textContent = 'No se recibio codigo OAuth.';
+        back.style.display = 'inline-flex';
+        return;
+      }
+
+      if (!api.obtenerToken()) {
+        status.textContent = 'Tu sesion expiro. Inicia sesion para vincular Mercado Pago.';
+        back.style.display = 'inline-flex';
+        back.href = 'login.html';
+        return;
+      }
+
+      try {
+        await api.vincularOAuthMercadoPago(code, redirectUri);
+        status.textContent = 'Mercado Pago vinculado correctamente. Redirigiendo...';
+        setTimeout(() => {
+          window.location.href = 'mis-boletos.html?mp=vinculado';
+        }, 1200);
+      } catch (e) {
+        status.textContent = e.message || 'No se pudo vincular Mercado Pago.';
+        back.style.display = 'inline-flex';
+      }
+    })();
+  </script>
+</body>
+</html>

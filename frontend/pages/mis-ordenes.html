@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Órdenes - Sistema de Eventos</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="../index.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+                <ul class="navbar-menu">
+                    <li><a href="../index.html">Inicio</a></li>
+                    <li><a href="mis-boletos.html">Mis Boletos</a></li>
+                    <li><a href="mis-ordenes.html" style="color: var(--primary);">Mis Órdenes</a></li>
+                </ul>
+                <div class="navbar-user"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Mis Órdenes de Compra</h1>
+        <p style="color: var(--text-light); margin-bottom: 30px;">Historial completo de tus compras</p>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Orden #</th>
+                        <th>Evento</th>
+                        <th>Fecha</th>
+                        <th>Boletos</th>
+                        <th>Total</th>
+                        <th>Estado Orden</th>
+                        <th>Pago</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ordenesTable">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <div class="loading"></div>
+                            <p>Cargando órdenes...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const MisOrdenesModule = {
+            async cargarOrdenes() {
+                try {
+                    const response = await api.misOrdenes();
+                    this.renderOrdenes(response.ordenes);
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.mostrarError();
+                }
+            },
+
+            renderOrdenes(ordenes) {
+                const tbody = document.querySelector('#ordenesTable');
+
+                const ordenesOrdenadas = [...ordenes].sort((a, b) => {
+                    const fechaA = new Date(a.fecha_orden || 0).getTime();
+                    const fechaB = new Date(b.fecha_orden || 0).getTime();
+
+                    if (fechaA !== fechaB) {
+                        return fechaB - fechaA;
+                    }
+
+                    return Number(b.orden_id || 0) - Number(a.orden_id || 0);
+                });
+                
+                if (ordenesOrdenadas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-light);">
+                                No tienes órdenes aún
+                                <br><a href="../index.html" class="btn btn-primary" style="margin-top: 15px; display: inline-block;">Ir a comprar</a>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = ordenesOrdenadas.map(orden => `
+                    <tr>
+                        <td><strong>#${orden.orden_id}</strong></td>
+                        <td>${orden.evento || 'Sin evento'}</td>
+                        <td>${new Date(orden.fecha_orden).toLocaleDateString()}</td>
+                        <td>${orden.cantidad_boletos}</td>
+                        <td><strong>$${parseFloat(orden.total).toFixed(2)}</strong></td>
+                        <td>
+                            <span class="badge badge-${orden.estado === 'pagada' ? 'success' : orden.estado === 'pendiente' ? 'pending' : 'danger'}">
+                                ${orden.estado}
+                            </span>
+                        </td>
+                        <td>${orden.estado_pago ? orden.estado_pago : '-'}</td>
+                        <td style="text-align: center;">
+                            ${orden.estado === 'pendiente' ? 
+                                `<button class="btn btn-accion btn-danger" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>` :
+                                '<span style="color: var(--text-light);">-</span>'
+                            }
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            async cancelar(idOrden) {
+                if (confirm('¿Deseas cancelar esta orden?')) {
+                    try {
+                        const response = await api.cancelarOrden(idOrden);
+                        if (response.success) {
+                            alert('Orden cancelada exitosamente');
+                            this.cargarOrdenes();
+                        }
+                    } catch (error) {
+                        alert('Error: ' + error.message);
+                    }
+                }
+            },
+
+            mostrarError() {
+                const tbody = document.querySelector('#ordenesTable');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            <div class="alert alert-error">
+                                <span>⚠️</span>
+                                <span>Error al cargar las órdenes</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        };
+
+        // Inicializar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => MisOrdenesModule.cargarOrdenes());
+        } else {
+            MisOrdenesModule.cargarOrdenes();
+        }
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/navbar.js"></script>
+    <script src="../js/auth-guard.js"></script>
+</body>
+</html>

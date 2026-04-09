@@ -1,0 +1,493 @@
+/* Compra de boletos */
+.detalle-evento-page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--evento-bg-page);
+  background-size: cover;
+  background-position: center 14%;
+  filter: blur(20px) saturate(1.12);
+  transform: scale(1.08);
+  opacity: 0.38;
+}
+
+.detalle-evento-page-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(5, 13, 29, 0.78) 0%, rgba(5, 13, 29, 0.86) 100%);
+}
+
+.navbar,
+.compra-container {
+  position: relative;
+  z-index: 1;
+}
+
+.compra-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.compra-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.evento-detalle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  position: relative;
+  isolation: isolate;
+}
+
+.evento-detalle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--evento-bg);
+  background-size: cover;
+  background-position: center 16%;
+  opacity: 0.2;
+  transform: scale(1.05);
+  filter: blur(10px) saturate(1.1);
+  z-index: 0;
+}
+
+.evento-detalle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 16, 34, 0.35) 0%, rgba(6, 16, 34, 0.7) 100%);
+  z-index: 0;
+}
+
+.evento-detalle-imagen {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  background: linear-gradient(135deg, #123767 0%, #11607d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.evento-detalle-imagen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--evento-bg);
+  background-size: cover;
+  background-position: center 14%;
+  filter: blur(16px) saturate(1.08);
+  transform: scale(1.08);
+  opacity: 0.2;
+  z-index: 0;
+}
+
+.evento-detalle-imagen img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: initial;
+  object-position: center;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .evento-detalle-imagen {
+    height: auto;
+  }
+}
+
+.evento-detalle-contenido {
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+  font-size: 15px;
+}
+
+.evento-detalle h2 {
+  margin-bottom: 15px;
+  font-size: 22px;
+}
+
+.evento-detalle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.evento-detalle-info p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.evento-descripcion {
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.lugar-areas-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.lugar-areas-header h3 {
+  margin: 0 0 6px;
+}
+
+.lugar-areas-header p {
+  margin: 0 0 16px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.lugar-areas-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.lugar-mapa-wrap {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  min-height: 240px;
+}
+
+.lugar-mapa-wrap img {
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+.area-selector-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.area-selector-wrap label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.area-selector-wrap select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--text);
+  padding: 0 12px;
+}
+
+.area-selector-wrap small {
+  color: var(--text-light);
+  line-height: 1.45;
+}
+
+/* Selección de boletos */
+.boletos-selector {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 30px;
+}
+
+.boletos-selector h3 {
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 10px;
+}
+
+.tipo-boleto {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto auto;
+  justify-content: initial;
+  align-items: center;
+  gap: 20px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 15px;
+  transition: var(--transition);
+}
+
+.tipo-boleto:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: var(--primary);
+}
+
+.tipo-boleto-activo {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(24, 203, 255, 0.18);
+}
+
+.tipo-boleto-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.tipo-boleto-info {
+  flex: initial;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.tipo-boleto-info p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tipo-boleto-info p:last-child {
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.tipo-boleto-precio {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--secondary);
+  margin: 0;
+  flex: initial;
+  min-width: 130px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tipo-boleto-cantidad {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: initial;
+  min-width: 190px;
+  justify-content: flex-end;
+}
+
+.tipo-boleto-cantidad small {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.cantidad-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 124px;
+  width: 124px;
+}
+
+.cantidad-arrow {
+  width: 28px;
+  height: 28px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(9, 22, 45, 0.9);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.cantidad-arrow-left {
+  left: 4px;
+}
+
+.cantidad-arrow-right {
+  right: 4px;
+}
+
+.cantidad-control:hover .cantidad-arrow,
+.cantidad-control:focus-within .cantidad-arrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cantidad-arrow:hover {
+  border-color: var(--primary);
+  background: rgba(24, 203, 255, 0.16);
+}
+
+.cantidad-input {
+  width: 124px;
+  min-width: 124px;
+  max-width: 124px;
+  height: 44px;
+  padding: 8px 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.cantidad-input::-webkit-outer-spin-button,
+.cantidad-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cantidad-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (max-width: 1080px) {
+  .lugar-areas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tipo-boleto {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .tipo-boleto-precio {
+    margin: 0;
+    text-align: left;
+  }
+
+  .tipo-boleto-cantidad {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Resumen de compra */
+.resumen-compra {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  position: sticky;
+  top: 20px;
+}
+
+.resumen-compra h3 {
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 10px;
+}
+
+.resumen-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.resumen-subtotal {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.resumen-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--primary);
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 2px solid var(--primary);
+}
+
+.btn-comprar {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  font-size: 16px;
+}
+
+/* Carrito */
+.carrito-table {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 30px;
+}
+
+.carrito-vacio {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .compra-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resumen-compra {
+    position: static;
+  }
+
+  .tipo-boleto {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .tipo-boleto-precio {
+    margin: 0;
+    flex: initial;
+    text-align: left;
+  }
+
+  .tipo-boleto-cantidad {
+    flex: initial;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

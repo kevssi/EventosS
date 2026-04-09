@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Boleto - Eventos+</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/boletos.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="../index.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+                <ul class="navbar-menu">
+                    <li><a href="../index.html">Inicio</a></li>
+                    <li><a href="mis-boletos.html" style="color: var(--primary);">Mis Boletos</a></li>
+                </ul>
+                <div class="navbar-user"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container compra-container" style="padding-top: 24px; padding-bottom: 32px;">
+        <div style="margin-bottom: 20px;">
+            <a href="mis-boletos.html" style="color: var(--primary); text-decoration: none;">← Volver a mis boletos</a>
+        </div>
+
+        <div id="detalleBoletoContainer" class="card">
+            <div style="text-align: center; padding: 30px;">
+                <div class="loading"></div>
+                <p>Cargando detalle del boleto...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/navbar.js"></script>
+    <script src="../js/auth-guard.js"></script>
+    <script>
+        const DetalleBoletoModule = {
+            getBoletoId() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('id');
+            },
+
+            formatDate(value) {
+                if (!value) return 'No disponible';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 'No disponible';
+                return date.toLocaleDateString('es-MX', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            },
+
+            formatTime(value) {
+                if (!value) return 'No disponible';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 'No disponible';
+                return date.toLocaleTimeString('es-MX', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
+
+            init() {
+                const id = this.getBoletoId();
+                if (!id) {
+                    this.mostrarError('No se recibió el ID del boleto.');
+                    return;
+                }
+
+                this.cargarDetalle(id);
+            },
+
+            async cargarDetalle(id) {
+                try {
+                    const response = await api.detalleBoleto(id);
+                    this.render(response.boleto || {});
+                } catch (error) {
+                    console.error('Error cargando detalle del boleto:', error);
+                    this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto.');
+                }
+            },
+
+            render(boleto) {
+                const container = document.querySelector('#detalleBoletoContainer');
+                if (!container) return;
+
+                const estado = String(boleto.estado || 'desconocido').toLowerCase();
+                const estadoClass = estado === 'pagado' || estado === 'activo' ? 'success' : 'warning';
+                const fechaEvento = boleto.fecha_evento || boleto.fecha_inicio || boleto.fecha;
+                const fechaCompra = boleto.fecha_compra || boleto.fecha_pago || boleto.fecha_emision;
+                const referencia = boleto.referencia_externa || boleto.id_orden || boleto.orden_id || 'No disponible';
+
+                container.innerHTML = `
+                    <div class="card-header">
+                        <h2 style="margin-bottom: 8px;">${boleto.evento || 'Boleto'}</h2>
+                        <p style="color: var(--text-light); margin: 0;">Detalle completo de tu compra</p>
+                    </div>
+
+                    <div style="padding: 20px; display: grid; gap: 10px;">
+                        <p><strong>Tipo de boleto:</strong> ${boleto.tipo_boleto || 'No disponible'}</p>
+                        <p><strong>Ubicación:</strong> ${boleto.ubicacion || 'No disponible'}</p>
+                        <p><strong>Fecha del evento:</strong> ${this.formatDate(fechaEvento)}</p>
+                        <p><strong>Hora del evento:</strong> ${this.formatTime(fechaEvento)}</p>
+                        <p><strong>Fecha de compra:</strong> ${this.formatDate(fechaCompra)}</p>
+                        <p><strong>Hora de compra:</strong> ${this.formatTime(fechaCompra)}</p>
+                        <p><strong>Precio pagado:</strong> $${Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2)}</p>
+                        <p><strong>Estado:</strong> <span class="badge badge-${estadoClass}">${boleto.estado || 'No disponible'}</span></p>
+                        <p><strong>Referencia:</strong> ${referencia}</p>
+                    </div>
+
+                    <div style="margin: 0 20px 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); text-align: center;">
+                        <p style="margin-bottom: 10px; color: var(--text-light);">Código QR del boleto</p>
+                        <img
+                            src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(boleto.codigo_qr || '')}"
+                            alt="QR del boleto"
+                            style="width: 180px; height: 180px; display: block; margin: 0 auto 10px; border-radius: 8px; background: #fff; padding: 8px;"
+                        />
+                        <code style="display: block; font-size: 15px; font-weight: 700; letter-spacing: 1px;">${boleto.codigo_qr || 'No disponible'}</code>
+                    </div>
+                `;
+            },
+
+            mostrarError(mensaje) {
+                const container = document.querySelector('#detalleBoletoContainer');
+                if (!container) return;
+
+                container.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>⚠️</span>
+                        <span>${mensaje}</span>
+                    </div>
+                `;
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => DetalleBoletoModule.init());
+        } else {
+            DetalleBoletoModule.init();
+        }
+    </script>
+</body>
+</html>

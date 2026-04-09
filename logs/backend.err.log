@@ -1,0 +1,782 @@
+Error en obtenerEvento: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarCategorias: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}
+Error en listarEventos: Error: Access denied for user 'root'@'localhost' (using password: NO)
+    at Packet.asError (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packets\packet.js:788:17)
+    at ClientHandshake.execute (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+    at PoolConnection.handlePacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:552:34)
+    at PacketParser.onPacket (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:102:12)
+    at PacketParser.executeStart (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C:\Users\talam\Desktop\EventosS\backend\node_modules\mysql2\lib\base\connection.js:109:25)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'root'@'localhost' (using password: NO)",
+  sql: undefined
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eventos+ | Compra tus boletos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/eventos.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="index.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+                <ul class="navbar-menu">
+                    <li><a href="index.html">Inicio</a></li>
+                </ul>
+                <div class="navbar-user"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="container">
+            <h1>¡Bienvenido a Eventos+!</h1>
+            <p>Descubre y compra boletos para los mejores eventos cerca de ti</p>
+        </div>
+    </div>
+
+    <!-- Contenido -->
+    <div class="container">
+        <!-- Barra buscadora -->
+        <section class="filtros" aria-label="Buscar eventos">
+            <div class="filtro-grupo">
+                <label for="filtroBusqueda">Busca tu evento</label>
+                <input
+                    type="text"
+                    id="filtroBusqueda"
+                    placeholder="Artista, evento o ubicación"
+                >
+            </div>
+            <div class="filtro-grupo">
+                <label for="filtroCategoria">Categoría</label>
+                <select id="filtroCategoria">
+                    <option value="">Todas las categorías</option>
+                </select>
+                <button class="btn btn-primary" id="btnBuscar" type="button">Buscar</button>
+            </div>
+        </section>
+
+        <!-- Resumen -->
+        <section class="explora-banner" id="exploraBanner">
+            <h2>Cartelera disponible</h2>
+            <p id="exploraResumen">Explora los eventos destacados y abre cada detalle para comprar boletos.</p>
+        </section>
+
+        <!-- Grid de eventos -->
+        <div class="grid grid-3" id="eventosContainer">
+            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                <div class="loading"></div>
+                <p>Cargando eventos...</p>
+            </div>
+        </div>
+    </div>
+
+        <script src="js/api.js"></script>
+        <script src="js/navbar.js"></script>
+        <script src="js/eventos.js"></script>
+</body>
+</html>

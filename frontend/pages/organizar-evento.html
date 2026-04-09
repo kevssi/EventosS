@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organizar Evento - Eventos+</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+  <style>
+    .organizar-contenido { max-width: 800px; margin: 40px auto; padding: 20px; background: var(--bg-soft); border-radius: 10px; color: var(--text); }
+    .organizar-contenido h2 { margin-bottom: 15px; }
+    .organizar-contenido p { margin-bottom: 18px; }
+    .organizar-contenido .btn { margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="/inicio.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+        <ul class="navbar-menu">
+          <li><a href="/inicio.html">Inicio</a></li>
+          <li><a href="/mis-boletos.html">Mis Boletos</a></li>
+        </ul>
+        <div class="navbar-user"></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="organizar-contenido">
+    <h2>Organizar Evento</h2>
+    <p>Bienvenido a la sección de organización de eventos. Aquí podrás cargar los datos del evento, definir la cantidad de boletos y administrar tu oferta.</p>
+
+    <p>Por ahora esta es una guía inicial. Completa el formulario de abajo para empezar:</p>
+
+    <form id="organizadorForm">
+      <label>Nombre del evento</label>
+      <input type="text" id="eventoNombre" placeholder="Nombre del evento" required>
+      <label>Fecha</label>
+      <input type="date" id="eventoFecha" required>
+      <label>Lugar</label>
+      <input type="text" id="eventoLugar" placeholder="Lugar" required>
+      <label>Capacidad</label>
+      <input type="number" id="eventoCapacidad" placeholder="Capacidad" required>
+      <button class="btn btn-primary" type="submit">Guardar evento (simulado)</button>
+    </form>
+
+    <p><small>Nota: Este flujo es una simulación; en la versión final se conectaría con la API de backend para crear el evento realmente.</small></p>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script>
+    document.getElementById('organizadorForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Evento enviado para revisión. En la versión final, se guardará en la base de datos.');
+      this.reset();
+    });
+  </script>
+</body>
+</html>

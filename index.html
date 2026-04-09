@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Venta de Eventos - Eventos+</title>
+    <link rel="icon" type="image/svg+xml" href="frontend/favicon.svg">
+    <link rel="stylesheet" href="frontend/css/global.css">
+    <link rel="stylesheet" href="frontend/css/navbar.css">
+    <link rel="stylesheet" href="frontend/css/eventos.css">
+    <style>
+        .landing-hero {
+            background: linear-gradient(135deg, #6366f1 0%, #10b981 100%);
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .landing-hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .landing-hero p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-buttons .btn {
+            padding: 15px 30px;
+            font-size: 16px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            padding: 60px 20px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand">🎫 Eventos+</a>
+                <ul class="navbar-menu">
+                    <li><a href="#caracteristicas">Características</a></li>
+                    <li><a href="#acerca">Acerca de</a></li>
+                </ul>
+                <div style="display: flex; gap: 10px;">
+                    <a href="frontend/pages/login.html" class="btn btn-primary">Iniciar Sesión</a>
+                    <a href="frontend/pages/registro.html" class="btn btn-outline">Registrarse</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Landing -->
+    <div class="landing-hero">
+        <div class="container">
+            <h1>¡Bienvenido a Eventos+!</h1>
+            <p>La plataforma más moderna para comprar y vender boletos de eventos</p>
+            <div class="cta-buttons">
+                <a href="frontend/pages/login.html" class="btn btn-primary">Iniciar Sesión</a>
+                <a href="frontend/pages/registro.html" class="btn btn-secondary">Registrarse Ahora</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Características -->
+    <div class="container" id="caracteristicas">
+        <h2 style="text-align: center; margin-top: 60px; margin-bottom: 40px;">¿Por qué elegir Eventos+?</h2>
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎟️</div>
+                <h3>Compra Fácil</h3>
+                <p>Compra boletos en segundos con nuestra interfaz intuitiva y segura</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Completamente Mobile</h3>
+                <p>Accede desde cualquier dispositivo, en cualquier momento y lugar</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>100% Seguro</h3>
+                <p>Tus datos y transacciones están protegidos con encriptación de nivel banco</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎉</div>
+                <h3>Múltiples Eventos</h3>
+                <p>Descubre miles de eventos de todos los tipos en tu área</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📧</div>
+                <h3>Notificaciones</h3>
+                <p>Recibe alertas sobre tus órdenes y nuevos eventos disponibles</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛠️</div>
+                <h3>Para Organizadores</h3>
+                <p>Herramientas poderosas para crear y gestionar tus eventos</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="container">
+            <p>&copy; 2025 Eventos+. Todos los derechos reservados.</p>
+            <p>Sistema de Venta de Boletos para Eventos | v1.0.0</p>
+        </div>
+    </div>
+
+    <script src="frontend/js/api.js"></script>
+</body>
+</html>

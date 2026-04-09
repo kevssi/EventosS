@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicar para Organizador - Eventos+</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+  <style>
+    .aplicar-contenido {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+    .aplicar-contenido h2 { margin-bottom: 15px; }
+    .aplicar-contenido p { margin-bottom: 12px; }
+    .aplicar-contenido form {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .aplicar-contenido small {
+      color: var(--text-light);
+    }
+    .solicitud-estado {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .solicitud-estado h3 {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    .solicitud-estado p {
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="/inicio.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+        <div class="navbar-user"></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="aplicar-contenido">
+    <h2>Solicitud para Organizador</h2>
+    <p>Gracias por tu interés en organizar eventos con nuestra plataforma.</p>
+    <p>Para solicitar el rol de organizador, completa el formulario a continuación y el equipo de Eventos+ revisará tu solicitud:</p>
+
+    <form id="solicitudFormulario">
+      <label>Nombre completo</label>
+      <input type="text" id="solicitudNombre" required>
+      <label>Email</label>
+      <input type="email" id="solicitudEmail" required>
+      <label>Nombre de la organización</label>
+      <input type="text" id="solicitudOrganizacion" required>
+      <label>Breve descripción de la experiencia organizando eventos</label>
+      <textarea id="solicitudDescripcion" rows="4" required></textarea>
+      <label>Teléfono de contacto (opcional)</label>
+      <input type="text" id="solicitudTelefono">
+      <label>Comentarios adicionales (opcional)</label>
+      <textarea id="solicitudComentarios" rows="3"></textarea>
+      <button class="btn btn-primary" type="submit">Enviar solicitud</button>
+    </form>
+
+    <div id="solicitudEstado" class="solicitud-estado" style="display:none;"></div>
+
+    <p><small>Tu solicitud se guarda en backend y queda disponible para revisión del administrador.</small></p>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script src="../js/auth-guard.js"></script>
+  <script>
+    const estadoColors = {
+      pendiente: 'badge-pending',
+      aprobada: 'badge-success',
+      rechazada: 'badge-danger'
+    };
+
+    async function cargarEstadoSolicitud() {
+      const estadoContainer = document.getElementById('solicitudEstado');
+
+      try {
+        const response = await api.miSolicitudOrganizador();
+        const solicitud = response.solicitud;
+
+        if (!solicitud) {
+          estadoContainer.style.display = 'none';
+          return;
+        }
+
+        estadoContainer.style.display = 'block';
+        estadoContainer.innerHTML = `
+          <h3>Estado de tu solicitud</h3>
+          <p><strong>Estado:</strong> <span class="badge ${estadoColors[solicitud.estado] || 'badge-info'}">${solicitud.estado}</span></p>
+          <p><strong>Organización:</strong> ${solicitud.organizacion}</p>
+          <p><strong>Fecha:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleString()}</p>
+          ${solicitud.motivo_rechazo ? `<p><strong>Motivo de rechazo:</strong> ${solicitud.motivo_rechazo}</p>` : ''}
+        `;
+      } catch (error) {
+        console.error('Error consultando estado de solicitud:', error);
+      }
+    }
+
+    document.getElementById('solicitudFormulario').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      try {
+        const payload = {
+          organizacion: document.getElementById('solicitudOrganizacion').value.trim(),
+          experiencia: document.getElementById('solicitudDescripcion').value.trim(),
+          telefono_contacto: document.getElementById('solicitudTelefono').value.trim() || null,
+          comentarios: document.getElementById('solicitudComentarios').value.trim() || null
+        };
+
+        const response = await api.enviarSolicitudOrganizador(payload);
+        alert(response.message || 'Solicitud enviada correctamente');
+        this.reset();
+        await cargarEstadoSolicitud();
+      } catch (error) {
+        alert(error.message || 'No se pudo enviar la solicitud');
+      }
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', cargarEstadoSolicitud);
+    } else {
+      cargarEstadoSolicitud();
+    }
+  </script>
+</body>
+</html>

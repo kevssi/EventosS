@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Boletos - Sistema de Eventos</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/boletos.css">
+    <style>
+        .mis-boletos-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .boleto-card {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            height: 100%;
+        }
+
+        .boleto-card .card-header h3 {
+            margin: 0;
+            font-size: 26px;
+            line-height: 1.2;
+        }
+
+        .boleto-body {
+            padding: 16px;
+        }
+
+        .boleto-qr-box {
+            margin: 16px auto 0;
+            max-width: 320px;
+            text-align: center;
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+        }
+
+        .boleto-qr-image {
+            width: 112px;
+            height: 112px;
+            display: block;
+            margin: 0 auto 8px;
+            border-radius: 8px;
+            background: #fff;
+            padding: 6px;
+        }
+
+        .boleto-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1200px) {
+            .mis-boletos-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mis-boletos-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .boleto-card .card-header h3 {
+                font-size: 22px;
+            }
+
+            .boleto-actions .btn {
+                flex: 1 1 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="../index.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+                <ul class="navbar-menu">
+                    <li><a href="../index.html">Inicio</a></li>
+                    <li><a href="mis-boletos.html" style="color: var(--primary);">Mis Boletos</a></li>
+                    <li><a href="mis-ordenes.html">Mis Órdenes</a></li>
+                </ul>
+                <div class="navbar-user"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Mis Boletos</h1>
+        <p style="color: var(--text-light); margin-bottom: 30px;">Aquí están todos tus boletos comprados</p>
+
+        <div id="boletosList" class="grid mis-boletos-grid">
+            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                <div class="loading"></div>
+                <p>Cargando boletos...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Módulo para mis boletos
+        const MisBoletosModule = {
+            async cargarBoletos() {
+                try {
+                    const response = await api.misBoletos();
+                    this.renderBoletos(response.boletos);
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.mostrarError('Error al cargar boletos');
+                }
+            },
+
+            renderBoletos(boletos) {
+                const container = document.querySelector('#boletosList');
+                
+                if (boletos.length === 0) {
+                    container.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <p style="color: var(--text-light); font-size: 16px;">No tienes boletos aún</p>
+                            <a href="../index.html" class="btn btn-primary" style="margin-top: 20px;">Comprar boletos</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = boletos.map(boleto => `
+                    <div class="card boleto-card">
+                        <div class="card-header">
+                            <h3>${boleto.evento}</h3>
+                            <small>${new Date(boleto.fecha_evento).toLocaleDateString()}</small>
+                        </div>
+                        <div class="boleto-body">
+                            <p><strong>Tipo:</strong> ${boleto.tipo_boleto}</p>
+                            <p><strong>Ubicación:</strong> ${boleto.ubicacion}</p>
+                            <p><strong>Precio:</strong> $${parseFloat(boleto.precio_pagado).toFixed(2)}</p>
+                            <p><strong>Estado:</strong> <span class="badge badge-${boleto.estado === 'pagado' ? 'success' : 'pending'}">${boleto.estado}</span></p>
+                            
+                            <div class="boleto-qr-box">
+                                <p style="margin-bottom: 10px; color: #445a7f;">Tu código QR:</p>
+                                <img
+                                    src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(boleto.codigo_qr || '')}"
+                                    alt="QR del boleto"
+                                    class="boleto-qr-image"
+                                />
+                                <code style="display: block; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #1d3557;">${boleto.codigo_qr || 'SIN-CODIGO'}</code>
+                            </div>
+
+                            <div class="boleto-actions">
+                                <button class="btn btn-primary" onclick="descargarQR('${boleto.codigo_qr}')">Descargar QR</button>
+                                <button class="btn btn-secondary" onclick="location.href='detalle-boleto.html?id=${boleto.boleto_id || boleto.id_boleto || boleto.id}'">Ver Detalle</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            mostrarError(mensaje) {
+                const container = document.querySelector('#boletosList');
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1;">
+                        <div class="alert alert-error">
+                            <span>⚠️</span>
+                            <span>${mensaje}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        function descargarQR(codigo) {
+            alert('Función de descarga QR en desarrollo\nCódigo: ' + codigo);
+        }
+
+        // Inicializar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                MisBoletosModule.cargarBoletos();
+            });
+        } else {
+            MisBoletosModule.cargarBoletos();
+        }
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/navbar.js"></script>
+    <script src="../js/auth-guard.js"></script>
+</body>
+</html>
