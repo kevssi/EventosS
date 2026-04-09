@@ -149,55 +149,6 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Obtener perfil
-exports.obtenerPerfil = async (req, res) => {
-  try {
-    const connection = await pool.getConnection();
-    const [resultado] = await connection.query(
-      'CALL sp_obtener_perfil(?)',
-      [req.user.id]
-    );
-
-    await connection.release();
-
-    if (resultado[0].length > 0) {
-      res.json({ success: true, perfil: resultado[0][0] });
-    } else {
-      res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-  } catch (error) {
-    console.error('Error en obtenerPerfil:', error);
-    res.status(500).json({ error: 'Error al obtener perfil' });
-  }
-};
-
-// Actualizar perfil
-exports.actualizarPerfil = async (req, res) => {
-  const { nombre, telefono } = req.body;
-
-  if (!nombre) {
-    return res.status(400).json({ error: 'El nombre es requerido' });
-  }
-
-  try {
-    const connection = await pool.getConnection();
-    const [resultado] = await connection.query(
-      'CALL sp_actualizar_perfil(?, ?, ?)',
-      [req.user.id, nombre, telefono || null]
-    );
-
-    await connection.release();
-
-    res.json({
-      success: true,
-      message: resultado[0][0].mensaje
-    });
-  } catch (error) {
-    console.error('Error en actualizarPerfil:', error);
-    res.status(500).json({ error: 'Error al actualizar perfil' });
-  }
-};
-
 const resolverClientIdMercadoPago = (inputClientId) => (
   inputClientId
   || process.env.MERCADOPAGO_OAUTH_CLIENT_ID

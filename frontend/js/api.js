@@ -54,17 +54,6 @@ class APIClient {
     return this.request('/auth/logout', { method: 'POST' });
   }
 
-  obtenerPerfil() {
-    return this.request('/auth/perfil');
-  }
-
-  actualizarPerfil(nombre, telefono) {
-    return this.request('/auth/perfil', {
-      method: 'PUT',
-      body: JSON.stringify({ nombre, telefono })
-    });
-  }
-
   // EVENTOS
   listarEventos(options = {}) {
     const normalized = typeof options === 'object' && options !== null

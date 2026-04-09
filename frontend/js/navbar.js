@@ -229,7 +229,6 @@ const NavbarModule = {
         }
       }
 
-      const perfilPath = this.resolvePath('perfil.html');
       const boletosPath = this.resolvePath('mis-boletos.html');
       const ordenesPath = this.resolvePath('mis-ordenes.html');
       const organizarPath = this.resolvePath('organizar-evento.html');
@@ -251,7 +250,6 @@ const NavbarModule = {
               ${isAdmin ? `
                 <a href="${adminPath}">Panel Admin</a>
               ` : `
-                <a href="${perfilPath}">Mi Perfil</a>
                 <a href="${boletosPath}">Mis Boletos</a>
                 <a href="${ordenesPath}">Mis Órdenes</a>
                 ${isOrganizador ? `<a href="${organizarPath}" target="_blank">Organizar Evento</a>` : `<a href="${aplicarPath}" target="_blank">Aplicar para organizar eventos</a>`}

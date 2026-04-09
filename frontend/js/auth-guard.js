@@ -5,7 +5,6 @@ const AuthGuard = {
     'mis-boletos.html',
     'mis-ordenes.html',
     'mis-eventos.html',
-    'perfil.html',
     'aplicar-organizador.html',
     'admin-dashboard.html'
   ],
