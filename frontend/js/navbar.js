@@ -523,6 +523,8 @@ const NavbarModule = {
   }
 };
 
+window.NavbarModule = NavbarModule;
+
 // Inicializar navbar cuando el DOM esté listo
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => NavbarModule.init());
