@@ -1,10 +1,33 @@
 // Módulo de autenticación
 const AuthModule = {
   lucideScriptPromise: null,
-  lucideCdnUrls: [
-    'https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js',
-    'https://unpkg.com/lucide@latest/dist/umd/lucide.js'
-  ],
+
+  resolveLocalLucideUrl() {
+    const script = document.querySelector('script[src*="/js/auth.js"], script[src$="js/auth.js"]');
+    if (!script?.src) return null;
+
+    try {
+      return new URL('vendor/lucide.min.js', script.src).toString();
+    } catch (_error) {
+      return null;
+    }
+  },
+
+  getLucideSources() {
+    const local = this.resolveLocalLucideUrl();
+    const sources = [];
+
+    if (local) {
+      sources.push(local);
+    }
+
+    sources.push(
+      'https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js',
+      'https://unpkg.com/lucide@latest/dist/umd/lucide.js'
+    );
+
+    return sources;
+  },
 
   loadScriptWithFallback(urls, index = 0) {
     return new Promise((resolve, reject) => {
@@ -48,7 +71,7 @@ const AuthModule = {
         return;
       }
 
-      this.loadScriptWithFallback(this.lucideCdnUrls)
+      this.loadScriptWithFallback(this.getLucideSources())
         .then(resolve)
         .catch(reject);
     });
