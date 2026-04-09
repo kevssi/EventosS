@@ -80,13 +80,48 @@ const AuthModule = {
   },
 
   renderLucideIcons() {
-    if (!window.lucide?.createIcons) return;
-    window.lucide.createIcons({
-      attrs: {
-        'stroke-width': 2,
-        class: 'lucide-icon'
-      },
-      nameAttr: 'data-lucide'
+    if (window.lucide?.createIcons) {
+      window.lucide.createIcons({
+        attrs: {
+          'stroke-width': 2,
+          class: 'lucide-icon'
+        },
+        nameAttr: 'data-lucide'
+      });
+    }
+
+    this.renderInlineFallbackIcons(document);
+  },
+
+  getFallbackIconSvg(name) {
+    const icons = {
+      'triangle-alert': '<path d="M10.3 3.5 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.5a2 2 0 0 0-3.4 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+      'circle-check': '<circle cx="12" cy="12" r="9"></circle><polyline points="9 12 11 14 15 10"></polyline>'
+    };
+
+    return icons[name] || '<circle cx="12" cy="12" r="9"></circle>';
+  },
+
+  renderInlineFallbackIcons(scope = document) {
+    const root = scope || document;
+    const iconNodes = root.querySelectorAll('[data-lucide]');
+
+    iconNodes.forEach((node) => {
+      const name = node.getAttribute('data-lucide');
+      if (!name) return;
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('class', 'lucide-icon');
+      svg.innerHTML = this.getFallbackIconSvg(name);
+
+      node.replaceWith(svg);
     });
   },
 

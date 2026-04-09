@@ -80,13 +80,67 @@ const NavbarModule = {
   },
 
   renderLucideIcons(scope = document) {
-    if (!window.lucide?.createIcons) return;
-    window.lucide.createIcons({
-      attrs: {
-        'stroke-width': 2,
-        class: 'lucide-icon'
-      },
-      nameAttr: 'data-lucide'
+    if (window.lucide?.createIcons) {
+      window.lucide.createIcons({
+        attrs: {
+          'stroke-width': 2,
+          class: 'lucide-icon'
+        },
+        nameAttr: 'data-lucide'
+      });
+    }
+
+    // Fallback duro: si por cualquier motivo Lucide no reemplazo nodos,
+    // convertimos data-lucide en SVG inline para no mostrar espacios vacios.
+    this.renderInlineFallbackIcons(scope);
+  },
+
+  getFallbackIconSvg(name) {
+    const icons = {
+      menu: '<line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line>',
+      search: '<circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>',
+      x: '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+      'chevron-right': '<polyline points="9 18 15 12 9 6"></polyline>',
+      'chevron-left': '<polyline points="15 18 9 12 15 6"></polyline>',
+      'arrow-left': '<line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>',
+      'calendar-days': '<rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>',
+      'clock-3': '<circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 16 12"></polyline>',
+      'map-pin': '<path d="M12 22s7-5.4 7-12a7 7 0 1 0-14 0c0 6.6 7 12 7 12z"></path><circle cx="12" cy="10" r="2.5"></circle>',
+      'circle-check': '<circle cx="12" cy="12" r="9"></circle><polyline points="9 12 11 14 15 10"></polyline>',
+      'triangle-alert': '<path d="M10.3 3.5 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.5a2 2 0 0 0-3.4 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+      tag: '<path d="M20 12 12 20a2 2 0 0 1-2.8 0l-6.4-6.4a2 2 0 0 1 0-2.8L10.8 2H20v10z"></path><circle cx="16" cy="8" r="1"></circle>',
+      'user-round': '<circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.9-3.2 5.1-5 8-5s6.1 1.8 8 5"></path>',
+      users: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><path d="M20 8a4 4 0 0 1 0 8"></path><path d="M23 21v-2a4 4 0 0 0-3-3.9"></path>',
+      'bar-chart-3': '<path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="9" width="3" height="9"></rect><rect x="17" y="6" width="3" height="12"></rect>',
+      'file-text': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>',
+      plus: '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>',
+      'lock-keyhole': '<rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path><circle cx="12" cy="16" r="1"></circle>',
+      'circle-user-round': '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 17c1.4-2 3-3 5-3s3.6 1 5 3"></path>'
+    };
+
+    return icons[name] || '<circle cx="12" cy="12" r="9"></circle>';
+  },
+
+  renderInlineFallbackIcons(scope = document) {
+    const root = scope || document;
+    const iconNodes = root.querySelectorAll('[data-lucide]');
+
+    iconNodes.forEach((node) => {
+      const name = node.getAttribute('data-lucide');
+      if (!name) return;
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('class', 'lucide-icon');
+      svg.innerHTML = this.getFallbackIconSvg(name);
+
+      node.replaceWith(svg);
     });
   },
 
