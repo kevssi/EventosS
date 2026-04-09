@@ -244,13 +244,21 @@ exports.listarEventos = async (req, res) => {
   try {
     const connection = await pool.getConnection();
     const parsedCategoria = id_categoria ? parseInt(id_categoria, 10) : null;
-    const [resultado] = await connection.query(
-      'CALL sp_listar_eventos(?)',
-      [parsedCategoria]
-    );
-
     const searchQuery = normalizeText(q);
-    let eventos = resultado[0] || [];
+    let eventos = [];
+
+    try {
+      const [resultado] = await connection.query(
+        'CALL sp_listar_eventos(?)',
+        [parsedCategoria]
+      );
+      eventos = resultado[0] || [];
+    } catch (spError) {
+      if (spError?.code !== 'ER_SP_DOES_NOT_EXIST') {
+        throw spError;
+      }
+      eventos = await fetchEventosFallback(connection, parsedCategoria);
+    }
 
     // ERROR: el SP puede no aplicar id_categoria en algunos despliegues.
     // Forzamos filtrado por categoría usando fetchEventosFallback cuando id_categoria está presente.
@@ -297,12 +305,17 @@ exports.listarEventos = async (req, res) => {
 // Obtener detalle de un evento
 exports.obtenerEvento = async (req, res) => {
   const { id } = req.params;
+  const parsedId = parseInt(id, 10);
+
+  if (Number.isNaN(parsedId) || parsedId <= 0) {
+    return res.status(400).json({ error: 'ID de evento inválido' });
+  }
 
   try {
     const connection = await pool.getConnection();
     const [resultado] = await connection.query(
       'CALL sp_obtener_evento(?)',
-      [parseInt(id)]
+      [parsedId]
     );
 
     await connection.release();
@@ -459,15 +472,31 @@ exports.cancelarEvento = async (req, res) => {
 exports.listarCategorias = async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [resultado] = await connection.query(
-      'CALL sp_listar_categorias()'
-    );
+    let categorias = [];
+
+    try {
+      const [resultado] = await connection.query('CALL sp_listar_categorias()');
+      categorias = resultado[0] || [];
+    } catch (spError) {
+      if (spError?.code !== 'ER_SP_DOES_NOT_EXIST') {
+        throw spError;
+      }
+
+      const [rows] = await connection.query(
+        `
+          SELECT id, nombre
+          FROM categorias_evento
+          ORDER BY nombre ASC
+        `
+      );
+      categorias = rows;
+    }
 
     await connection.release();
 
     res.json({
       success: true,
-      categorias: resultado[0]
+      categorias
     });
   } catch (error) {
     console.error('Error en listarCategorias:', error);

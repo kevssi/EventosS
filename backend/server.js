@@ -46,6 +46,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
+module.exports = app;
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
