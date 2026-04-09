@@ -20,7 +20,7 @@ const AuthModule = {
       }
 
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/lucide@latest';
+      script.src = 'https://unpkg.com/lucide@latest/dist/umd/lucide.js';
       script.defer = true;
       script.setAttribute('data-lucide-script', '1');
       script.onload = () => resolve();
