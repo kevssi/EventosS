@@ -8,6 +8,113 @@
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .ordenes-subtitle {
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .ordenes-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 18px;
+        }
+
+        .ordenes-table {
+            min-width: 860px;
+        }
+
+        .ordenes-table td.ordenes-full-row {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .ordenes-table td.ordenes-full-row::before {
+            content: none;
+        }
+
+        @media (max-width: 768px) {
+            .ordenes-subtitle {
+                margin-bottom: 18px;
+            }
+
+            .ordenes-table-wrap {
+                overflow: visible;
+                border-radius: 0;
+            }
+
+            .ordenes-table {
+                min-width: 0;
+                border: 0;
+                box-shadow: none;
+                background: transparent;
+            }
+
+            .ordenes-table thead {
+                display: none;
+            }
+
+            .ordenes-table tbody {
+                display: grid;
+                gap: 12px;
+            }
+
+            .ordenes-table tr {
+                display: block;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                background: var(--surface);
+                overflow: hidden;
+            }
+
+            .ordenes-table td {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                border-bottom: 1px solid var(--border);
+                padding: 10px 12px;
+                overflow-wrap: anywhere;
+            }
+
+            .ordenes-table td:last-child {
+                border-bottom: 0;
+            }
+
+            .ordenes-table td::before {
+                content: attr(data-label);
+                color: var(--text-light);
+                font-weight: 600;
+                font-size: 12px;
+                flex: 0 0 96px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+
+            .ordenes-table td[data-label="Evento"] {
+                display: block;
+            }
+
+            .ordenes-table td[data-label="Evento"]::before {
+                display: block;
+                margin-bottom: 6px;
+            }
+
+            .ordenes-table td[data-label="Acciones"] {
+                display: block;
+            }
+
+            .ordenes-table td[data-label="Acciones"]::before {
+                display: block;
+                margin-bottom: 8px;
+            }
+
+            .ordenes-table .btn-accion {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
@@ -27,31 +134,33 @@
 
     <div class="container">
         <h1>Mis Órdenes de Compra</h1>
-        <p style="color: var(--text-light); margin-bottom: 30px;">Historial completo de tus compras</p>
+        <p class="ordenes-subtitle">Historial completo de tus compras</p>
 
         <div class="card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Orden #</th>
-                        <th>Evento</th>
-                        <th>Fecha</th>
-                        <th>Boletos</th>
-                        <th>Total</th>
-                        <th>Estado Orden</th>
-                        <th>Pago</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="ordenesTable">
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px;">
-                            <div class="loading"></div>
-                            <p>Cargando órdenes...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="ordenes-table-wrap">
+                <table class="ordenes-table">
+                    <thead>
+                        <tr>
+                            <th>Orden #</th>
+                            <th>Evento</th>
+                            <th>Fecha</th>
+                            <th>Boletos</th>
+                            <th>Total</th>
+                            <th>Estado Orden</th>
+                            <th>Pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordenesTable">
+                        <tr>
+                            <td class="ordenes-full-row" colspan="8">
+                                <div class="loading"></div>
+                                <p>Cargando órdenes...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -84,7 +193,7 @@
                 if (ordenesOrdenadas.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <td class="ordenes-full-row" colspan="8" style="color: var(--text-light);">
                                 No tienes órdenes aún
                                 <br><a href="../index.html" class="btn btn-primary" style="margin-top: 15px; display: inline-block;">Ir a comprar</a>
                             </td>
@@ -95,18 +204,18 @@
 
                 tbody.innerHTML = ordenesOrdenadas.map(orden => `
                     <tr>
-                        <td><strong>#${orden.orden_id}</strong></td>
-                        <td>${orden.evento || 'Sin evento'}</td>
-                        <td>${new Date(orden.fecha_orden).toLocaleDateString()}</td>
-                        <td>${orden.cantidad_boletos}</td>
-                        <td><strong>$${parseFloat(orden.total).toFixed(2)}</strong></td>
-                        <td>
+                        <td data-label="Orden #"><strong>#${orden.orden_id}</strong></td>
+                        <td data-label="Evento">${orden.evento || 'Sin evento'}</td>
+                        <td data-label="Fecha">${new Date(orden.fecha_orden).toLocaleDateString()}</td>
+                        <td data-label="Boletos">${orden.cantidad_boletos}</td>
+                        <td data-label="Total"><strong>$${parseFloat(orden.total).toFixed(2)}</strong></td>
+                        <td data-label="Estado Orden">
                             <span class="badge badge-${orden.estado === 'pagada' ? 'success' : orden.estado === 'pendiente' ? 'pending' : 'danger'}">
                                 ${orden.estado}
                             </span>
                         </td>
-                        <td>${orden.estado_pago ? orden.estado_pago : '-'}</td>
-                        <td style="text-align: center;">
+                        <td data-label="Pago">${orden.estado_pago ? orden.estado_pago : '-'}</td>
+                        <td data-label="Acciones" style="text-align: center;">
                             ${orden.estado === 'pendiente' ? 
                                 `<button class="btn btn-accion btn-danger" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>` :
                                 '<span style="color: var(--text-light);">-</span>'
@@ -134,7 +243,7 @@
                 const tbody = document.querySelector('#ordenesTable');
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8">
+                        <td class="ordenes-full-row" colspan="8">
                             <div class="alert alert-error">
                                 <span>⚠️</span>
                                 <span>Error al cargar las órdenes</span>
