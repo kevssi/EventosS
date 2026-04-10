@@ -402,7 +402,9 @@ const BoletosModule = {
       if (mensaje.toLowerCase().includes('token de mercado pago')) {
         const confirmar = window.confirm('No tienes Mercado Pago vinculado. Quieres vincularlo ahora?');
         if (confirmar) {
-          const redirectUri = `${window.location.origin}/pages/mercadopago-callback.html`;
+          const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
+          const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
+          const redirectUri = `${window.location.origin}${appBasePath}/pages/mercadopago-callback.html`;
           window.location.href = `/api/auth/mercadopago/oauth/iniciar?redirect_uri=${encodeURIComponent(redirectUri)}`;
           return;
         }

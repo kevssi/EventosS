@@ -52,7 +52,9 @@
       const code = params.get('code');
       const error = params.get('error');
 
-      const redirectUri = window.location.origin + '/pages/mercadopago-callback.html';
+      const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
+      const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
+      const redirectUri = `${window.location.origin}${appBasePath}/pages/mercadopago-callback.html`;
 
       if (error) {
         status.textContent = 'Mercado Pago devolvio un error: ' + error;
