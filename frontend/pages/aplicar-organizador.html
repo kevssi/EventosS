@@ -25,6 +25,33 @@
       gap: 10px;
       margin-top: 10px;
     }
+    .tipos-evento-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+    .tipos-evento-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 14px;
+    }
+    .tipos-evento-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+    @media (max-width: 768px) {
+      .tipos-evento-grid {
+        grid-template-columns: 1fr;
+      }
+    }
     .aplicar-contenido small {
       color: var(--text-light);
     }
@@ -67,8 +94,33 @@
       <input type="email" id="solicitudEmail" required>
       <label>Nombre de la organización</label>
       <input type="text" id="solicitudOrganizacion" required>
+
+      <label>Tipo de organizador</label>
+      <select id="solicitudTipoOrganizador" required>
+        <option value="">Selecciona una opción</option>
+        <option value="Persona física">Persona física</option>
+        <option value="Empresa">Empresa</option>
+      </select>
+
+      <label>Tipo de eventos que organiza</label>
+      <div class="tipos-evento-grid" role="group" aria-label="Tipos de eventos">
+        <label class="tipos-evento-item"><input type="checkbox" name="tiposEvento" value="Conciertos">Conciertos</label>
+        <label class="tipos-evento-item"><input type="checkbox" name="tiposEvento" value="Conferencias">Conferencias</label>
+        <label class="tipos-evento-item"><input type="checkbox" name="tiposEvento" value="Deportivos">Deportivos</label>
+        <label class="tipos-evento-item"><input type="checkbox" name="tiposEvento" value="Festivales">Festivales</label>
+        <label class="tipos-evento-item"><input type="checkbox" name="tiposEvento" value="Teatro">Teatro</label>
+        <label class="tipos-evento-item"><input type="checkbox" name="tiposEvento" value="Exposiciones">Exposiciones</label>
+      </div>
+
       <label>Breve descripción de la experiencia organizando eventos</label>
       <textarea id="solicitudDescripcion" rows="4" required></textarea>
+
+      <label>Portafolio (link o referencia)</label>
+      <input type="text" id="solicitudPortafolio" placeholder="https://... o nombre del portafolio">
+
+      <label>Redes sociales (links)</label>
+      <textarea id="solicitudRedes" rows="2" placeholder="Instagram, Facebook, TikTok, sitio web"></textarea>
+
       <label>Teléfono de contacto (opcional)</label>
       <input type="text" id="solicitudTelefono">
       <label>Comentarios adicionales (opcional)</label>
@@ -120,11 +172,39 @@
       e.preventDefault();
 
       try {
+        const tipoOrganizador = document.getElementById('solicitudTipoOrganizador').value;
+        const tiposEvento = Array.from(document.querySelectorAll('input[name="tiposEvento"]:checked'))
+          .map((item) => item.value);
+        const portafolio = document.getElementById('solicitudPortafolio').value.trim();
+        const redes = document.getElementById('solicitudRedes').value.trim();
+        const comentariosBase = document.getElementById('solicitudComentarios').value.trim();
+
+        if (!tipoOrganizador) {
+          alert('Selecciona el tipo de organizador');
+          return;
+        }
+
+        if (tiposEvento.length === 0) {
+          alert('Selecciona al menos un tipo de evento');
+          return;
+        }
+
+        const metadataSolicitud = [
+          `Tipo de organizador: ${tipoOrganizador}`,
+          `Tipos de eventos: ${tiposEvento.join(', ')}`,
+          `Portafolio: ${portafolio || 'No especificado'}`,
+          `Redes sociales: ${redes || 'No especificado'}`
+        ].join('\n');
+
+        const comentariosCompuestos = [comentariosBase, metadataSolicitud]
+          .filter(Boolean)
+          .join('\n\n');
+
         const payload = {
           organizacion: document.getElementById('solicitudOrganizacion').value.trim(),
           experiencia: document.getElementById('solicitudDescripcion').value.trim(),
           telefono_contacto: document.getElementById('solicitudTelefono').value.trim() || null,
-          comentarios: document.getElementById('solicitudComentarios').value.trim() || null
+          comentarios: comentariosCompuestos || null
         };
 
         const response = await api.enviarSolicitudOrganizador(payload);
