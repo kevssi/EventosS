@@ -36,6 +36,35 @@ const EventosModule = {
     this.busquedaActual = params.get('q') || '';
   },
 
+  normalizarTexto(value) {
+    return (value || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  },
+
+  resolverCategoriaDesdeBusqueda(busqueda) {
+    const query = this.normalizarTexto(busqueda);
+    if (!query || !Array.isArray(this.categorias) || this.categorias.length === 0) {
+      return null;
+    }
+
+    const exacta = this.categorias.find((categoria) => this.normalizarTexto(categoria?.nombre) === query);
+    if (exacta) return exacta;
+
+    return this.categorias.find((categoria) => {
+      const nombre = this.normalizarTexto(categoria?.nombre);
+      return nombre && (nombre.includes(query) || query.includes(nombre));
+    }) || null;
+  },
+
+  obtenerLinkAplicarOrganizador() {
+    const isInPages = window.location.pathname.includes('/pages/');
+    return isInPages ? 'aplicar-organizador.html' : 'pages/aplicar-organizador.html';
+  },
+
   setupEventListeners() {
     const filtroCategoria = document.querySelector('#filtroCategoria');
     const filtroBusqueda = document.querySelector('#filtroBusqueda');
@@ -87,21 +116,21 @@ const EventosModule = {
   async cargarEventos(id_categoria = this.filtroActual || null, q = this.busquedaActual || '') {
     try {
       const response = await api.listarEventos({ id_categoria, q });
-    let eventosAPI = response.eventos || [];
+      let eventosAPI = response.eventos || [];
 
-    if (id_categoria) {
-      const selectedCategoria = this.categorias.find(c => String(c.id) === String(id_categoria));
-      const selectedCategoriaNombre = selectedCategoria ? selectedCategoria.nombre.toLowerCase() : null;
+      if (id_categoria) {
+        const selectedCategoria = this.categorias.find((c) => String(c.id) === String(id_categoria));
+        const selectedCategoriaNombre = this.normalizarTexto(selectedCategoria?.nombre || '');
 
-      eventosAPI = eventosAPI.filter(evt => {
-        const idMatch = String(evt.id_categoria || evt.idCategoria || '').trim() === String(id_categoria).trim();
-        const categoriaNombre = String(evt.categoria || '').trim().toLowerCase();
-        const nameMatch = selectedCategoriaNombre ? categoriaNombre === selectedCategoriaNombre : false;
-        return idMatch || nameMatch;
-      });
-    }
+        eventosAPI = eventosAPI.filter((evt) => {
+          const idMatch = String(evt.id_categoria || evt.idCategoria || '').trim() === String(id_categoria).trim();
+          const categoriaNombre = this.normalizarTexto(evt.categoria || '');
+          const nameMatch = selectedCategoriaNombre ? categoriaNombre === selectedCategoriaNombre : false;
+          return idMatch || nameMatch;
+        });
+      }
 
-    this.eventos = await this.enriquecerEventosConImagen(eventosAPI);
+      this.eventos = await this.enriquecerEventosConImagen(eventosAPI);
       this.renderEventos();
     } catch (error) {
       console.error('Error al cargar eventos:', error);
@@ -256,11 +285,16 @@ const EventosModule = {
     const eventosAMostrar = this.eventos;
 
     if (eventosAMostrar.length === 0) {
+      const categoriaSeleccionada = this.categorias.find((cat) => String(cat.id) === String(this.filtroActual));
+      const nombreCategoria = categoriaSeleccionada?.nombre || this.busquedaActual || 'seleccionada';
+      const linkAplicar = this.obtenerLinkAplicarOrganizador();
+
       this.actualizarResumenExplora(0);
       container.innerHTML = `
         <div class="sin-resultados">
-          <p>No encontramos eventos con esos criterios</p>
-          <p>Prueba con otra búsqueda o cambia la categoría</p>
+          <p class="sin-resultados-titulo">NO HAY NINGUN EVENTO EN LA CATEGORIA "${nombreCategoria}"</p>
+          <p class="sin-resultados-subtitulo">Prueba con otra categoria o vuelve a intentarlo mas tarde.</p>
+          <a class="sin-resultados-link" href="${linkAplicar}">Quisieras organizar tu propio evento?</a>
         </div>
       `;
       return;
@@ -337,17 +371,30 @@ const EventosModule = {
   async handleFiltro() {
     const filtroCategoria = document.querySelector('#filtroCategoria')?.value || '';
     const filtroBusqueda = document.querySelector('#filtroBusqueda')?.value?.trim() || '';
+    const categoriaDetectada = !filtroCategoria ? this.resolverCategoriaDesdeBusqueda(filtroBusqueda) : null;
+    const categoriaFinal = filtroCategoria || (categoriaDetectada ? String(categoriaDetectada.id) : '');
+    const busquedaFinal = categoriaDetectada ? '' : filtroBusqueda;
 
-    this.filtroActual = filtroCategoria;
-    this.busquedaActual = filtroBusqueda;
+    this.filtroActual = categoriaFinal;
+    this.busquedaActual = busquedaFinal;
 
     const params = new URLSearchParams();
-    if (filtroCategoria) params.set('id_categoria', filtroCategoria);
-    if (filtroBusqueda) params.set('q', filtroBusqueda);
+    if (categoriaFinal) params.set('id_categoria', categoriaFinal);
+    if (busquedaFinal) params.set('q', busquedaFinal);
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
     window.history.replaceState({}, '', newUrl);
 
-    await this.cargarEventos(filtroCategoria || null, filtroBusqueda);
+    const inputBusqueda = document.querySelector('#filtroBusqueda');
+    if (inputBusqueda) {
+      inputBusqueda.value = busquedaFinal;
+    }
+
+    const selectCategoria = document.querySelector('#filtroCategoria');
+    if (selectCategoria) {
+      selectCategoria.value = categoriaFinal;
+    }
+
+    await this.cargarEventos(categoriaFinal || null, busquedaFinal);
   },
 
   mostrarError(mensaje) {
