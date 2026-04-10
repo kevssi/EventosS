@@ -220,10 +220,18 @@ const AuthModule = {
       const response = await api.registrar(nombre, email, password, telefono);
 
       if (response.success) {
-        this.showSuccess('¡Registro exitoso! Redirigiendo al login...');
+        if (response.token) {
+          api.setToken(response.token);
+        }
+
+        if (response.usuario) {
+          localStorage.setItem('usuario', JSON.stringify(response.usuario));
+        }
+
+        this.showSuccess('¡Registro exitoso! Iniciando sesion...');
         setTimeout(() => {
-          window.location.href = 'login.html';
-        }, 2000);
+          window.location.href = this.getHomeByRole(response.usuario);
+        }, 1500);
       } else {
         this.showError(response.message);
       }

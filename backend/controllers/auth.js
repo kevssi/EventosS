@@ -39,20 +39,58 @@ exports.registrar = async (req, res) => {
       [nombre, email, hashedPassword, telefono || null]
     );
 
-    await connection.release();
-
-    if (resultado[0][0].resultado === 'ok') {
-      res.status(201).json({
-        success: true,
-        message: resultado[0][0].mensaje,
-        id_usuario: resultado[0][0].id_usuario
-      });
-    } else {
-      res.status(400).json({
+    if (resultado[0][0].resultado !== 'ok') {
+      await connection.release();
+      return res.status(400).json({
         success: false,
         message: resultado[0][0].mensaje
       });
     }
+
+    const idUsuario = resultado[0][0].id_usuario;
+    const [usuarioRows] = await connection.query(
+      'SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = ? LIMIT 1',
+      [idUsuario]
+    );
+
+    await connection.release();
+
+    const usuario = usuarioRows?.[0];
+    const rolNormalizado = normalizeRole(usuario?.rol);
+
+    const token = jwt.sign(
+      {
+        id: idUsuario,
+        email: usuario?.email || email,
+        nombre: usuario?.nombre || nombre,
+        rol: rolNormalizado,
+        rol_id: Number.isNaN(Number(usuario?.rol)) ? null : Number(usuario?.rol)
+      },
+      process.env.JWT_SECRET || 'mi_super_secreto_eventos_2026',
+      { expiresIn: 86400 }
+    );
+
+    const connSesion = await pool.getConnection();
+    await connSesion.query(
+      'CALL sp_guardar_sesion(?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
+      [idUsuario, token, req.ip || '127.0.0.1']
+    );
+    await connSesion.release();
+
+    return res.status(201).json({
+      success: true,
+      message: resultado[0][0].mensaje,
+      id_usuario: idUsuario,
+      token,
+      usuario: {
+        id: idUsuario,
+        nombre: usuario?.nombre || nombre,
+        email: usuario?.email || email,
+        rol: rolNormalizado,
+        rol_id: Number.isNaN(Number(usuario?.rol)) ? null : Number(usuario?.rol),
+        telefono: usuario?.telefono || telefono || null
+      }
+    });
   } catch (error) {
     console.error('Error en registrar:', error);
     res.status(500).json({ error: 'Error al registrar usuario' });

@@ -8,10 +8,28 @@
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/navbar.css">
   <style>
-    .organizar-contenido { max-width: 800px; margin: 40px auto; padding: 20px; background: var(--bg-soft); border-radius: 10px; color: var(--text); }
-    .organizar-contenido h2 { margin-bottom: 15px; }
-    .organizar-contenido p { margin-bottom: 18px; }
-    .organizar-contenido .btn { margin-top: 15px; }
+    .organizar-contenido { max-width: 980px; margin: 40px auto; padding: 24px; background: var(--bg-soft); border-radius: 14px; color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
+    .organizar-contenido h2 { margin-bottom: 8px; }
+    .organizar-contenido p { margin-bottom: 14px; }
+    .organizar-contenido .btn { margin-top: 10px; }
+    .section-title { margin: 24px 0 10px; font-size: 1.08rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 12px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 6px; font-size: 0.94rem; }
+    input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.15); color: var(--text); }
+    textarea { min-height: 90px; resize: vertical; }
+    .hint { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+    .checklist { display: grid; gap: 10px; margin-top: 8px; }
+    .check-item { display: flex; gap: 10px; align-items: flex-start; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; }
+    .check-item input { width: 18px; height: 18px; margin-top: 2px; }
+    .legal-note { background: rgba(255, 184, 0, 0.1); border: 1px solid rgba(255, 184, 0, 0.35); border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .status { margin-top: 14px; padding: 10px 12px; border-radius: 10px; display: none; }
+    .status.ok { display: block; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); }
+    .status.error { display: block; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); }
+    @media (max-width: 860px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -30,33 +48,312 @@
 
   <div class="organizar-contenido">
     <h2>Organizar Evento</h2>
-    <p>Bienvenido a la sección de organización de eventos. Aquí podrás cargar los datos del evento, definir la cantidad de boletos y administrar tu oferta.</p>
-
-    <p>Por ahora esta es una guía inicial. Completa el formulario de abajo para empezar:</p>
+    <p>Este flujo de Eventos+ mantiene lo que ya existe y agrega una ficha operativa mas cercana a la realidad: datos de evento, zonas/precios definidas por promotor y validaciones legales.</p>
 
     <form id="organizadorForm">
-      <label>Nombre del evento</label>
-      <input type="text" id="eventoNombre" placeholder="Nombre del evento" required>
-      <label>Fecha</label>
-      <input type="date" id="eventoFecha" required>
-      <label>Lugar</label>
-      <input type="text" id="eventoLugar" placeholder="Lugar" required>
-      <label>Capacidad</label>
-      <input type="number" id="eventoCapacidad" placeholder="Capacidad" required>
-      <button class="btn btn-primary" type="submit">Guardar evento (simulado)</button>
-    </form>
+      <h3 class="section-title">1) Informacion del evento</h3>
+      <div class="grid-2">
+        <div>
+          <label for="eventoNombre">Nombre del evento</label>
+          <input type="text" id="eventoNombre" placeholder="Ej. Festival Noches del Centro" required>
+        </div>
+        <div>
+          <label for="eventoTipo">Tipo de evento</label>
+          <select id="eventoTipo" required>
+            <option value="">Selecciona tipo</option>
+            <option value="Concierto">Concierto</option>
+            <option value="Obra de teatro">Obra de teatro</option>
+            <option value="Deporte">Deporte</option>
+            <option value="Exposicion">Exposicion</option>
+            <option value="Conferencia">Conferencia</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
 
-    <p><small>Nota: Este flujo es una simulación; en la versión final se conectaría con la API de backend para crear el evento realmente.</small></p>
+        <div>
+          <label for="eventoCategoria">Categoria en plataforma</label>
+          <select id="eventoCategoria">
+            <option value="">Sin categoria</option>
+          </select>
+        </div>
+        <div>
+          <label for="eventoImagen">Imagen (URL opcional)</label>
+          <input type="url" id="eventoImagen" placeholder="https://...">
+        </div>
+
+        <div>
+          <label for="eventoFecha">Fecha</label>
+          <input type="date" id="eventoFecha" required>
+        </div>
+        <div>
+          <label for="eventoHoraInicio">Hora de inicio</label>
+          <input type="time" id="eventoHoraInicio" required>
+        </div>
+
+        <div>
+          <label for="eventoHoraFin">Hora de termino (opcional)</label>
+          <input type="time" id="eventoHoraFin">
+        </div>
+        <div>
+          <label for="eventoLugar">Recinto confirmado</label>
+          <input type="text" id="eventoLugar" placeholder="Ej. Arena Ciudad de Mexico" required>
+        </div>
+
+        <div>
+          <label for="eventoCapacidad">Capacidad del lugar</label>
+          <input type="number" id="eventoCapacidad" min="1" step="1" placeholder="Ej. 12000" required>
+        </div>
+        <div>
+          <label for="eventoMapa">Mapa de asientos o zonas (URL/descripcion)</label>
+          <input type="text" id="eventoMapa" placeholder="URL del mapa o descripcion de zonas" required>
+        </div>
+
+        <div class="full">
+          <label for="eventoDescripcion">Descripcion del evento</label>
+          <textarea id="eventoDescripcion" placeholder="Describe el concepto del evento, publico objetivo y puntos relevantes"></textarea>
+        </div>
+      </div>
+
+      <h3 class="section-title">2) Zonas y precios (definidos por organizador/promotor)</h3>
+      <div class="grid-3">
+        <div>
+          <label for="zona1Nombre">Zona 1</label>
+          <input type="text" id="zona1Nombre" placeholder="VIP" required>
+        </div>
+        <div>
+          <label for="zona1Cupo">Cupo</label>
+          <input type="number" id="zona1Cupo" min="0" step="1" placeholder="200" required>
+        </div>
+        <div>
+          <label for="zona1Precio">Precio</label>
+          <input type="number" id="zona1Precio" min="0" step="0.01" placeholder="1800" required>
+        </div>
+
+        <div>
+          <label for="zona2Nombre">Zona 2</label>
+          <input type="text" id="zona2Nombre" placeholder="General" required>
+        </div>
+        <div>
+          <label for="zona2Cupo">Cupo</label>
+          <input type="number" id="zona2Cupo" min="0" step="1" placeholder="800" required>
+        </div>
+        <div>
+          <label for="zona2Precio">Precio</label>
+          <input type="number" id="zona2Precio" min="0" step="0.01" placeholder="750" required>
+        </div>
+
+        <div>
+          <label for="zona3Nombre">Zona 3 (opcional)</label>
+          <input type="text" id="zona3Nombre" placeholder="Grada alta">
+        </div>
+        <div>
+          <label for="zona3Cupo">Cupo</label>
+          <input type="number" id="zona3Cupo" min="0" step="1" placeholder="400">
+        </div>
+        <div>
+          <label for="zona3Precio">Precio</label>
+          <input type="number" id="zona3Precio" min="0" step="0.01" placeholder="450">
+        </div>
+      </div>
+
+      <h3 class="section-title">3) Permisos y legalidad</h3>
+      <div class="grid-2">
+        <div>
+          <label for="permisoFolio">Permiso gobierno/localidad (folio)</label>
+          <input type="text" id="permisoFolio" required>
+        </div>
+        <div>
+          <label for="permisoAutoridad">Autoridad emisora</label>
+          <input type="text" id="permisoAutoridad" required>
+        </div>
+
+        <div>
+          <label for="contratoRecinto">Contrato/autorizacion de recinto (numero)</label>
+          <input type="text" id="contratoRecinto" required>
+        </div>
+        <div>
+          <label for="derechosArtista">Derechos de artista</label>
+          <select id="derechosArtista" required>
+            <option value="">Selecciona</option>
+            <option value="aplica-ok">Aplica y esta autorizado</option>
+            <option value="no-aplica">No aplica</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="seguroPoliza">Seguro / poliza</label>
+          <input type="text" id="seguroPoliza" required>
+        </div>
+        <div>
+          <label for="cumplimientoNormativo">Cumplimiento normativo</label>
+          <input type="text" id="cumplimientoNormativo" placeholder="Proteccion civil, aforo, salidas, etc." required>
+        </div>
+      </div>
+
+      <div class="legal-note">
+        <strong>Importante:</strong> La venta no es automatica. Debes firmar contrato comercial con Eventos+, acordar condiciones de venta y definir responsabilidades de ventas, cancelaciones y reembolsos.
+      </div>
+
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" id="aceptoContrato" required>
+          <span>Confirmo que existe contrato comercial firmado con Eventos+.</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" id="aceptoCondiciones" required>
+          <span>Confirmo condiciones de venta acordadas (comisiones, fechas de corte y politicas).</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" id="aceptoResponsabilidades" required>
+          <span>Confirmo responsabilidades definidas para ventas, cancelaciones y atencion al cliente.</span>
+        </label>
+      </div>
+
+      <p class="hint">Este formulario conserva la API actual: los campos extra se guardan dentro de la descripcion operativa para no modificar la estructura ya establecida.</p>
+      <button class="btn btn-primary" type="submit">Enviar evento para revision operativa</button>
+      <div id="statusMensaje" class="status"></div>
+    </form>
   </div>
 
   <script src="../js/api.js"></script>
   <script src="../js/navbar.js"></script>
   <script>
-    document.getElementById('organizadorForm').addEventListener('submit', function(e) {
+    const form = document.getElementById('organizadorForm');
+    const statusBox = document.getElementById('statusMensaje');
+    const categoriaSelect = document.getElementById('eventoCategoria');
+
+    const showStatus = (type, message) => {
+      statusBox.className = `status ${type}`;
+      statusBox.textContent = message;
+    };
+
+    const toIsoLocalDateTime = (date, time) => {
+      if (!date || !time) return null;
+      return new Date(`${date}T${time}:00`).toISOString();
+    };
+
+    const parseZone = (nombreId, cupoId, precioId, required = false) => {
+      const nombre = document.getElementById(nombreId).value.trim();
+      const cupo = Number(document.getElementById(cupoId).value || 0);
+      const precio = Number(document.getElementById(precioId).value || 0);
+
+      if (!nombre && !required) return null;
+      return { nombre, cupo, precio };
+    };
+
+    const cargarCategorias = async () => {
+      try {
+        const response = await api.listarCategorias();
+        const categorias = response?.categorias || [];
+
+        categorias.forEach((cat) => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.nombre;
+          categoriaSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.warn('No se pudieron cargar categorias:', error.message);
+      }
+    };
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      alert('Evento enviado para revisión. En la versión final, se guardará en la base de datos.');
-      this.reset();
+      showStatus('', '');
+
+      const titulo = document.getElementById('eventoNombre').value.trim();
+      const tipoEvento = document.getElementById('eventoTipo').value;
+      const fecha = document.getElementById('eventoFecha').value;
+      const horaInicio = document.getElementById('eventoHoraInicio').value;
+      const horaFin = document.getElementById('eventoHoraFin').value;
+      const ubicacion = document.getElementById('eventoLugar').value.trim();
+      const capacidad = Number(document.getElementById('eventoCapacidad').value || 0);
+      const mapaZonas = document.getElementById('eventoMapa').value.trim();
+      const descripcionBase = document.getElementById('eventoDescripcion').value.trim();
+      const idCategoria = document.getElementById('eventoCategoria').value;
+      const imagenUrl = document.getElementById('eventoImagen').value.trim();
+
+      const permisoFolio = document.getElementById('permisoFolio').value.trim();
+      const permisoAutoridad = document.getElementById('permisoAutoridad').value.trim();
+      const contratoRecinto = document.getElementById('contratoRecinto').value.trim();
+      const derechosArtista = document.getElementById('derechosArtista').value;
+      const seguroPoliza = document.getElementById('seguroPoliza').value.trim();
+      const cumplimientoNormativo = document.getElementById('cumplimientoNormativo').value.trim();
+
+      const fechaInicioISO = toIsoLocalDateTime(fecha, horaInicio);
+      const fechaFinISO = horaFin ? toIsoLocalDateTime(fecha, horaFin) : null;
+
+      if (!fechaInicioISO) {
+        showStatus('error', 'Debes indicar fecha y hora de inicio validas.');
+        return;
+      }
+
+      if (fechaFinISO && new Date(fechaFinISO) <= new Date(fechaInicioISO)) {
+        showStatus('error', 'La hora de termino debe ser posterior a la hora de inicio.');
+        return;
+      }
+
+      const zonas = [
+        parseZone('zona1Nombre', 'zona1Cupo', 'zona1Precio', true),
+        parseZone('zona2Nombre', 'zona2Cupo', 'zona2Precio', true),
+        parseZone('zona3Nombre', 'zona3Cupo', 'zona3Precio', false)
+      ].filter(Boolean);
+
+      const sumaCupos = zonas.reduce((acc, zona) => acc + (Number(zona.cupo) || 0), 0);
+      if (sumaCupos > capacidad) {
+        showStatus('error', 'La suma de cupos por zona no puede superar la capacidad total.');
+        return;
+      }
+
+      const fichaOperativa = [
+        'Ficha operativa Eventos+ (realidad operativa):',
+        `- Tipo de evento: ${tipoEvento}`,
+        `- Horario: ${horaInicio}${horaFin ? ` a ${horaFin}` : ''}`,
+        `- Recinto confirmado: ${ubicacion}`,
+        `- Capacidad total: ${capacidad}`,
+        `- Mapa/zonas: ${mapaZonas}`,
+        '- Zonas y precios (definidos por organizador/promotor):',
+        ...zonas.map((z) => `  * ${z.nombre}: cupo ${z.cupo}, precio ${z.precio}`),
+        '- Permisos y legalidad:',
+        `  * Permiso gobierno/localidad: ${permisoFolio} (${permisoAutoridad})`,
+        `  * Contrato/autorizacion de recinto: ${contratoRecinto}`,
+        `  * Derechos de artista: ${derechosArtista}`,
+        `  * Seguro/poliza: ${seguroPoliza}`,
+        `  * Cumplimiento normativo: ${cumplimientoNormativo}`,
+        '- Proceso comercial no automatico:',
+        '  * Contrato firmado con Eventos+',
+        '  * Condiciones de venta acordadas',
+        '  * Responsabilidades de ventas/cancelaciones definidas'
+      ].join('\n');
+
+      const descripcion = [descripcionBase, fichaOperativa].filter(Boolean).join('\n\n---\n\n');
+
+      const payload = {
+        titulo,
+        descripcion,
+        fecha_inicio: fechaInicioISO,
+        fecha_fin: fechaFinISO,
+        ubicacion,
+        capacidad,
+        id_categoria: idCategoria ? Number(idCategoria) : null,
+        imagen_url: imagenUrl || null
+      };
+
+      try {
+        const response = await api.crearEvento(payload);
+        if (!response?.success) {
+          showStatus('error', response?.message || 'No se pudo enviar el evento a revision.');
+          return;
+        }
+
+        showStatus('ok', `Evento enviado correctamente (ID: ${response.id_evento}).`);
+        form.reset();
+      } catch (error) {
+        showStatus('error', error.message || 'Ocurrio un error al enviar el evento.');
+      }
     });
+
+    cargarCategorias();
   </script>
 </body>
 </html>
