@@ -22,6 +22,28 @@ const normalizeRole = (rol) => {
   return value || 'usuario';
 };
 
+const resolveUserRoleColumn = async (connection) => {
+  const [rows] = await connection.query(
+    `SELECT COLUMN_NAME
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'usuarios'
+       AND COLUMN_NAME IN ('rol', 'id_rol', 'rol_id')
+     ORDER BY FIELD(COLUMN_NAME, 'id_rol', 'rol_id', 'rol')
+     LIMIT 1`
+  );
+
+  return rows[0]?.COLUMN_NAME || null;
+};
+
+const getRoleRawValue = (usuario = {}) => (
+  usuario.id_rol
+  ?? usuario.rol_id
+  ?? usuario.rol
+  ?? usuario.role_value
+  ?? null
+);
+
 // Registrar usuario
 exports.registrar = async (req, res) => {
   const { nombre, email, password, telefono } = req.body;
@@ -51,17 +73,43 @@ exports.registrar = async (req, res) => {
       });
     }
 
-    const idUsuario = resultado[0][0].id_usuario;
+    let idUsuario = Number(resultado[0][0].id_usuario);
 
-    // El registro no debe romperse por diferencias de esquema (ej. columna rol/id_rol).
-    const usuario = {
-      id: idUsuario,
-      nombre,
-      email,
-      telefono: telefono || null,
-      rol: 'usuario'
-    };
-    const rolNormalizado = normalizeRole(usuario.rol);
+    // Tomamos el usuario real desde BD para evitar inconsistencias de SP en id_usuario.
+    let usuario = null;
+    try {
+      const connUser = await pool.getConnection();
+      try {
+        const roleColumn = await resolveUserRoleColumn(connUser);
+        const query = roleColumn
+          ? `SELECT id, nombre, email, telefono, ${roleColumn} AS role_value FROM usuarios WHERE email = ? LIMIT 1`
+          : 'SELECT id, nombre, email, telefono FROM usuarios WHERE email = ? LIMIT 1';
+
+        const [rows] = await connUser.query(query, [email]);
+        usuario = rows?.[0] || null;
+      } finally {
+        await connUser.release();
+      }
+    } catch (userFetchError) {
+      console.warn('Aviso en registrar: no se pudo obtener usuario por email:', userFetchError.message);
+    }
+
+    if (usuario?.id) {
+      idUsuario = Number(usuario.id);
+    }
+
+    if (!usuario) {
+      usuario = {
+        id: Number.isNaN(idUsuario) ? null : idUsuario,
+        nombre,
+        email,
+        telefono: telefono || null,
+        id_rol: 1
+      };
+    }
+
+    const rawRole = getRoleRawValue(usuario);
+    const rolNormalizado = normalizeRole(rawRole);
 
     const token = jwt.sign(
       {
@@ -69,7 +117,7 @@ exports.registrar = async (req, res) => {
         email: usuario?.email || email,
         nombre: usuario?.nombre || nombre,
         rol: rolNormalizado,
-        rol_id: Number.isNaN(Number(usuario?.rol)) ? null : Number(usuario?.rol)
+        rol_id: Number.isNaN(Number(rawRole)) ? null : Number(rawRole)
       },
       process.env.JWT_SECRET || 'mi_super_secreto_eventos_2026',
       { expiresIn: 86400 }
@@ -99,7 +147,7 @@ exports.registrar = async (req, res) => {
         nombre: usuario?.nombre || nombre,
         email: usuario?.email || email,
         rol: rolNormalizado,
-        rol_id: Number.isNaN(Number(usuario?.rol)) ? null : Number(usuario?.rol),
+        rol_id: Number.isNaN(Number(rawRole)) ? null : Number(rawRole),
         telefono: usuario?.telefono || telefono || null
       }
     });
@@ -138,7 +186,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     }
 
-    const rolNormalizado = normalizeRole(usuario.rol);
+    const rawRole = getRoleRawValue(usuario);
+    const rolNormalizado = normalizeRole(rawRole);
 
     // Generar token
     const token = jwt.sign(
@@ -147,7 +196,7 @@ exports.login = async (req, res) => {
         email: usuario.email,
         nombre: usuario.nombre,
         rol: rolNormalizado,
-        rol_id: Number.isNaN(Number(usuario.rol)) ? null : Number(usuario.rol)
+        rol_id: Number.isNaN(Number(rawRole)) ? null : Number(rawRole)
       },
       process.env.JWT_SECRET || 'mi_super_secreto_eventos_2026',
       { expiresIn: 86400 }
@@ -169,7 +218,7 @@ exports.login = async (req, res) => {
         nombre: usuario.nombre,
         email: usuario.email,
         rol: rolNormalizado,
-        rol_id: Number.isNaN(Number(usuario.rol)) ? null : Number(usuario.rol),
+        rol_id: Number.isNaN(Number(rawRole)) ? null : Number(rawRole),
         telefono: usuario.telefono
       }
     });
@@ -203,10 +252,13 @@ exports.logout = async (req, res) => {
 exports.obtenerPerfil = async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [rows] = await connection.query(
-      'SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = ? LIMIT 1',
-      [req.user.id]
-    );
+    const roleColumn = await resolveUserRoleColumn(connection);
+
+    const query = roleColumn
+      ? `SELECT id, nombre, email, telefono, ${roleColumn} AS role_value FROM usuarios WHERE id = ? LIMIT 1`
+      : 'SELECT id, nombre, email, telefono FROM usuarios WHERE id = ? LIMIT 1';
+
+    const [rows] = await connection.query(query, [req.user.id]);
     await connection.release();
 
     const usuario = rows?.[0];
@@ -214,7 +266,8 @@ exports.obtenerPerfil = async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    const rolNormalizado = normalizeRole(usuario.rol);
+    const rawRole = getRoleRawValue(usuario);
+    const rolNormalizado = normalizeRole(rawRole);
 
     return res.json({
       success: true,
@@ -224,7 +277,7 @@ exports.obtenerPerfil = async (req, res) => {
         email: usuario.email,
         telefono: usuario.telefono,
         rol: rolNormalizado,
-        rol_id: Number.isNaN(Number(usuario.rol)) ? null : Number(usuario.rol)
+        rol_id: Number.isNaN(Number(rawRole)) ? null : Number(rawRole)
       }
     });
   } catch (error) {
