@@ -33,14 +33,18 @@ exports.registrar = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const connection = await pool.getConnection();
+    let resultado;
 
-    const [resultado] = await connection.query(
-      'CALL sp_registrar_usuario(?, ?, ?, ?)',
-      [nombre, email, hashedPassword, telefono || null]
-    );
+    try {
+      [resultado] = await connection.query(
+        'CALL sp_registrar_usuario(?, ?, ?, ?)',
+        [nombre, email, hashedPassword, telefono || null]
+      );
+    } finally {
+      await connection.release();
+    }
 
     if (resultado[0][0].resultado !== 'ok') {
-      await connection.release();
       return res.status(400).json({
         success: false,
         message: resultado[0][0].mensaje
@@ -48,15 +52,16 @@ exports.registrar = async (req, res) => {
     }
 
     const idUsuario = resultado[0][0].id_usuario;
-    const [usuarioRows] = await connection.query(
-      'SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = ? LIMIT 1',
-      [idUsuario]
-    );
 
-    await connection.release();
-
-    const usuario = usuarioRows?.[0];
-    const rolNormalizado = normalizeRole(usuario?.rol);
+    // El registro no debe romperse por diferencias de esquema (ej. columna rol/id_rol).
+    const usuario = {
+      id: idUsuario,
+      nombre,
+      email,
+      telefono: telefono || null,
+      rol: 'usuario'
+    };
+    const rolNormalizado = normalizeRole(usuario.rol);
 
     const token = jwt.sign(
       {
@@ -70,12 +75,19 @@ exports.registrar = async (req, res) => {
       { expiresIn: 86400 }
     );
 
-    const connSesion = await pool.getConnection();
-    await connSesion.query(
-      'CALL sp_guardar_sesion(?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
-      [idUsuario, token, req.ip || '127.0.0.1']
-    );
-    await connSesion.release();
+    try {
+      const connSesion = await pool.getConnection();
+      try {
+        await connSesion.query(
+          'CALL sp_guardar_sesion(?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
+          [idUsuario, token, req.ip || '127.0.0.1']
+        );
+      } finally {
+        await connSesion.release();
+      }
+    } catch (sessionError) {
+      console.warn('Aviso en registrar: no se pudo guardar sesion en BD:', sessionError.message);
+    }
 
     return res.status(201).json({
       success: true,
