@@ -8,5 +8,6 @@ router.get('/evento/:id_evento', authMiddleware, reportesController.reporteVenta
 router.get('/admin/general', authMiddleware, requireAdmin, reportesController.reporteGeneralAdmin);
 router.get('/admin/usuarios', authMiddleware, requireAdmin, reportesController.listarUsuarios);
 router.post('/admin/desactivar-usuario', authMiddleware, requireAdmin, reportesController.desactivarUsuario);
+router.delete('/admin/usuarios/:id_usuario', authMiddleware, requireAdmin, reportesController.eliminarUsuario);
 
 module.exports = router;

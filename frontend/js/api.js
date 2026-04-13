@@ -228,6 +228,12 @@ class APIClient {
     });
   }
 
+  eliminarUsuario(id_usuario) {
+    return this.request(`/reportes/admin/usuarios/${id_usuario}`, {
+      method: 'DELETE'
+    });
+  }
+
   // ADMIN - SOLICITUDES DE ORGANIZADOR
   enviarSolicitudOrganizador(payload) {
     return this.request('/admin/solicitudes-organizador', {

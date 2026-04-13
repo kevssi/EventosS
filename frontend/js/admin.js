@@ -587,6 +587,9 @@ const AdminModule = {
                           onclick="AdminModule.cambiarEstadoUsuario(${usuario.id}, ${isActivo ? 0 : 1})">
                     ${isActivo ? 'Desactivar' : 'Activar'}
                   </button>
+                  <button class="btn btn-accion btn-outline" onclick="AdminModule.eliminarUsuario(${usuario.id})">
+                    Eliminar
+                  </button>
                 </td>
               </tr>
             `;
@@ -636,6 +639,21 @@ const AdminModule = {
       const response = await api.desactivarUsuario(id, activo);
       if (response.success) {
         alert(response.message);
+        await this.cargarUsuarios();
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  },
+
+  async eliminarUsuario(id) {
+    const confirmar = confirm('Esta accion eliminara el usuario de forma permanente. Deseas continuar?');
+    if (!confirmar) return;
+
+    try {
+      const response = await api.eliminarUsuario(id);
+      if (response.success) {
+        alert(response.message || 'Usuario eliminado correctamente');
         await this.cargarUsuarios();
       }
     } catch (error) {

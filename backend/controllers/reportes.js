@@ -136,3 +136,42 @@ exports.desactivarUsuario = async (req, res) => {
     res.status(500).json({ error: 'Error al desactivar usuario' });
   }
 };
+
+// Eliminar usuario (solo admin)
+exports.eliminarUsuario = async (req, res) => {
+  const userId = Number(req.params.id_usuario);
+
+  if (Number.isNaN(userId) || userId <= 0) {
+    return res.status(400).json({ success: false, error: 'id_usuario invalido' });
+  }
+
+  if (Number(req.user.id) === userId) {
+    return res.status(400).json({ success: false, error: 'No puedes eliminar tu propio usuario administrador' });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+    const [deleteResult] = await connection.query('DELETE FROM usuarios WHERE id = ? LIMIT 1', [userId]);
+    await connection.release();
+
+    if (!deleteResult?.affectedRows) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Usuario eliminado correctamente'
+    });
+  } catch (error) {
+    console.error('Error en eliminarUsuario:', error);
+
+    if (error?.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({
+        success: false,
+        error: 'No se puede eliminar: el usuario tiene registros relacionados. Puedes desactivarlo en su lugar.'
+      });
+    }
+
+    return res.status(500).json({ success: false, error: 'Error al eliminar usuario' });
+  }
+};
