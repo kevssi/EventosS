@@ -99,6 +99,8 @@
         <h1>Mis Boletos</h1>
         <p style="color: var(--text-light); margin-bottom: 30px;">Aquí están todos tus boletos comprados</p>
 
+        <div id="mensajePagoPrueba" style="display:none; margin-bottom: 18px;"></div>
+
         <div id="boletosList" class="grid mis-boletos-grid">
             <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
                 <div class="loading"></div>
@@ -111,6 +113,31 @@
         // Módulo para mis boletos
         const MisBoletosModule = {
             boletosPorId: {},
+
+            mostrarMensajePagoPruebaSiAplica() {
+                const params = new URLSearchParams(window.location.search);
+                const pago = (params.get('pago') || '').toLowerCase();
+                const box = document.getElementById('mensajePagoPrueba');
+                if (!box) return;
+
+                if (pago === 'success') {
+                    box.style.display = 'block';
+                    box.innerHTML = `
+                        <div class="alert alert-info" style="font-size: 15px;">
+                            <span><i data-lucide="circle-check"></i></span>
+                            <span>
+                                <strong>Pago de prueba detectado:</strong> Regresaste desde Mercado Pago y, para fines de demostración del programa, esta operación se tomará como si el pago se hubiera efectuado correctamente.
+                            </span>
+                        </div>
+                    `;
+
+                    window.NavbarModule?.renderLucideIcons?.(box);
+
+                    // Limpiamos el parametro para evitar mostrar el mensaje en cada recarga.
+                    const cleanUrl = `${window.location.pathname}`;
+                    window.history.replaceState({}, '', cleanUrl);
+                }
+            },
 
             esMovil() {
                 return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
@@ -257,9 +284,11 @@
         // Inicializar
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
+                MisBoletosModule.mostrarMensajePagoPruebaSiAplica();
                 MisBoletosModule.cargarBoletos();
             });
         } else {
+            MisBoletosModule.mostrarMensajePagoPruebaSiAplica();
             MisBoletosModule.cargarBoletos();
         }
     </script>
