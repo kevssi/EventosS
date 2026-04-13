@@ -152,11 +152,15 @@
   gap: 8px;
 }
 
-.td-acciones {
-  display: flex;
+.acciones-evento {
+  display: inline-flex;
   gap: 6px;
   align-items: center;
   white-space: nowrap;
+}
+
+.tabla-eventos-admin td:last-child {
+  vertical-align: middle;
 }
 
 .btn-accion {

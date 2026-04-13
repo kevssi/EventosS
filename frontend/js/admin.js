@@ -140,7 +140,7 @@ const AdminModule = {
         <div class="card-header">
           <h2>Top 5 Eventos con Mayor Venta</h2>
         </div>
-        <table>
+        <table class="tabla-eventos-admin">
           <thead>
             <tr>
               <th>Evento</th>
@@ -244,9 +244,11 @@ const AdminModule = {
                 <td>${this.formatCurrency(evento.precio_desde)}</td>
                 <td>${Number(evento.boletos_disponibles || 0)}</td>
                 <td><span class="badge badge-${String(evento.estado || '').toLowerCase() === 'publicado' ? 'success' : String(evento.estado || '').toLowerCase() === 'cancelado' ? 'danger' : 'pending'}">${this.escapeHtml(evento.estado || 'borrador')}</span></td>
-                <td class="td-acciones">
-                  <button class="btn btn-accion btn-outline" onclick="AdminModule.mostrarModalEvento(${Number(evento.id)})">Editar</button>
-                  <button class="btn btn-accion btn-danger" onclick="AdminModule.cancelarEventoAdmin(${Number(evento.id)})">Eliminar</button>
+                <td>
+                  <div class="acciones-evento">
+                    <button class="btn btn-accion btn-outline" onclick="AdminModule.mostrarModalEvento(${Number(evento.id)})">Editar</button>
+                    <button class="btn btn-accion btn-danger" onclick="AdminModule.cancelarEventoAdmin(${Number(evento.id)})">Eliminar</button>
+                  </div>
                 </td>
               </tr>
             `).join('')}
