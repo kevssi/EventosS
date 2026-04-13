@@ -717,7 +717,6 @@ const AdminModule = {
                 ${solicitudSeleccionada.estado === 'pendiente' ? `
                   <button class="btn btn-secondary" onclick="AdminModule.aprobarSolicitud(${solicitudSeleccionada.id})">Aceptar</button>
                   <button class="btn btn-danger" onclick="AdminModule.rechazarSolicitud(${solicitudSeleccionada.id})">Negar</button>
-                  <button class="btn btn-outline" onclick="AdminModule.solicitarMasInformacion(${solicitudSeleccionada.id})">Solicitar mas informacion</button>
                 ` : '<span style="color: var(--text-light);">Esta solicitud ya fue revisada.</span>'}
               </div>
             </div>
