@@ -268,6 +268,68 @@ const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
   return rows || [];
 };
 
+const obtenerVentasDesdeOrdenes = async (connection, eventId = null) => {
+  const ordersTable = await findExistingTable(connection, ['ordenes']);
+  const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
+
+  if (!ordersTable) {
+    return [];
+  }
+
+  const orderEventCol = await findExistingColumn(connection, ordersTable, ['id_evento', 'evento_id']);
+  const orderTotalCol = await findExistingColumn(connection, ordersTable, ['total', 'monto_total', 'total_pago', 'importe_total']);
+  const orderQtyCol = await findExistingColumn(connection, ordersTable, ['boletos_reservados', 'cantidad', 'total_boletos', 'cantidad_boletos']);
+  const orderStatusCol = await findExistingColumn(connection, ordersTable, ['estado_pago', 'estado', 'status']);
+
+  if (!orderEventCol && !orderTotalCol && !orderQtyCol) {
+    return [];
+  }
+
+  let eventTitleExpr = "'-'";
+  let joins = '';
+
+  if (eventsTable && orderEventCol) {
+    const eventIdCol = await findExistingColumn(connection, eventsTable, ['id', 'id_evento']);
+    const eventTitleCol = await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']);
+
+    if (eventIdCol) {
+      joins = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = o.${escapeIdentifier(orderEventCol)}`;
+      if (eventTitleCol) {
+        eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+      }
+    }
+  }
+
+  const where = [];
+  const params = [];
+
+  if (orderStatusCol) {
+    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...PAID_STATUSES);
+  }
+
+  if (eventId !== null && orderEventCol) {
+    where.push(`o.${escapeIdentifier(orderEventCol)} = ?`);
+    params.push(eventId);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const query = `
+    SELECT
+      ${orderEventCol ? `o.${escapeIdentifier(orderEventCol)}` : 'NULL'} AS id_evento,
+      ${eventTitleExpr} AS evento,
+      '-' AS tipo_boleto,
+      ${orderQtyCol ? `COALESCE(o.${escapeIdentifier(orderQtyCol)}, 0)` : '0'} AS cantidad,
+      ${orderTotalCol ? `COALESCE(o.${escapeIdentifier(orderTotalCol)}, 0)` : '0'} AS subtotal
+    FROM ${escapeIdentifier(ordersTable)} o${joins}
+    ${whereClause}
+  `;
+
+  const [rows] = await connection.query(query, params);
+  return rows || [];
+};
+
 const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const ordersTable = await findExistingTable(connection, ['ordenes']);
   const detailsTable = await findExistingTable(connection, ['detalle_orden', 'detalles_orden', 'orden_detalle', 'ordenes_detalle']);
@@ -280,6 +342,7 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
 
   const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
   const orderStatusCol = await findExistingColumn(connection, ordersTable, ['estado_pago', 'estado', 'status']);
+  const orderEventCol = await findExistingColumn(connection, ordersTable, ['id_evento', 'evento_id']);
 
   const detailOrderIdCol = await findExistingColumn(connection, detailsTable, ['id_orden', 'orden_id']);
   const detailTicketTypeCol = await findExistingColumn(connection, detailsTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
@@ -340,7 +403,25 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
     }
   }
 
+  if (eventIdExpr === 'NULL' && orderEventCol) {
+    eventIdExpr = `o.${escapeIdentifier(orderEventCol)}`;
+
+    if (eventsTable) {
+      const eventIdCol = await findExistingColumn(connection, eventsTable, ['id', 'id_evento']);
+      const eventTitleCol = await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']);
+
+      if (eventIdCol) {
+        eventJoin = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = o.${escapeIdentifier(orderEventCol)}`;
+        if (eventTitleCol) {
+          eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+        }
+      }
+    }
+  }
+
   if (eventId !== null && eventIdExpr === 'NULL') {
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    if (orderRows.length) return orderRows;
     return obtenerVentasDesdeBoletos(connection, eventId);
   }
 
@@ -387,6 +468,10 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const totalCantidad = normalizedRows.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
 
   if (totalIngresos <= 0 && totalCantidad <= 0) {
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    if (orderRows.length) {
+      return orderRows;
+    }
     const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
     if (boletoRows.length) {
       return boletoRows;
