@@ -235,9 +235,7 @@ const NavbarModule = {
       { href: paths.conciertosPath, label: 'Conciertos y Festivales' },
       { href: paths.teatroPath, label: 'Teatro y Cultura' },
       { href: paths.deportesPath, label: 'Deportes' },
-      { href: paths.familiaresPath, label: 'Familiares' },
-      { href: paths.especialesPath, label: 'Especiales' },
-      { href: paths.ciudadesPath, label: 'Ciudades' }
+      { href: paths.familiaresPath, label: 'Familiares' }
     ];
   },
 
@@ -539,15 +537,11 @@ const NavbarModule = {
       const teatroPath = `${inicioPath}?q=teatro`;
       const deportesPath = `${inicioPath}?q=deportes`;
       const familiaresPath = `${inicioPath}?q=familia`;
-      const especialesPath = `${inicioPath}?q=festival`;
-      const ciudadesPath = `${inicioPath}?q=ciudad%20de%20mexico`;
       const mobileItems = this.buildPreAuthMobileItems({
         conciertosPath,
         teatroPath,
         deportesPath,
-        familiaresPath,
-        especialesPath,
-        ciudadesPath
+        familiaresPath
       });
 
       if (navbarMenu) {
@@ -556,8 +550,6 @@ const NavbarModule = {
           <li><a href="${teatroPath}">Teatro y Cultura</a></li>
           <li><a href="${deportesPath}">Deportes</a></li>
           <li><a href="${familiaresPath}">Familiares</a></li>
-          <li><a href="${especialesPath}">Especiales</a></li>
-          <li><a href="${ciudadesPath}">Ciudades</a></li>
         `;
       }
 
