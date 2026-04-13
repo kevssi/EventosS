@@ -136,6 +136,18 @@ const BoletosModule = {
     localStorage.removeItem(this.getCarritoKey());
   },
 
+  resetearSeleccionBoletos() {
+    const inputs = document.querySelectorAll('.cantidad-input');
+    inputs.forEach((input) => {
+      input.value = '0';
+    });
+
+    this.carrito = {};
+    this.total = 0;
+    this.renderResumen(0);
+    this.limpiarCarritoEvento();
+  },
+
   obtenerIdEvento() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
@@ -392,7 +404,7 @@ const BoletosModule = {
         throw new Error('No se pudo iniciar el checkout de Mercado Pago');
       }
 
-      this.limpiarCarritoEvento();
+      this.resetearSeleccionBoletos();
 
       window.location.href = preferencia.init_point || preferencia.sandbox_init_point;
     } catch (error) {
