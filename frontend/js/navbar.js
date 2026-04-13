@@ -343,6 +343,85 @@ const NavbarModule = {
     if (utility) utility.remove();
   },
 
+  ensureHelpModal() {
+    const existing = document.getElementById('helpModalOverlay');
+    if (existing) return existing;
+
+    const modal = document.createElement('div');
+    modal.id = 'helpModalOverlay';
+    modal.className = 'help-modal-overlay';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <section class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+        <header class="help-modal-header">
+          <h3 id="helpModalTitle">Centro de Ayuda</h3>
+          <button type="button" class="help-modal-close" data-help-close aria-label="Cerrar ayuda">×</button>
+        </header>
+        <div class="help-modal-body">
+          <p class="help-modal-intro">Para recibir soporte mas rapido, incluye esta informacion segun el apartado:</p>
+          <div class="help-section">
+            <h4>1) Cuenta y acceso</h4>
+            <p>Email registrado, captura del error y hora aproximada en la que ocurrio.</p>
+          </div>
+          <div class="help-section">
+            <h4>2) Publicar evento</h4>
+            <p>Nombre del evento, fecha, tipo, imagen y detalle de en que paso se detuvo el formulario.</p>
+          </div>
+          <div class="help-section">
+            <h4>3) Boletos y pagos</h4>
+            <p>ID de orden o referencia, metodo de pago, estado mostrado y captura del mensaje de error.</p>
+          </div>
+          <div class="help-section">
+            <h4>4) QR y acceso al evento</h4>
+            <p>Codigo QR, nombre del evento y descripcion de lo que mostro el lector al intentar validar.</p>
+          </div>
+          <div class="help-section">
+            <h4>5) Reembolsos o cancelaciones</h4>
+            <p>Folio de compra, motivo de solicitud y cuenta de contacto para seguimiento.</p>
+          </div>
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal || event.target.closest('[data-help-close]')) {
+        this.cerrarHelpModal();
+      }
+    });
+
+    return modal;
+  },
+
+  abrirHelpModal(event) {
+    if (event) event.preventDefault();
+
+    const modal = this.ensureHelpModal();
+    modal.hidden = false;
+    document.body.classList.add('help-modal-open');
+
+    if (this.closeMobileDrawer) {
+      this.closeMobileDrawer();
+    }
+  },
+
+  cerrarHelpModal() {
+    const modal = document.getElementById('helpModalOverlay');
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.classList.remove('help-modal-open');
+  },
+
+  setupHelpButtons() {
+    const helpButtons = document.querySelectorAll('.navbar-utility-help, .navbar-mobile-help');
+    helpButtons.forEach((button) => {
+      button.onclick = (event) => {
+        this.abrirHelpModal(event);
+      };
+    });
+  },
+
   resolveUserRoleValue(usuario) {
     if (!usuario) return '';
     return usuario.rol ?? usuario.role ?? usuario.rol_id ?? usuario.id_rol ?? usuario.idRol ?? '';
@@ -514,6 +593,8 @@ const NavbarModule = {
       this.setupMobileMenuBehavior();
       this.renderLucideIcons(document);
     }
+
+    this.setupHelpButtons();
   },
 
   getRoleLabel(rol) {
