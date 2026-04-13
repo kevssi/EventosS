@@ -105,28 +105,69 @@ const cascadeDeleteFromParent = async ({
 // Reporte de ventas de un evento
 exports.reporteVentasEvento = async (req, res) => {
   const { id_evento } = req.params;
+  const eventId = Number.parseInt(id_evento, 10);
+
+  if (!Number.isInteger(eventId) || eventId <= 0) {
+    return res.status(400).json({ success: false, message: 'id_evento invalido' });
+  }
 
   try {
     const connection = await pool.getConnection();
-    const [resultado] = await connection.query(
-      'CALL sp_reporte_ventas_evento(?, ?)',
-      [parseInt(id_evento), req.user.id]
-    );
+    try {
+      const rawRole = String(req.user?.rol ?? req.user?.id_rol ?? req.user?.rol_id ?? '').trim().toLowerCase();
+      const isAdmin = rawRole === '3' || rawRole === 'admin' || rawRole === 'administrador';
+      const candidateUserIds = isAdmin ? [req.user.id, 0, null] : [req.user.id];
 
-    await connection.release();
+      let bestResult = null;
+      let lastErrorMessage = null;
 
-    if (resultado[0][0].resultado === 'error') {
-      return res.status(403).json({
-        success: false,
-        message: resultado[0][0].mensaje
+      for (const candidateUserId of candidateUserIds) {
+        const [resultado] = await connection.query('CALL sp_reporte_ventas_evento(?, ?)', [eventId, candidateUserId]);
+        const resumen = resultado?.[0]?.[0] || null;
+        const desglose = Array.isArray(resultado?.[1]) ? resultado[1] : [];
+
+        if (!resumen) {
+          continue;
+        }
+
+        if (String(resumen.resultado || '').toLowerCase() === 'error') {
+          lastErrorMessage = resumen.mensaje || lastErrorMessage;
+          continue;
+        }
+
+        const totalVendidos = Number(resumen.boletos_vendidos || resumen.vendidos || 0);
+        const totalIngresos = Number(resumen.ingresos_totales || resumen.ingresos || resumen.total || 0);
+        const hasDetailSignal = desglose.some((row) => {
+          const vendidos = Number(row?.vendidos || row?.boletos_vendidos || row?.cantidad || row?.cantidad_vendida || 0);
+          const ingresos = Number(row?.ingresos || row?.total || row?.monto || row?.importe || 0);
+          const tipo = row?.tipo_boleto || row?.nombre || row?.tipo || row?.tipo_nombre;
+          return vendidos > 0 || ingresos > 0 || Boolean(tipo);
+        });
+
+        const hasData = totalVendidos > 0 || totalIngresos > 0 || hasDetailSignal;
+        if (!bestResult || hasData) {
+          bestResult = { resumen, desglose };
+        }
+        if (hasData) {
+          break;
+        }
+      }
+
+      if (!bestResult) {
+        return res.status(403).json({
+          success: false,
+          message: lastErrorMessage || 'No se pudo obtener el reporte del evento'
+        });
+      }
+
+      return res.json({
+        success: true,
+        resumen: bestResult.resumen,
+        desglose: bestResult.desglose
       });
+    } finally {
+      await connection.release();
     }
-
-    res.json({
-      success: true,
-      resumen: resultado[0][0],
-      desglose: resultado[1]
-    });
   } catch (error) {
     console.error('Error en reporteVentasEvento:', error);
     res.status(500).json({ error: 'Error al obtener reporte' });

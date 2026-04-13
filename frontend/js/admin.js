@@ -437,6 +437,28 @@ const AdminModule = {
     const resumen = this.reporteEventoSeleccionado?.resumen;
     const desglose = this.reporteEventoSeleccionado?.desglose || [];
 
+    const resolveValue = (source, keys, fallback = '') => {
+      if (!source || typeof source !== 'object') return fallback;
+      for (const key of keys) {
+        const value = source[key];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          return value;
+        }
+      }
+      return fallback;
+    };
+
+    const totalIngresos = Number(resolveValue(resumen, ['ingresos_totales', 'ingresos', 'total_ingresos', 'monto_total', 'total'], 0));
+    const totalVendidos = Number(resolveValue(resumen, ['boletos_vendidos', 'vendidos', 'cantidad_vendida', 'total_boletos'], 0));
+    const totalOrdenes = Number(resolveValue(resumen, ['total_ordenes', 'ordenes', 'ordenes_total', 'cantidad_ordenes'], 0));
+    const tituloEvento = resolveValue(resumen, ['titulo', 'evento', 'nombre_evento'], '-');
+
+    const detalleRows = desglose.map((item) => ({
+      tipo: resolveValue(item, ['tipo_boleto', 'tipo', 'nombre', 'tipo_nombre', 'categoria', 'descripcion'], '-'),
+      vendidos: Number(resolveValue(item, ['vendidos', 'boletos_vendidos', 'cantidad_vendida', 'cantidad', 'total_vendidos'], 0)),
+      ingresos: Number(resolveValue(item, ['ingresos', 'total', 'monto', 'importe', 'ingreso_total'], 0))
+    }));
+
     container.innerHTML = `
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
@@ -459,10 +481,10 @@ const AdminModule = {
         </div>
         ${!resumen ? '<p style="color: var(--text-light); margin: 0;">Selecciona un evento para ver desglose de ingresos y boletos vendidos.</p>' : `
           <div class="resumen-cards" style="margin-bottom: 14px;">
-            <div class="resumen-card success"><h3>Ingresos</h3><div class="valor">${this.formatCurrency(resumen.ingresos_totales || resumen.ingresos || 0)}</div></div>
-            <div class="resumen-card warning"><h3>Boletos vendidos</h3><div class="valor">${Number(resumen.boletos_vendidos || 0)}</div></div>
-            <div class="resumen-card"><h3>Ordenes</h3><div class="valor">${Number(resumen.total_ordenes || resumen.ordenes || 0)}</div></div>
-            <div class="resumen-card"><h3>Evento</h3><div class="valor" style="font-size:1rem;">${this.escapeHtml(resumen.titulo || '-')}</div></div>
+            <div class="resumen-card success"><h3>Ingresos</h3><div class="valor">${this.formatCurrency(totalIngresos)}</div></div>
+            <div class="resumen-card warning"><h3>Boletos vendidos</h3><div class="valor">${totalVendidos}</div></div>
+            <div class="resumen-card"><h3>Ordenes</h3><div class="valor">${totalOrdenes}</div></div>
+            <div class="resumen-card"><h3>Evento</h3><div class="valor" style="font-size:1rem;">${this.escapeHtml(tituloEvento)}</div></div>
           </div>
           <table>
             <thead>
@@ -473,13 +495,13 @@ const AdminModule = {
               </tr>
             </thead>
             <tbody>
-              ${desglose.length === 0
+              ${detalleRows.length === 0
                 ? '<tr><td colspan="3" style="text-align:center; color: var(--text-light);">Sin detalle disponible para este evento.</td></tr>'
-                : desglose.map((item) => `
+                : detalleRows.map((item) => `
                   <tr>
-                    <td>${this.escapeHtml(item.tipo_boleto || item.nombre || '-')}</td>
-                    <td>${Number(item.vendidos || item.boletos_vendidos || 0)}</td>
-                    <td>${this.formatCurrency(item.ingresos || item.total || 0)}</td>
+                    <td>${this.escapeHtml(item.tipo)}</td>
+                    <td>${item.vendidos}</td>
+                    <td>${this.formatCurrency(item.ingresos)}</td>
                   </tr>
                 `).join('')
               }
