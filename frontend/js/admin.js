@@ -218,7 +218,6 @@ const AdminModule = {
       <div class="card">
         <div class="card-header">
           <h2>Gestion de eventos</h2>
-          <button class="btn btn-primary btn-sm" onclick="AdminModule.mostrarModalEvento(null)">+ Nuevo evento</button>
         </div>
         <table>
           <thead>
