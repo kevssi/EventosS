@@ -119,7 +119,7 @@
       <textarea id="solicitudRedes" rows="2" placeholder="Instagram, Facebook, TikTok, sitio web"></textarea>
 
       <label>Teléfono de contacto (opcional)</label>
-      <input type="text" id="solicitudTelefono" placeholder="10 números" inputmode="numeric" maxlength="10" pattern="^\\d{10}$" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)">
+      <input type="text" id="solicitudTelefono" placeholder="10 números (puede incluir espacios)" inputmode="tel" maxlength="14" pattern="^(?:\\d\\s*){10}$" oninput="this.value=this.value.replace(/[^\\d\\s]/g,'').slice(0,14)">
       <label>Comentarios adicionales (opcional)</label>
       <textarea id="solicitudComentarios" rows="3"></textarea>
       <button class="btn btn-primary" type="submit">Enviar solicitud</button>
@@ -174,7 +174,7 @@
           .map((item) => item.value);
         const redes = document.getElementById('solicitudRedes').value.trim();
         const telefonoRaw = document.getElementById('solicitudTelefono').value.trim();
-        const telefono = telefonoRaw.replace(/\D/g, '');
+        const telefono = telefonoRaw.replace(/\s+/g, '');
         const comentariosBase = document.getElementById('solicitudComentarios').value.trim();
 
         if (!tipoOrganizador) {
@@ -187,8 +187,13 @@
           return;
         }
 
-        if (telefonoRaw && !/^\d{10}$/.test(telefonoRaw)) {
-          alert('El telefono debe tener exactamente 10 numeros, sin letras ni espacios');
+        if (telefonoRaw && !/^[\d\s]+$/.test(telefonoRaw)) {
+          alert('El telefono solo puede contener numeros y espacios');
+          return;
+        }
+
+        if (telefonoRaw && !/^\d{10}$/.test(telefono)) {
+          alert('El telefono debe tener exactamente 10 numeros');
           return;
         }
 
