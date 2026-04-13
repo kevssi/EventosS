@@ -124,11 +124,14 @@ const BoletosModule = {
   },
 
   cargarCarritoEvento() {
-    this.carrito = JSON.parse(localStorage.getItem(this.getCarritoKey())) || {};
+    // Siempre iniciamos en 0 al entrar a la pantalla de compra.
+    this.carrito = {};
+    this.total = 0;
+    localStorage.removeItem(this.getCarritoKey());
   },
 
   guardarCarritoEvento() {
-    localStorage.setItem(this.getCarritoKey(), JSON.stringify(this.carrito));
+    // No persistimos cantidades para evitar que se queden marcadas al recargar.
   },
 
   limpiarCarritoEvento() {
@@ -265,6 +268,7 @@ const BoletosModule = {
             <input type="number" 
              class="cantidad-input cantidad-${tipo.id}" 
              data-tipo-id="${tipo.id}"
+             autocomplete="off"
              min="0" 
              max="${disponibles}"
              value="${this.carrito[tipo.id]?.cantidad || 0}"
