@@ -91,15 +91,9 @@
   border: 1px solid rgba(129, 205, 255, 0.2);
   border-bottom: none;
   border-radius: 10px 10px 0 0;
-  padding: 10px 14px;
-  min-height: 44px;
-  cursor: pointer;
-  font-weight: 700;
-  color: rgba(223, 239, 255, 0.82);
-  transition: var(--transition);
-  position: relative;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
+  padding: 12px 14px 0;
+  gap: 10px;
+  flex-wrap: wrap;
   font-size: 13px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -204,14 +198,13 @@
 
 .modal-footer {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 20px;
-}
-
-.solicitudes-filtros {
-  display: flex;
-  gap: 10px;
+  gap: 8px;
+  padding: 15px 22px;
+  min-height: 54px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  flex-shrink: 0;
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
