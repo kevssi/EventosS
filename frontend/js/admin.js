@@ -97,7 +97,6 @@ const AdminModule = {
     const totalUsuarios = Number(resumen.total_usuarios || resumen.usuarios_activos || 0);
     const eventosActivos = Number(resumen.eventos_activos || resumen.eventos_publicados || 0);
     const boletosVendidos = Number(resumen.boletos_vendidos || resumen.vendidos || 0);
-    const ingresosTotales = Number(resumen.ingresos_totales || resumen.ingresos || 0);
 
     container.innerHTML = `
       <div class="resumen-cards">
@@ -112,10 +111,6 @@ const AdminModule = {
         <div class="resumen-card warning">
           <h3>Boletos Vendidos</h3>
           <div class="valor">${boletosVendidos}</div>
-        </div>
-        <div class="resumen-card danger">
-          <h3>Ingresos Totales</h3>
-          <div class="valor">$${ingresosTotales.toFixed(2)}</div>
         </div>
       </div>
 
