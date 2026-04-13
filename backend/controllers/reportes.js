@@ -96,28 +96,40 @@ exports.desactivarUsuario = async (req, res) => {
     return res.status(400).json({ error: 'Parámetros requeridos' });
   }
 
+  const userId = Number(id_usuario);
+  if (Number.isNaN(userId) || userId <= 0) {
+    return res.status(400).json({ error: 'id_usuario invalido' });
+  }
+
+  const normalizedActivo = ['1', 'true', 'activo', 'si', 'yes']
+    .includes(String(activo).trim().toLowerCase())
+      ? 1
+      : 0;
+
   try {
     const connection = await pool.getConnection();
-    const [resultado] = await connection.query(
-      'CALL sp_desactivar_usuario(?, ?, ?)',
-      [req.user.id, parseInt(id_usuario), activo ? 1 : 0]
+    const [updateResult] = await connection.query(
+      'UPDATE usuarios SET activo = ? WHERE id = ? LIMIT 1',
+      [normalizedActivo, userId]
     );
 
-    await connection.release();
-
-    const row = resultado?.[0]?.[0] || {};
-    const estadoResultado = String(row.resultado || '').toLowerCase();
-
-    if (estadoResultado === 'error') {
-      return res.status(400).json({
+    if (!updateResult?.affectedRows) {
+      await connection.release();
+      return res.status(404).json({
         success: false,
-        error: row.mensaje || 'No se pudo actualizar el estado del usuario'
+        error: 'Usuario no encontrado'
       });
     }
 
+    const [rows] = await connection.query('SELECT activo FROM usuarios WHERE id = ? LIMIT 1', [userId]);
+    await connection.release();
+
+    const estadoActual = Number(rows?.[0]?.activo) === 1;
+
     res.json({
       success: true,
-      message: row.mensaje || 'Estado de usuario actualizado'
+      message: estadoActual ? 'Usuario activado correctamente' : 'Usuario desactivado correctamente',
+      activo: estadoActual
     });
   } catch (error) {
     console.error('Error en desactivarUsuario:', error);
