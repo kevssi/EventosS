@@ -55,6 +55,10 @@ body.help-modal-open {
   padding: 20px;
 }
 
+.help-modal-overlay[hidden] {
+  display: none !important;
+}
+
 .help-modal {
   width: min(720px, 100%);
   max-height: min(86vh, 720px);
