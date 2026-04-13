@@ -311,7 +311,17 @@ const AdminModule = {
     `;
 
     window.NavbarModule?.renderLucideIcons?.(container);
-    this.bindForms();
+    this._bindFormGestionEvento();
+  },
+
+  _bindFormGestionEvento() {
+    const form = document.querySelector('#formGestionEvento');
+    if (!form || form === this._boundFormGestionEvento) return;
+    this._boundFormGestionEvento = form;
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      await this.guardarEventoDesdeFormulario();
+    });
   },
 
   limpiarFormularioEvento() {
@@ -872,16 +882,11 @@ const AdminModule = {
   },
 
   bindForms() {
-    const formGestionEvento = document.querySelector('#formGestionEvento');
-    if (formGestionEvento) {
-      formGestionEvento.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        await this.guardarEventoDesdeFormulario();
-      });
-    }
+    this._bindFormGestionEvento();
 
     const formCrearAdmin = document.querySelector('#formCrearAdmin');
-    if (formCrearAdmin) {
+    if (formCrearAdmin && formCrearAdmin !== this._boundFormCrearAdmin) {
+      this._boundFormCrearAdmin = formCrearAdmin;
       formCrearAdmin.addEventListener('submit', async (event) => {
         event.preventDefault();
         await this.crearAdminDesdeFormulario();
@@ -889,7 +894,8 @@ const AdminModule = {
     }
 
     const formPasswordAdmin = document.querySelector('#formPasswordAdmin');
-    if (formPasswordAdmin) {
+    if (formPasswordAdmin && formPasswordAdmin !== this._boundFormPasswordAdmin) {
+      this._boundFormPasswordAdmin = formPasswordAdmin;
       formPasswordAdmin.addEventListener('submit', async (event) => {
         event.preventDefault();
         await this.cambiarPasswordAdminDesdeFormulario();
@@ -1044,13 +1050,15 @@ const AdminModule = {
   },
 
   setupEventListeners() {
-    const tabs = document.querySelectorAll('.tab-btn');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        const tabName = e.currentTarget?.dataset?.tab || tab.dataset.tab;
-        if (!tabName) return;
-        this.cambiarTab(tabName);
-      });
+    const tabsContainer = document.querySelector('.tabs');
+    if (!tabsContainer) return;
+
+    tabsContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      const tabName = btn.dataset.tab;
+      if (!tabName) return;
+      this.cambiarTab(tabName);
     });
   },
 

@@ -97,7 +97,11 @@
   font-size: 16px;
 }
 
-.tab-btn .lucide-icon {
+.tab-btn .lucide-icon,
+.tab-btn svg,
+.tab-btn span,
+.tab-btn i {
+  pointer-events: none;
   width: 18px;
   height: 18px;
 }
