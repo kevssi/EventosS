@@ -17,8 +17,25 @@ const obtenerDisponiblesDesdeResultado = (row = {}) => {
   return null;
 };
 
+const resolverClientIdMercadoPago = () => {
+  const envClientId = process.env.MERCADOPAGO_OAUTH_CLIENT_ID
+    || process.env.MERCADOPAGO_APP_ID
+    || process.env.MP_APP_ID
+    || process.env.NEXT_PUBLIC_MERCADOPAGO_APP_ID
+    || process.env.APP_ID
+    || process.env.CLIENT_ID;
+
+  if (envClientId) {
+    return envClientId;
+  }
+
+  const token = String(process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.ACCESS_TOKEN || '').trim();
+  const match = token.match(/APP_[A-Z]+-(\d+)-/i);
+  return match?.[1] || null;
+};
+
 const refrescarTokenMercadoPago = async ({ refreshToken }) => {
-  const clientId = process.env.MERCADOPAGO_OAUTH_CLIENT_ID || process.env.APP_ID || process.env.CLIENT_ID;
+  const clientId = resolverClientIdMercadoPago();
   const clientSecret = process.env.MERCADOPAGO_OAUTH_CLIENT_SECRET || process.env.CLIENT_SECRET;
 
   if (!refreshToken || !clientId || !clientSecret) {

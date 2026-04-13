@@ -44,6 +44,25 @@ const getRoleRawValue = (usuario = {}) => (
   ?? null
 );
 
+const extraerClientIdDesdeAccessTokenMercadoPago = () => {
+  const candidates = [
+    process.env.MERCADOPAGO_ACCESS_TOKEN,
+    process.env.ACCESS_TOKEN
+  ];
+
+  for (const tokenValue of candidates) {
+    const token = String(tokenValue || '').trim();
+    if (!token) continue;
+
+    const match = token.match(/APP_[A-Z]+-(\d+)-/i);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+};
+
 // Registrar usuario
 exports.registrar = async (req, res) => {
   const { nombre, email, password, telefono } = req.body;
@@ -289,8 +308,12 @@ exports.obtenerPerfil = async (req, res) => {
 const resolverClientIdMercadoPago = (inputClientId) => (
   inputClientId
   || process.env.MERCADOPAGO_OAUTH_CLIENT_ID
+  || process.env.MERCADOPAGO_APP_ID
+  || process.env.MP_APP_ID
+  || process.env.NEXT_PUBLIC_MERCADOPAGO_APP_ID
   || process.env.APP_ID
   || process.env.CLIENT_ID
+  || extraerClientIdDesdeAccessTokenMercadoPago()
 );
 
 const resolverRedirectUriMercadoPago = (inputRedirectUri, req) => {
