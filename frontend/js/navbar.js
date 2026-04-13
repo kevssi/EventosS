@@ -359,6 +359,7 @@ const NavbarModule = {
         </header>
         <div class="help-modal-body">
           <p class="help-modal-intro">Para recibir soporte mas rapido, incluye esta informacion segun el apartado:</p>
+          <p class="help-modal-intro">Correo de soporte: <strong>soporte@eventosplus.mx</strong></p>
           <div class="help-section">
             <h4>1) Cuenta y acceso</h4>
             <p>Email registrado, captura del error y hora aproximada en la que ocurrio.</p>
@@ -385,8 +386,17 @@ const NavbarModule = {
 
     document.body.appendChild(modal);
 
+    const closeButton = modal.querySelector('[data-help-close]');
+    if (closeButton) {
+      closeButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.cerrarHelpModal();
+      });
+    }
+
     modal.addEventListener('click', (event) => {
-      if (event.target === modal || event.target.closest('[data-help-close]')) {
+      if (event.target === modal) {
         this.cerrarHelpModal();
       }
     });
