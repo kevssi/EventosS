@@ -174,21 +174,19 @@ const obtenerHistorialComprasDetallado = async (connection, userId) => {
   return rows || [];
 };
 
-const EXCLUDED_SALE_STATUSES = [
-  'cancelado',
-  'cancelled',
-  'canceled',
-  'rechazado',
-  'rejected',
-  'failed',
-  'anulado',
-  'void',
-  'refunded',
-  'chargeback'
+const PAID_SALE_STATUSES = [
+  'pagado',
+  'paid',
+  'approved',
+  'accredited',
+  'authorized',
+  'completed',
+  'success'
 ];
 
 const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
   const boletosTable = await findExistingTable(connection, ['boletos', 'boleto']);
+  const ordersTable = await findExistingTable(connection, ['ordenes']);
   const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
   const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
 
@@ -198,6 +196,8 @@ const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
 
   const boletoEventCol = await findExistingColumn(connection, boletosTable, ['id_evento', 'evento_id']);
   const boletoTipoCol = await findExistingColumn(connection, boletosTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const boletoOrderCol = await findExistingColumn(connection, boletosTable, ['id_orden', 'orden_id']);
+  const boletoEstadoCol = await findExistingColumn(connection, boletosTable, ['estado', 'status']);
   const boletoQtyCol = await findExistingColumn(connection, boletosTable, ['cantidad', 'qty']);
   const boletoPriceCol = await findExistingColumn(connection, boletosTable, ['precio_pagado', 'precio', 'monto', 'total']);
 
@@ -208,7 +208,19 @@ const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
   let eventIdExpr = boletoEventCol ? `b.${escapeIdentifier(boletoEventCol)}` : 'NULL';
   let eventTitleExpr = "'-'";
   let ticketTypeExpr = "'-'";
+  let orderStatusExpr = null;
   let joins = '';
+
+  if (ordersTable && boletoOrderCol) {
+    const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
+    const orderStatusCol = await findExistingColumn(connection, ordersTable, ['estado_pago', 'estado', 'status']);
+    if (orderIdCol) {
+      joins += `\n      LEFT JOIN ${escapeIdentifier(ordersTable)} o ON o.${escapeIdentifier(orderIdCol)} = b.${escapeIdentifier(boletoOrderCol)}`;
+      if (orderStatusCol) {
+        orderStatusExpr = `LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, ''))`;
+      }
+    }
+  }
 
   if (ticketTypesTable && boletoTipoCol) {
     const ticketTypeIdCol = await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']);
@@ -247,6 +259,14 @@ const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
 
   const where = [];
   const params = [];
+
+  if (orderStatusExpr) {
+    where.push(`${orderStatusExpr} IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...PAID_SALE_STATUSES);
+  } else if (boletoEstadoCol) {
+    where.push(`LOWER(COALESCE(b.${escapeIdentifier(boletoEstadoCol)}, '')) IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...PAID_SALE_STATUSES);
+  }
 
   if (eventId !== null) {
     where.push(`${eventIdExpr} = ?`);
@@ -306,8 +326,8 @@ const obtenerVentasDesdeOrdenes = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusCol) {
-    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) NOT IN (${EXCLUDED_SALE_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...EXCLUDED_SALE_STATUSES);
+    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...PAID_SALE_STATUSES);
   }
 
   if (eventId !== null && orderEventCol) {
@@ -456,8 +476,8 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusCol) {
-    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) NOT IN (${EXCLUDED_SALE_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...EXCLUDED_SALE_STATUSES);
+    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...PAID_SALE_STATUSES);
   }
 
   if (eventId !== null) {
