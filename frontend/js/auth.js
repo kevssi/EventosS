@@ -207,6 +207,18 @@ const AuthModule = {
       return;
     }
 
+    const nombreNormalizado = String(nombre || '').trim().replace(/\s+/g, ' ');
+    const partesNombre = nombreNormalizado.split(' ').filter(Boolean);
+    if (partesNombre.length < 2) {
+      this.showError('Escribe nombre(s) y apellido(s)');
+      return;
+    }
+
+    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/.test(nombreNormalizado)) {
+      this.showError('El nombre solo puede contener letras y espacios');
+      return;
+    }
+
     if (password !== confirmPassword) {
       this.showError('Las contraseñas no coinciden');
       return;
@@ -223,7 +235,7 @@ const AuthModule = {
     }
 
     try {
-      const response = await api.registrar(nombre, email, password, telefono);
+      const response = await api.registrar(nombreNormalizado, email, password, telefono);
 
       if (response.success) {
         if (response.token) {

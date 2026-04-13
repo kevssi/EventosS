@@ -120,8 +120,6 @@
 
       <label>Teléfono de contacto (opcional)</label>
       <input type="text" id="solicitudTelefono" placeholder="10 números (puede incluir espacios)" inputmode="tel" maxlength="14" pattern="^(?:\\d\\s*){10}$" oninput="this.value=this.value.replace(/[^\\d\\s]/g,'').slice(0,14)">
-      <label>Nombre(s) y apellido(s) de contacto</label>
-      <input type="text" id="solicitudNombreContacto" placeholder="Ej. Juan Carlos Perez Lopez" maxlength="120" required>
       <label>Comentarios adicionales (opcional)</label>
       <textarea id="solicitudComentarios" rows="3"></textarea>
       <button class="btn btn-primary" type="submit">Enviar solicitud</button>
@@ -177,7 +175,6 @@
         const redes = document.getElementById('solicitudRedes').value.trim();
         const telefonoRaw = document.getElementById('solicitudTelefono').value.trim();
         const telefono = telefonoRaw.replace(/\s+/g, '');
-        const nombreContacto = document.getElementById('solicitudNombreContacto').value.trim().replace(/\s+/g, ' ');
         const comentariosBase = document.getElementById('solicitudComentarios').value.trim();
 
         if (!tipoOrganizador) {
@@ -200,20 +197,9 @@
           return;
         }
 
-        if (!nombreContacto || nombreContacto.length < 3) {
-          alert('Escribe el nombre y apellido de contacto');
-          return;
-        }
-
-        if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/.test(nombreContacto)) {
-          alert('El nombre de contacto solo puede contener letras y espacios');
-          return;
-        }
-
         const metadataSolicitud = [
           `Tipo de organizador: ${tipoOrganizador}`,
           `Tipos de eventos: ${tiposEvento.join(', ')}`,
-          `Nombre de contacto: ${nombreContacto}`,
           `Redes sociales: ${redes || 'No especificado'}`
         ].join('\n');
 
