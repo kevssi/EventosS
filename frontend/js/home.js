@@ -7,6 +7,13 @@ const HomeModule = {
     'publi/e5.jpg'
   ],
 
+  normalizeRole(rol) {
+    const value = (rol ?? '').toString().trim().toLowerCase();
+    if (value === '3' || value === 'admin' || value === 'administrador') return 'administrador';
+    if (value === '2' || value === 'organizador') return 'organizador';
+    return 'usuario';
+  },
+
   async init() {
     this.renderTopActions();
     this.bindSearchForm();
@@ -26,7 +33,9 @@ const HomeModule = {
       return;
     }
 
-    if (usuario.rol === 'administrador') {
+    const rol = this.normalizeRole(usuario.rol ?? usuario.rol_id ?? usuario.id_rol);
+
+    if (rol === 'administrador') {
       container.innerHTML = `
         <a class="btn" href="pages/inicio.html">Explorar</a>
         <a class="btn btn-primary" href="pages/admin-dashboard.html">Panel admin</a>
@@ -34,10 +43,10 @@ const HomeModule = {
       return;
     }
 
-    if (usuario.rol === 'organizador') {
+    if (rol === 'organizador') {
       container.innerHTML = `
         <a class="btn" href="pages/inicio.html">Explorar</a>
-        <a class="btn btn-primary" href="pages/admin-dashboard.html">Mis eventos</a>
+        <a class="btn btn-primary" href="pages/mis-eventos.html">Mis eventos</a>
       `;
       return;
     }
