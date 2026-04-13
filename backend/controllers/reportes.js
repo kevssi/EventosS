@@ -172,17 +172,17 @@ const obtenerHistorialComprasDetallado = async (connection, userId) => {
   return rows || [];
 };
 
-const PAID_STATUSES = [
-  'pagado',
-  'paid',
-  'approved',
-  'accredited',
-  'authorized',
-  'success',
-  'completed',
-  'pendiente',
-  'pending',
-  'in_process'
+const EXCLUDED_SALE_STATUSES = [
+  'cancelado',
+  'cancelled',
+  'canceled',
+  'rechazado',
+  'rejected',
+  'failed',
+  'anulado',
+  'void',
+  'refunded',
+  'chargeback'
 ];
 
 const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
@@ -304,8 +304,8 @@ const obtenerVentasDesdeOrdenes = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusCol) {
-    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...PAID_STATUSES);
+    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) NOT IN (${EXCLUDED_SALE_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...EXCLUDED_SALE_STATUSES);
   }
 
   if (eventId !== null && orderEventCol) {
@@ -438,8 +438,8 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusCol) {
-    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...PAID_STATUSES);
+    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) NOT IN (${EXCLUDED_SALE_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...EXCLUDED_SALE_STATUSES);
   }
 
   if (eventId !== null) {
