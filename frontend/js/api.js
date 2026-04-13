@@ -25,7 +25,10 @@ class APIClient {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error en la solicitud');
+        const requestError = new Error(data.error || 'Error en la solicitud');
+        requestError.status = response.status;
+        requestError.payload = data;
+        throw requestError;
       }
 
       return data;

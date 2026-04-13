@@ -399,6 +399,15 @@ const BoletosModule = {
       console.error('Error al procesar compra con Mercado Pago:', error);
 
       const mensaje = error.message || 'No se pudo iniciar el proceso de pago';
+      const sesionExpirada = error?.status === 401 || mensaje.toLowerCase().includes('token inválido o expirado') || mensaje.toLowerCase().includes('token invalido o expirado');
+
+      if (sesionExpirada) {
+        api.limpiarToken();
+        alert('Tu sesion expiro. Inicia sesion para continuar con la compra.');
+        window.location.href = 'login.html';
+        return;
+      }
+
       if (mensaje.toLowerCase().includes('token de mercado pago')) {
         const confirmar = window.confirm('No tienes Mercado Pago vinculado. Quieres vincularlo ahora?');
         if (confirmar) {

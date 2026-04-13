@@ -17,17 +17,47 @@ const obtenerDisponiblesDesdeResultado = (row = {}) => {
   return null;
 };
 
-const obtenerAccessTokenMercadoPago = async (idUsuario) => {
-  const envToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-  if (envToken) {
-    return envToken;
+const refrescarTokenMercadoPago = async ({ refreshToken }) => {
+  const clientId = process.env.MERCADOPAGO_OAUTH_CLIENT_ID || process.env.APP_ID || process.env.CLIENT_ID;
+  const clientSecret = process.env.MERCADOPAGO_OAUTH_CLIENT_SECRET || process.env.CLIENT_SECRET;
+
+  if (!refreshToken || !clientId || !clientSecret) {
+    return null;
   }
+
+  try {
+    const mpResponse = await fetch('https://api.mercadopago.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        grant_type: 'refresh_token',
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken
+      })
+    });
+
+    const mpData = await mpResponse.json();
+    if (!mpResponse.ok || !mpData?.access_token) {
+      return null;
+    }
+
+    return mpData;
+  } catch (error) {
+    return null;
+  }
+};
+
+const obtenerAccessTokenMercadoPago = async (idUsuario) => {
+  const envToken = process.env.MERCADOPAGO_ACCESS_TOKEN || null;
 
   const connection = await pool.getConnection();
   try {
     const [rows] = await connection.query(
       `
-        SELECT access_token
+        SELECT access_token, refresh_token, expires_at
         FROM mercadopago_tokens
         WHERE id_usuario = ?
         LIMIT 1
@@ -35,10 +65,55 @@ const obtenerAccessTokenMercadoPago = async (idUsuario) => {
       [idUsuario]
     );
 
-    return rows[0]?.access_token || null;
+    const tokenGuardado = rows[0];
+    if (!tokenGuardado?.access_token) {
+      return envToken;
+    }
+
+    const expiresAtMs = tokenGuardado.expires_at ? new Date(tokenGuardado.expires_at).getTime() : null;
+    const isExpired = Number.isFinite(expiresAtMs) && expiresAtMs <= (Date.now() + 60 * 1000);
+
+    if (!isExpired) {
+      return tokenGuardado.access_token;
+    }
+
+    // Si el token expiro, intentamos refrescarlo y persistirlo para futuros pagos.
+    const refreshed = await refrescarTokenMercadoPago({
+      refreshToken: tokenGuardado.refresh_token
+    });
+
+    if (refreshed?.access_token) {
+      const expiresAt = Number.isFinite(Number(refreshed.expires_in))
+        ? new Date(Date.now() + Number(refreshed.expires_in) * 1000)
+        : null;
+
+      await connection.query(
+        `
+          UPDATE mercadopago_tokens
+          SET access_token = ?,
+              refresh_token = ?,
+              token_type = ?,
+              scope = ?,
+              expires_at = ?
+          WHERE id_usuario = ?
+        `,
+        [
+          refreshed.access_token,
+          refreshed.refresh_token || tokenGuardado.refresh_token || null,
+          refreshed.token_type || null,
+          refreshed.scope || null,
+          expiresAt,
+          idUsuario
+        ]
+      );
+
+      return refreshed.access_token;
+    }
+
+    return envToken;
   } catch (error) {
-    // Si la tabla no existe o hay un error de consulta, solo retornamos null para fallback controlado.
-    return null;
+    // Si la tabla no existe o hay un error de consulta, usamos fallback de entorno.
+    return envToken;
   } finally {
     await connection.release();
   }
@@ -236,6 +311,7 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
 
   try {
     const accessToken = await obtenerAccessTokenMercadoPago(req.user.id);
+    const envAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || null;
 
     if (!accessToken) {
       return res.status(500).json({
@@ -250,7 +326,7 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       pending: `${appBaseUrl}/pages/mis-ordenes.html?pago=pending`
     };
 
-    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    let response = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -271,13 +347,57 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       })
     });
 
-    const data = await response.json();
+    let data = await response.json();
+
+    const errorText = [
+      data?.message,
+      data?.error,
+      data?.error_description,
+      JSON.stringify(data?.cause || '')
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    const pareceErrorDeToken = /token|unauthor|forbidden|credential|access[_ ]?token|invalid[_ ]?token/i.test(errorText);
+
+    const puedeReintentarConEnv = (
+      envAccessToken
+      && accessToken !== envAccessToken
+      && (response.status === 400 || response.status === 401 || response.status === 403 || pareceErrorDeToken)
+    );
+
+    if (puedeReintentarConEnv) {
+      response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${envAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          items,
+          payer: {
+            email: req.user.email || undefined,
+            name: req.user.nombre || undefined
+          },
+          back_urls: backUrls,
+          external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
+          metadata: {
+            usuario_id: req.user.id,
+            orden_ids: ordenes.map((orden) => orden.id_orden).filter(Boolean)
+          }
+        })
+      });
+
+      data = await response.json();
+    }
 
     if (!response.ok) {
       console.error('Error Mercado Pago:', data);
       return res.status(502).json({
         success: false,
-        error: data?.message || 'No se pudo crear preferencia en Mercado Pago'
+        error: data?.message || data?.error || 'No se pudo crear preferencia en Mercado Pago',
+        details: data
       });
     }
 
