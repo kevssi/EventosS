@@ -39,6 +39,8 @@
     <script src="../js/api.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="../js/auth-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="../js/boleto-pdf.js"></script>
     <script>
         const DetalleBoletoModule = {
             getBoletoId() {
@@ -125,7 +127,22 @@
                         />
                         <code style="display: block; font-size: 15px; font-weight: 700; letter-spacing: 1px;">${boleto.codigo_qr || 'No disponible'}</code>
                     </div>
+
+                    <div style="margin: 0 20px 20px; display: flex; justify-content: center;">
+                        <button class="btn btn-primary" id="btnDescargarBoletoPdf">Descargar boleto PDF</button>
+                    </div>
                 `;
+
+                const btnPdf = document.getElementById('btnDescargarBoletoPdf');
+                if (btnPdf) {
+                    btnPdf.addEventListener('click', async () => {
+                        try {
+                            await window.BoletoPdf.abrirPdfBoleto(boleto);
+                        } catch (error) {
+                            alert(error.message || 'No se pudo generar el PDF del boleto');
+                        }
+                    });
+                }
 
                 window.NavbarModule?.renderLucideIcons?.(container);
             },
