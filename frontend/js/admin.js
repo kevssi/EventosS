@@ -148,14 +148,10 @@ const AdminModule = {
     try {
       const response = await api.listarSolicitudesOrganizador(estado || null);
       this.solicitudes = response.solicitudes || [];
-      if (!this.solicitudSeleccionadaId && this.solicitudes.length > 0) {
-        this.solicitudSeleccionadaId = Number(this.solicitudes[0].id);
-      }
-
       if (this.solicitudes.length > 0) {
         const existeSeleccion = this.solicitudes.some((item) => Number(item.id) === Number(this.solicitudSeleccionadaId));
         if (!existeSeleccion) {
-          this.solicitudSeleccionadaId = Number(this.solicitudes[0].id);
+          this.solicitudSeleccionadaId = null;
         }
       } else {
         this.solicitudSeleccionadaId = null;
@@ -232,7 +228,7 @@ const AdminModule = {
           <div class="solicitudes-empty">No hay solicitudes para el filtro seleccionado.</div>
         ` : `
           <div class="solicitud-lista-wrap">
-            <div class="solicitud-lista-title">Solicitudes enlistadas (haz clic para abrir detalle)</div>
+            <div class="solicitud-lista-title">Solicitudes enlistadas: ${this.solicitudes.length} (haz clic para abrir detalle)</div>
             <div class="solicitudes-lista">
               ${this.solicitudes.map((solicitud) => {
                 const isSelected = Number(solicitud.id) === Number(solicitudSeleccionada?.id);
@@ -294,7 +290,11 @@ const AdminModule = {
                 ` : '<span style="color: var(--text-light);">Esta solicitud ya fue revisada.</span>'}
               </div>
             </div>
-          ` : ''}
+          ` : `
+            <div class="solicitud-detalle">
+              <p style="margin: 0; color: var(--text-light);">Selecciona una solicitud de la lista para ver toda la informacion.</p>
+            </div>
+          `}
         `}
       </div>
     `;
@@ -570,6 +570,7 @@ const AdminModule = {
           <tbody>
             ${this.usuarios.map(usuario => {
               const isActivo = toActivo(usuario.activo);
+              const userId = Number(usuario.id || usuario.id_usuario || 0);
 
               return `
               <tr>
@@ -584,10 +585,11 @@ const AdminModule = {
                 </td>
                 <td class="acciones">
                   <button class="btn btn-accion btn-${isActivo ? 'danger' : 'success'}" 
-                          onclick="AdminModule.cambiarEstadoUsuario(${usuario.id}, ${isActivo ? 0 : 1})">
+                          onclick="AdminModule.cambiarEstadoUsuario(${userId}, ${isActivo ? 0 : 1})"
+                          ${userId ? '' : 'disabled'}>
                     ${isActivo ? 'Desactivar' : 'Activar'}
                   </button>
-                  <button class="btn btn-accion btn-outline" onclick="AdminModule.eliminarUsuario(${usuario.id})">
+                  <button class="btn btn-accion btn-outline" onclick="AdminModule.eliminarUsuario(${userId})" ${userId ? '' : 'disabled'}>
                     Eliminar
                   </button>
                 </td>

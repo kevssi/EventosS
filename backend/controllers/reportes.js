@@ -1,5 +1,7 @@
 const pool = require('../config/database');
 
+const escapeIdentifier = (identifier) => `\`${String(identifier || '').replace(/`/g, '``')}\``;
+
 // Reporte de ventas de un evento
 exports.reporteVentasEvento = async (req, res) => {
   const { id_evento } = req.params;
@@ -149,14 +151,46 @@ exports.eliminarUsuario = async (req, res) => {
     return res.status(400).json({ success: false, error: 'No puedes eliminar tu propio usuario administrador' });
   }
 
-  try {
-    const connection = await pool.getConnection();
-    const [deleteResult] = await connection.query('DELETE FROM usuarios WHERE id = ? LIMIT 1', [userId]);
-    await connection.release();
+  let connection;
 
-    if (!deleteResult?.affectedRows) {
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [userRows] = await connection.query('SELECT id FROM usuarios WHERE id = ? LIMIT 1 FOR UPDATE', [userId]);
+    if (!userRows.length) {
+      await connection.rollback();
       return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
     }
+
+    const [fkRows] = await connection.query(
+      `SELECT TABLE_NAME, COLUMN_NAME
+       FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND REFERENCED_TABLE_NAME = 'usuarios'
+         AND REFERENCED_COLUMN_NAME = 'id'
+       ORDER BY TABLE_NAME, COLUMN_NAME`
+    );
+
+    for (const fk of fkRows) {
+      const tableName = String(fk.TABLE_NAME || '');
+      const columnName = String(fk.COLUMN_NAME || '');
+      if (!tableName || !columnName || tableName === 'usuarios') {
+        continue;
+      }
+
+      const deleteChildSql = `DELETE FROM ${escapeIdentifier(tableName)} WHERE ${escapeIdentifier(columnName)} = ?`;
+      await connection.query(deleteChildSql, [userId]);
+    }
+
+    const [deleteResult] = await connection.query('DELETE FROM usuarios WHERE id = ? LIMIT 1', [userId]);
+
+    if (!deleteResult?.affectedRows) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    await connection.commit();
 
     return res.json({
       success: true,
@@ -164,6 +198,14 @@ exports.eliminarUsuario = async (req, res) => {
     });
   } catch (error) {
     console.error('Error en eliminarUsuario:', error);
+
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Error haciendo rollback al eliminar usuario:', rollbackError);
+      }
+    }
 
     if (error?.code === 'ER_ROW_IS_REFERENCED_2') {
       return res.status(409).json({
@@ -173,5 +215,9 @@ exports.eliminarUsuario = async (req, res) => {
     }
 
     return res.status(500).json({ success: false, error: 'Error al eliminar usuario' });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
