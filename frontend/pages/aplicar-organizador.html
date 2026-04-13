@@ -115,13 +115,8 @@
       <label>Breve descripción de la experiencia organizando eventos</label>
       <textarea id="solicitudDescripcion" rows="4" required></textarea>
 
-      <label>Redes sociales (links)</label>
-      <textarea id="solicitudRedes" rows="2" placeholder="Instagram, Facebook, TikTok, sitio web"></textarea>
-
       <label>Teléfono de contacto (opcional)</label>
       <input type="text" id="solicitudTelefono" placeholder="10 números (puede incluir espacios)" inputmode="tel" maxlength="14" pattern="^(?:\\d\\s*){10}$" oninput="this.value=this.value.replace(/[^\\d\\s]/g,'').slice(0,14)">
-      <label>Comentarios adicionales (opcional)</label>
-      <textarea id="solicitudComentarios" rows="3"></textarea>
       <button class="btn btn-primary" type="submit">Enviar solicitud</button>
     </form>
 
@@ -172,10 +167,8 @@
         const tipoOrganizador = document.getElementById('solicitudTipoOrganizador').value;
         const tiposEvento = Array.from(document.querySelectorAll('input[name="tiposEvento"]:checked'))
           .map((item) => item.value);
-        const redes = document.getElementById('solicitudRedes').value.trim();
         const telefonoRaw = document.getElementById('solicitudTelefono').value.trim();
         const telefono = telefonoRaw.replace(/\s+/g, '');
-        const comentariosBase = document.getElementById('solicitudComentarios').value.trim();
 
         if (!tipoOrganizador) {
           alert('Selecciona el tipo de organizador');
@@ -199,19 +192,14 @@
 
         const metadataSolicitud = [
           `Tipo de organizador: ${tipoOrganizador}`,
-          `Tipos de eventos: ${tiposEvento.join(', ')}`,
-          `Redes sociales: ${redes || 'No especificado'}`
+          `Tipos de eventos: ${tiposEvento.join(', ')}`
         ].join('\n');
-
-        const comentariosCompuestos = [comentariosBase, metadataSolicitud]
-          .filter(Boolean)
-          .join('\n\n');
 
         const payload = {
           organizacion: document.getElementById('solicitudOrganizacion').value.trim(),
           experiencia: document.getElementById('solicitudDescripcion').value.trim(),
           telefono_contacto: telefono || null,
-          comentarios: comentariosCompuestos || null
+          comentarios: metadataSolicitud || null
         };
 
         const response = await api.enviarSolicitudOrganizador(payload);
