@@ -338,8 +338,14 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
   const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
 
-  if (!ordersTable || !detailsTable) {
-    return [];
+  if (!ordersTable) {
+    return obtenerVentasDesdeBoletos(connection, eventId);
+  }
+
+  if (!detailsTable) {
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    if (orderRows.length) return orderRows;
+    return obtenerVentasDesdeBoletos(connection, eventId);
   }
 
   const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
@@ -354,7 +360,9 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const detailSubtotalCol = await findExistingColumn(connection, detailsTable, ['subtotal', 'total', 'importe', 'monto_total']);
 
   if (!orderIdCol || !detailOrderIdCol) {
-    return [];
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    if (orderRows.length) return orderRows;
+    return obtenerVentasDesdeBoletos(connection, eventId);
   }
 
   let ticketJoin = '';
