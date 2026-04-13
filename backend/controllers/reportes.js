@@ -184,7 +184,30 @@ const PAID_SALE_STATUSES = [
   'success'
 ];
 
-const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
+const EXCLUDED_SALE_STATUSES = [
+  'cancelado',
+  'cancelled',
+  'canceled',
+  'rechazado',
+  'rejected',
+  'failed',
+  'anulado',
+  'void',
+  'refunded',
+  'chargeback'
+];
+
+const buildOrderStatusFilter = ({ paidOnly, expr }) => {
+  const values = paidOnly ? PAID_SALE_STATUSES : EXCLUDED_SALE_STATUSES;
+  const op = paidOnly ? 'IN' : 'NOT IN';
+  return {
+    clause: `${expr} ${op} (${values.map(() => '?').join(', ')})`,
+    params: values
+  };
+};
+
+const obtenerVentasDesdeBoletos = async (connection, eventId = null, options = {}) => {
+  const paidOnly = options.paidOnly !== false;
   const boletosTable = await findExistingTable(connection, ['boletos', 'boleto']);
   const ordersTable = await findExistingTable(connection, ['ordenes']);
   const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
@@ -261,11 +284,16 @@ const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusExpr) {
-    where.push(`${orderStatusExpr} IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...PAID_SALE_STATUSES);
+    const statusFilter = buildOrderStatusFilter({ paidOnly, expr: orderStatusExpr });
+    where.push(statusFilter.clause);
+    params.push(...statusFilter.params);
   } else if (boletoEstadoCol) {
-    where.push(`LOWER(COALESCE(b.${escapeIdentifier(boletoEstadoCol)}, '')) IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...PAID_SALE_STATUSES);
+    const statusFilter = buildOrderStatusFilter({
+      paidOnly,
+      expr: `LOWER(COALESCE(b.${escapeIdentifier(boletoEstadoCol)}, ''))`
+    });
+    where.push(statusFilter.clause);
+    params.push(...statusFilter.params);
   }
 
   if (eventId !== null) {
@@ -290,7 +318,8 @@ const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
   return rows || [];
 };
 
-const obtenerVentasDesdeOrdenes = async (connection, eventId = null) => {
+const obtenerVentasDesdeOrdenes = async (connection, eventId = null, options = {}) => {
+  const paidOnly = options.paidOnly !== false;
   const ordersTable = await findExistingTable(connection, ['ordenes']);
   const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
 
@@ -326,8 +355,12 @@ const obtenerVentasDesdeOrdenes = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusCol) {
-    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...PAID_SALE_STATUSES);
+    const statusFilter = buildOrderStatusFilter({
+      paidOnly,
+      expr: `LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, ''))`
+    });
+    where.push(statusFilter.clause);
+    params.push(...statusFilter.params);
   }
 
   if (eventId !== null && orderEventCol) {
@@ -352,21 +385,22 @@ const obtenerVentasDesdeOrdenes = async (connection, eventId = null) => {
   return rows || [];
 };
 
-const obtenerVentasDetalladas = async (connection, eventId = null) => {
+const obtenerVentasDetalladas = async (connection, eventId = null, options = {}) => {
+  const paidOnly = options.paidOnly !== false;
   const ordersTable = await findExistingTable(connection, ['ordenes']);
   const detailsTable = await findExistingTable(connection, ['detalle_orden', 'detalles_orden', 'orden_detalle', 'ordenes_detalle']);
   const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
   const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
 
   if (!ordersTable) {
-    return obtenerVentasDesdeBoletos(connection, eventId);
+    return obtenerVentasDesdeBoletos(connection, eventId, { paidOnly });
   }
 
   if (!detailsTable) {
-    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
+    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId, { paidOnly });
     if (boletoRows.length) return boletoRows;
 
-    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId, { paidOnly });
     if (orderRows.length) return orderRows;
 
     return [];
@@ -384,10 +418,10 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const detailSubtotalCol = await findExistingColumn(connection, detailsTable, ['subtotal', 'total', 'importe', 'monto_total']);
 
   if (!orderIdCol || !detailOrderIdCol) {
-    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
+    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId, { paidOnly });
     if (boletoRows.length) return boletoRows;
 
-    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId, { paidOnly });
     if (orderRows.length) return orderRows;
 
     return [];
@@ -458,9 +492,9 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   }
 
   if (eventId !== null && eventIdExpr === 'NULL') {
-    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId, { paidOnly });
     if (orderRows.length) return orderRows;
-    return obtenerVentasDesdeBoletos(connection, eventId);
+    return obtenerVentasDesdeBoletos(connection, eventId, { paidOnly });
   }
 
   const qtyExpr = detailQtyCol
@@ -476,8 +510,12 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const params = [];
 
   if (orderStatusCol) {
-    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_SALE_STATUSES.map(() => '?').join(', ')})`);
-    params.push(...PAID_SALE_STATUSES);
+    const statusFilter = buildOrderStatusFilter({
+      paidOnly,
+      expr: `LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, ''))`
+    });
+    where.push(statusFilter.clause);
+    params.push(...statusFilter.params);
   }
 
   if (eventId !== null) {
@@ -506,11 +544,11 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const totalCantidad = normalizedRows.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
 
   if (totalIngresos <= 0 && totalCantidad <= 0) {
-    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
+    const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId, { paidOnly });
     if (orderRows.length) {
       return orderRows;
     }
-    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
+    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId, { paidOnly });
     if (boletoRows.length) {
       return boletoRows;
     }
@@ -519,16 +557,23 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   return normalizedRows;
 };
 
-const construirReporteEventoManual = (rows = [], eventId) => {
-  const filtered = rows.filter((row) => Number(row?.id_evento || 0) === Number(eventId));
-  const totalVendidos = filtered.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
-  const totalIngresos = filtered.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
+const construirReporteEventoManual = (soldRows = [], paidRows = [], eventId) => {
+  const filteredSold = soldRows.filter((row) => Number(row?.id_evento || 0) === Number(eventId));
+  const filteredPaid = paidRows.filter((row) => Number(row?.id_evento || 0) === Number(eventId));
+  const totalVendidos = filteredSold.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
+  const totalIngresos = filteredPaid.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
 
   const byTipo = new Map();
-  for (const row of filtered) {
+  for (const row of filteredSold) {
     const tipo = String(row?.tipo_boleto || '-');
     const prev = byTipo.get(tipo) || { tipo_boleto: tipo, vendidos: 0, ingresos: 0 };
     prev.vendidos += Number(row?.cantidad || 0);
+    byTipo.set(tipo, prev);
+  }
+
+  for (const row of filteredPaid) {
+    const tipo = String(row?.tipo_boleto || '-');
+    const prev = byTipo.get(tipo) || { tipo_boleto: tipo, vendidos: 0, ingresos: 0 };
     prev.ingresos += Number(row?.subtotal || 0);
     byTipo.set(tipo, prev);
   }
@@ -538,7 +583,7 @@ const construirReporteEventoManual = (rows = [], eventId) => {
       boletos_vendidos: totalVendidos,
       ingresos_totales: totalIngresos,
       total_ordenes: 0,
-      titulo: filtered[0]?.evento || '-'
+      titulo: filteredSold[0]?.evento || filteredPaid[0]?.evento || '-'
     },
     desglose: Array.from(byTipo.values())
   };
@@ -547,7 +592,8 @@ const construirReporteEventoManual = (rows = [], eventId) => {
 const construirReporteGeneralManual = async (connection) => {
   const usuariosTable = await findExistingTable(connection, ['usuarios']);
   const eventosTable = await findExistingTable(connection, ['eventos', 'evento']);
-  const ventasRows = await obtenerVentasDetalladas(connection);
+  const ventasRowsSold = await obtenerVentasDetalladas(connection, null, { paidOnly: false });
+  const ventasRowsPaid = await obtenerVentasDetalladas(connection, null, { paidOnly: true });
 
   let totalUsuarios = 0;
   if (usuariosTable) {
@@ -567,14 +613,20 @@ const construirReporteGeneralManual = async (connection) => {
     eventosActivos = Number(rows?.[0]?.total || 0);
   }
 
-  const boletosVendidos = ventasRows.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
-  const ingresosTotales = ventasRows.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
+  const boletosVendidos = ventasRowsSold.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
+  const ingresosTotales = ventasRowsPaid.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
 
   const topMap = new Map();
-  for (const row of ventasRows) {
+  for (const row of ventasRowsSold) {
     const key = String(row?.evento || '-');
     const prev = topMap.get(key) || { titulo: key, boletos_vendidos: 0, ingresos: 0 };
     prev.boletos_vendidos += Number(row?.cantidad || 0);
+    topMap.set(key, prev);
+  }
+
+  for (const row of ventasRowsPaid) {
+    const key = String(row?.evento || '-');
+    const prev = topMap.get(key) || { titulo: key, boletos_vendidos: 0, ingresos: 0 };
     prev.ingresos += Number(row?.subtotal || 0);
     topMap.set(key, prev);
   }
@@ -709,8 +761,9 @@ exports.reporteVentasEvento = async (req, res) => {
         bestResult = { resumen: { boletos_vendidos: 0, ingresos_totales: 0, total_ordenes: 0, titulo: '-' }, desglose: [] };
       }
 
-      const manualRows = await obtenerVentasDetalladas(connection, eventId);
-      const manualReport = construirReporteEventoManual(manualRows, eventId);
+      const manualRowsSold = await obtenerVentasDetalladas(connection, eventId, { paidOnly: false });
+      const manualRowsPaid = await obtenerVentasDetalladas(connection, eventId, { paidOnly: true });
+      const manualReport = construirReporteEventoManual(manualRowsSold, manualRowsPaid, eventId);
 
       const spVendidos = Number(bestResult?.resumen?.boletos_vendidos || bestResult?.resumen?.vendidos || 0);
       const spIngresos = Number(bestResult?.resumen?.ingresos_totales || bestResult?.resumen?.ingresos || 0);
