@@ -42,6 +42,136 @@ const buildSinglePrimaryKeyMap = (pkRows = []) => {
   return singlePkMap;
 };
 
+const findExistingTable = async (connection, candidates = []) => {
+  for (const tableName of candidates) {
+    const [rows] = await connection.query(
+      `
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+        LIMIT 1
+      `,
+      [tableName]
+    );
+
+    if (rows.length) {
+      return tableName;
+    }
+  }
+
+  return null;
+};
+
+const findExistingColumn = async (connection, tableName, candidates = []) => {
+  if (!tableName) return null;
+
+  for (const columnName of candidates) {
+    const [rows] = await connection.query(
+      `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+          AND column_name = ?
+        LIMIT 1
+      `,
+      [tableName, columnName]
+    );
+
+    if (rows.length) {
+      return columnName;
+    }
+  }
+
+  return null;
+};
+
+const obtenerHistorialComprasDetallado = async (connection, userId) => {
+  const ordersTable = await findExistingTable(connection, ['ordenes']);
+  const detailsTable = await findExistingTable(connection, ['detalle_orden', 'detalles_orden', 'orden_detalle', 'ordenes_detalle']);
+  const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
+  const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
+
+  if (!ordersTable || !detailsTable) {
+    return null;
+  }
+
+  const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
+  const orderUserCol = await findExistingColumn(connection, ordersTable, ['id_usuario', 'usuario_id', 'user_id']);
+  const orderDateCol = await findExistingColumn(connection, ordersTable, ['fecha_orden', 'fecha_compra', 'created_at', 'fecha']);
+  const orderStatusCol = await findExistingColumn(connection, ordersTable, ['estado_pago', 'estado', 'status']);
+  const orderTotalCol = await findExistingColumn(connection, ordersTable, ['total', 'monto_total', 'total_pago', 'importe_total']);
+
+  const detailOrderIdCol = await findExistingColumn(connection, detailsTable, ['id_orden', 'orden_id']);
+  const detailTicketTypeCol = await findExistingColumn(connection, detailsTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const detailQtyCol = await findExistingColumn(connection, detailsTable, ['cantidad', 'cantidad_boletos', 'boletos', 'qty']);
+  const detailPriceCol = await findExistingColumn(connection, detailsTable, ['precio_unitario', 'precio', 'costo_unitario']);
+  const detailSubtotalCol = await findExistingColumn(connection, detailsTable, ['subtotal', 'total', 'importe', 'monto_total']);
+
+  if (!orderIdCol || !orderUserCol || !detailOrderIdCol) {
+    return null;
+  }
+
+  let ticketJoin = '';
+  let eventJoin = '';
+  let eventTitleExpr = `'-'`;
+  let ticketTypeExpr = `'-'`;
+
+  if (ticketTypesTable && detailTicketTypeCol) {
+    const ticketTypeIdCol = await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']);
+    const ticketTypeNameCol = await findExistingColumn(connection, ticketTypesTable, ['nombre', 'tipo_boleto', 'descripcion', 'titulo']);
+    const ticketEventIdCol = await findExistingColumn(connection, ticketTypesTable, ['id_evento', 'evento_id']);
+
+    if (ticketTypeIdCol) {
+      ticketJoin = `\n      LEFT JOIN ${escapeIdentifier(ticketTypesTable)} tb ON tb.${escapeIdentifier(ticketTypeIdCol)} = d.${escapeIdentifier(detailTicketTypeCol)}`;
+      if (ticketTypeNameCol) {
+        ticketTypeExpr = `COALESCE(tb.${escapeIdentifier(ticketTypeNameCol)}, '-')`;
+      }
+
+      if (eventsTable && ticketEventIdCol) {
+        const eventIdCol = await findExistingColumn(connection, eventsTable, ['id', 'id_evento']);
+        const eventTitleCol = await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']);
+
+        if (eventIdCol) {
+          eventJoin = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = tb.${escapeIdentifier(ticketEventIdCol)}`;
+          if (eventTitleCol) {
+            eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+          }
+        }
+      }
+    }
+  }
+
+  const qtyExpr = detailQtyCol
+    ? `COALESCE(d.${escapeIdentifier(detailQtyCol)}, 0)`
+    : '0';
+  const subtotalExpr = detailSubtotalCol
+    ? `COALESCE(d.${escapeIdentifier(detailSubtotalCol)}, 0)`
+    : detailPriceCol
+      ? `COALESCE(d.${escapeIdentifier(detailPriceCol)}, 0) * ${qtyExpr}`
+      : '0';
+
+  const query = `
+    SELECT
+      o.${escapeIdentifier(orderIdCol)} AS id_orden,
+      ${orderDateCol ? `o.${escapeIdentifier(orderDateCol)}` : 'NULL'} AS fecha_orden,
+      ${orderStatusCol ? `o.${escapeIdentifier(orderStatusCol)}` : "'-'"} AS estado_pago,
+      ${orderTotalCol ? `COALESCE(o.${escapeIdentifier(orderTotalCol)}, 0)` : '0'} AS total,
+      ${eventTitleExpr} AS evento,
+      ${ticketTypeExpr} AS tipo_boleto,
+      ${qtyExpr} AS cantidad,
+      ${subtotalExpr} AS subtotal
+    FROM ${escapeIdentifier(ordersTable)} o
+    LEFT JOIN ${escapeIdentifier(detailsTable)} d ON d.${escapeIdentifier(detailOrderIdCol)} = o.${escapeIdentifier(orderIdCol)}${ticketJoin}${eventJoin}
+    WHERE o.${escapeIdentifier(orderUserCol)} = ?
+    ORDER BY fecha_orden DESC, id_orden DESC
+  `;
+
+  const [rows] = await connection.query(query, [userId]);
+  return rows || [];
+};
+
 const cascadeDeleteFromParent = async ({
   connection,
   tableName,
@@ -253,12 +383,36 @@ exports.historialComprasUsuario = async (req, res) => {
     }
 
     const [resultado] = await connection.query('CALL sp_mis_ordenes(?)', [userId]);
+    let historialDetallado = [];
+
+    try {
+      historialDetallado = await obtenerHistorialComprasDetallado(connection, userId);
+    } catch (innerError) {
+      historialDetallado = [];
+    }
+
+    const ordenes = resultado?.[0] || [];
+
+    if (!Array.isArray(historialDetallado) || !historialDetallado.length) {
+      historialDetallado = ordenes.map((orden) => ({
+        id_orden: orden.id_orden || orden.id || null,
+        fecha_orden: orden.fecha_orden || orden.fecha_compra || orden.fecha_pago || null,
+        estado_pago: orden.estado_pago || orden.estado || '-',
+        total: orden.total || orden.monto_total || 0,
+        evento: orden.evento || orden.titulo_evento || '-',
+        tipo_boleto: orden.tipo_boleto || orden.tipo || orden.nombre_tipo || '-',
+        cantidad: Number(orden.cantidad || orden.boletos || 0),
+        subtotal: Number(orden.subtotal || orden.total || orden.monto_total || 0)
+      }));
+    }
+
     await connection.release();
 
     return res.json({
       success: true,
       usuario: usuarioRows[0],
-      ordenes: resultado?.[0] || []
+      ordenes,
+      historial_detallado: historialDetallado
     });
   } catch (error) {
     console.error('Error en historialComprasUsuario:', error);

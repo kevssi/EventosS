@@ -402,7 +402,7 @@ const AdminModule = {
     try {
       const response = await api.historialComprasUsuario(idUsuario);
       this.historialComprasUsuarioActual = response.usuario || null;
-      this.historialCompras = response.ordenes || [];
+      this.historialCompras = response.historial_detallado || response.ordenes || [];
       this.renderUsuarios();
     } catch (error) {
       alert('No se pudo obtener historial de compras: ' + error.message);
@@ -993,19 +993,25 @@ const AdminModule = {
               <tr>
                 <th>Orden</th>
                 <th>Fecha</th>
+                <th>Evento</th>
+                <th>Tipo de boleto</th>
+                <th>Cantidad</th>
                 <th>Estado</th>
                 <th>Total</th>
               </tr>
             </thead>
             <tbody>
               ${this.historialCompras.length === 0
-                ? '<tr><td colspan="4" style="text-align:center; color: var(--text-light);">Este usuario aun no tiene compras registradas.</td></tr>'
+                ? '<tr><td colspan="7" style="text-align:center; color: var(--text-light);">Este usuario aun no tiene compras registradas.</td></tr>'
                 : this.historialCompras.map((orden) => `
                   <tr>
                     <td>#${this.escapeHtml(orden.id_orden || orden.id || '-')}</td>
                     <td>${this.formatDate(orden.fecha_orden || orden.fecha_compra || orden.fecha_pago)}</td>
+                    <td>${this.escapeHtml(orden.evento || orden.titulo_evento || '-')}</td>
+                    <td>${this.escapeHtml(orden.tipo_boleto || orden.tipo || orden.nombre_tipo || '-')}</td>
+                    <td>${Number(orden.cantidad || orden.boletos || 0)}</td>
                     <td>${this.escapeHtml(orden.estado_pago || orden.estado || '-')}</td>
-                    <td>${this.formatCurrency(orden.total || orden.monto_total || 0)}</td>
+                    <td>${this.formatCurrency(orden.subtotal || orden.total || orden.monto_total || 0)}</td>
                   </tr>
                 `).join('')
               }
