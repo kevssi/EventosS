@@ -256,6 +256,7 @@ const fetchEventosFallback = async (connection, idCategoria) => {
 // Listar eventos con filtro opcional por categoría
 exports.listarEventos = async (req, res) => {
   const { id_categoria, q, tipo, limit } = req.query;
+  const useRealtime = req.query.realtime === '1';
 
   try {
     const connection = await pool.getConnection();
@@ -284,7 +285,9 @@ exports.listarEventos = async (req, res) => {
       eventos = await fetchEventosFallback(connection, parsedCategoria);
     }
 
-    eventos = await recalcularDisponibilidadEventos(connection, eventos);
+    if (useRealtime) {
+      eventos = await recalcularDisponibilidadEventos(connection, eventos);
+    }
 
     await connection.release();
 

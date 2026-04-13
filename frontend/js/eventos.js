@@ -6,6 +6,7 @@ const EventosModule = {
   busquedaActual: '',
   cacheImagenesArtista: new Map(),
   refreshTimer: null,
+  currentLoadId: 0,
 
   async init() {
     this.inicializarDesdeURL();
@@ -114,6 +115,8 @@ const EventosModule = {
   },
 
   async cargarEventos(id_categoria = this.filtroActual || null, q = this.busquedaActual || '') {
+    const loadId = ++this.currentLoadId;
+
     try {
       const response = await api.listarEventos({ id_categoria, q });
       let eventosAPI = response.eventos || [];
@@ -130,15 +133,21 @@ const EventosModule = {
         });
       }
 
-      this.eventos = await this.enriquecerEventosConImagen(eventosAPI);
+      // Primer render rapido sin llamadas de red adicionales.
+      this.eventos = this.enriquecerEventosConImagen(eventosAPI);
       this.renderEventos();
+
+      // Si llega una carga mas nueva, ignoramos esta respuesta.
+      if (loadId !== this.currentLoadId) {
+        return;
+      }
     } catch (error) {
       console.error('Error al cargar eventos:', error);
       this.mostrarError('Error al cargar eventos');
     }
   },
 
-  async enriquecerEventosConImagen(eventos) {
+  enriquecerEventosConImagen(eventos) {
     const imagenesPorEvento = {
       'kenia os tour prototipo 2025': '/publi/keniaos.jpg',
       'rosalia motomami world tour mexico': '/publi/rosalia.jpg',
@@ -173,9 +182,8 @@ const EventosModule = {
       return '/publi/' + slug + '.jpg';
     };
 
-    return Promise.all(eventos.map(async (evento) => {
+    return eventos.map((evento) => {
       const artista = this.extraerNombreArtista(evento?.titulo || '');
-      const esMusical = this.esEventoMusical(evento);
       const normalizedTitulo = normalizeTitle(evento?.titulo || '');
       const localImage = imagenesPorEvento[normalizedTitulo] || imagenesPorEvento[evento?.titulo] || null;
       const imagenGenerada = imagenPorTitulo(evento?.titulo);
@@ -188,12 +196,10 @@ const EventosModule = {
       });
 
       const fallbackLocal = partidoGlobal ? imagenesPorEvento[partidoGlobal] : null;
-      const imagenArtista = esMusical
-        ? await this.obtenerImagenArtista(artista || evento?.titulo || 'evento')
-        : this.obtenerImagenCategoria(evento?.categoria || evento?.titulo || 'Evento');
       const imagenFallback = this.obtenerImagenCategoria(evento?.categoria || evento?.titulo || 'Evento');
 
-      const imagenFinal = localImage || fallbackLocal || imagenGenerada || imagenArtista;
+      // Evitamos llamadas externas por cada tarjeta para acelerar carga inicial.
+      const imagenFinal = localImage || fallbackLocal || imagenGenerada || imagenFallback;
 
       return {
         ...evento,
@@ -202,7 +208,7 @@ const EventosModule = {
         imagen_resuelta: imagenFinal,
         imagen_fallback: imagenFallback
       };
-    }));
+    });
   },
 
   esEventoMusical(evento = {}) {
