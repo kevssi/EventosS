@@ -35,7 +35,7 @@
 
             <div class="form-group">
                 <label for="telefono">Teléfono (Opcional):</label>
-                <input type="text" id="telefono" name="telefono" placeholder="Tu teléfono">
+                <input type="text" id="telefono" name="telefono" placeholder="10 números" inputmode="numeric" maxlength="10" pattern="^\\d{10}$" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)">
             </div>
 
             <button type="submit" class="btn btn-primary">Crear Cuenta</button>

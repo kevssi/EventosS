@@ -199,7 +199,8 @@ const AuthModule = {
     const email = document.querySelector('#email')?.value;
     const password = document.querySelector('#password')?.value;
     const confirmPassword = document.querySelector('#confirmPassword')?.value;
-    const telefono = document.querySelector('#telefono')?.value;
+    const telefonoRaw = document.querySelector('#telefono')?.value?.trim() || '';
+    const telefono = telefonoRaw.replace(/\D/g, '');
 
     if (!nombre || !email || !password || !confirmPassword) {
       this.showError('Por favor completa todos los campos');
@@ -213,6 +214,11 @@ const AuthModule = {
 
     if (password.length < 6) {
       this.showError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (telefonoRaw && !/^\d{10}$/.test(telefonoRaw)) {
+      this.showError('El telefono debe tener exactamente 10 numeros, sin letras ni espacios');
       return;
     }
 

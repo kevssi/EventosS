@@ -385,7 +385,7 @@ const AdminModule = {
           </div>
           <div class="form-group">
             <label for="adminTelefono">Teléfono (opcional)</label>
-            <input type="text" id="adminTelefono">
+            <input type="text" id="adminTelefono" placeholder="10 numeros" inputmode="numeric" maxlength="10" pattern="^\\d{10}$" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)">
           </div>
           <div class="form-group">
             <label for="adminPassword">Contraseña temporal</label>
@@ -478,11 +478,17 @@ const AdminModule = {
   async crearAdminDesdeFormulario() {
     const nombre = document.querySelector('#adminNombre')?.value?.trim();
     const email = document.querySelector('#adminEmail')?.value?.trim();
-    const telefono = document.querySelector('#adminTelefono')?.value?.trim();
+    const telefonoRaw = document.querySelector('#adminTelefono')?.value?.trim() || '';
+    const telefono = telefonoRaw.replace(/\D/g, '');
     const password = document.querySelector('#adminPassword')?.value;
 
     if (!nombre || !email || !password) {
       alert('Completa nombre, email y contraseña.');
+      return;
+    }
+
+    if (telefonoRaw && !/^\d{10}$/.test(telefonoRaw)) {
+      alert('El telefono debe tener exactamente 10 numeros, sin letras ni espacios.');
       return;
     }
 
