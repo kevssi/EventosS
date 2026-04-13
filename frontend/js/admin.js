@@ -577,25 +577,34 @@ const AdminModule = {
     const tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
-        this.cambiarTab(e.target.dataset.tab);
+        const tabName = e.currentTarget?.dataset?.tab || tab.dataset.tab;
+        if (!tabName) return;
+        this.cambiarTab(tabName);
       });
     });
   },
 
   cambiarTab(tabNombre) {
+    if (!tabNombre) return;
     this.tab_activo = tabNombre;
 
     // Actualizar tabs
     document.querySelectorAll('.tab-btn').forEach(tab => {
       tab.classList.remove('active');
     });
-    document.querySelector(`[data-tab="${tabNombre}"]`).classList.add('active');
+    const tabButton = document.querySelector(`[data-tab="${tabNombre}"]`);
+    if (tabButton) {
+      tabButton.classList.add('active');
+    }
 
     // Actualizar contenido
     document.querySelectorAll('.tab-content').forEach(content => {
       content.classList.remove('active');
     });
-    document.querySelector(`#tab${tabNombre.charAt(0).toUpperCase() + tabNombre.slice(1)}`).classList.add('active');
+    const tabContent = document.querySelector(`#tab${tabNombre.charAt(0).toUpperCase() + tabNombre.slice(1)}`);
+    if (tabContent) {
+      tabContent.classList.add('active');
+    }
   },
 
   async cambiarEstadoUsuario(id, activo) {

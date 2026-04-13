@@ -60,7 +60,7 @@ const resolveRoleValueForColumn = async (connection, columnName, roleId, roleTex
   return String(roleId);
 };
 
-const buildAdminRoleExpr = (columnName) => `(CAST(${columnName} AS CHAR) = '3' OR LOWER(CAST(${columnName} AS CHAR)) IN ('administrador', 'admin'))`;
+const buildAdminRoleExpr = (columnName) => `(TRIM(CAST(${columnName} AS CHAR)) = '3' OR TRIM(LOWER(CAST(${columnName} AS CHAR))) IN ('administrador', 'admin'))`;
 
 const ESTADOS_PERMITIDOS = new Set(['pendiente', 'aprobada', 'rechazada']);
 
