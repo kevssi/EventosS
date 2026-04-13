@@ -116,6 +116,11 @@ body {
   border-color: rgba(24, 203, 255, 0.45);
 }
 
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
 /* Formularios */
 .form-group {
   margin-bottom: 20px;
@@ -218,6 +223,11 @@ textarea {
   border-bottom: 1px solid var(--border);
   padding-bottom: 15px;
   margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .card-header h2 {

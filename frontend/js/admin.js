@@ -216,65 +216,10 @@ const AdminModule = {
         <div class="resumen-card danger"><h3>Cancelados</h3><div class="valor">${cancelados}</div></div>
       </div>
 
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-header">
-          <h2>Crear o editar evento</h2>
-        </div>
-        <form id="formGestionEvento" class="form-container" style="max-width: 900px; margin: 0;">
-          <input type="hidden" id="eventoIdEditar">
-          <div class="form-group">
-            <label for="eventoTitulo">Titulo</label>
-            <input type="text" id="eventoTitulo" required>
-          </div>
-          <div class="form-group">
-            <label for="eventoDescripcion">Descripcion</label>
-            <textarea id="eventoDescripcion" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="eventoFechaInicio">Fecha y hora de inicio</label>
-            <input type="datetime-local" id="eventoFechaInicio" required>
-          </div>
-          <div class="form-group">
-            <label for="eventoFechaFin">Fecha y hora de fin</label>
-            <input type="datetime-local" id="eventoFechaFin">
-          </div>
-          <div class="form-group">
-            <label for="eventoUbicacion">Sede / ubicacion</label>
-            <input type="text" id="eventoUbicacion" required>
-          </div>
-          <div class="form-group">
-            <label for="eventoCapacidad">Capacidad (control de zona/asientos)</label>
-            <input type="number" id="eventoCapacidad" min="1" required>
-          </div>
-          <div class="form-group">
-            <label for="eventoCategoria">Categoria de evento</label>
-            <select id="eventoCategoria">
-              <option value="">Sin categoria</option>
-              ${categoryOptions}
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="eventoImagen">Imagen URL</label>
-            <input type="url" id="eventoImagen">
-          </div>
-          <div class="form-group">
-            <label for="eventoEstado">Estado</label>
-            <select id="eventoEstado">
-              <option value="borrador">Borrador</option>
-              <option value="publicado">Publicado</option>
-              <option value="cancelado">Cancelado</option>
-            </select>
-          </div>
-          <div class="acciones" style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="submit" class="btn btn-primary">Guardar evento</button>
-            <button type="button" class="btn btn-outline" onclick="AdminModule.limpiarFormularioEvento()">Limpiar</button>
-          </div>
-        </form>
-      </div>
-
       <div class="card">
         <div class="card-header">
           <h2>Gestion de eventos</h2>
+          <button class="btn btn-primary btn-sm" onclick="AdminModule.mostrarModalEvento(null)">+ Nuevo evento</button>
         </div>
         <table>
           <thead>
@@ -299,8 +244,8 @@ const AdminModule = {
                 <td>${this.formatCurrency(evento.precio_desde)}</td>
                 <td>${Number(evento.boletos_disponibles || 0)}</td>
                 <td><span class="badge badge-${String(evento.estado || '').toLowerCase() === 'publicado' ? 'success' : String(evento.estado || '').toLowerCase() === 'cancelado' ? 'danger' : 'pending'}">${this.escapeHtml(evento.estado || 'borrador')}</span></td>
-                <td class="acciones">
-                  <button class="btn btn-accion btn-outline" onclick="AdminModule.editarEvento(${Number(evento.id)})">Editar</button>
+                <td class="td-acciones">
+                  <button class="btn btn-accion btn-outline" onclick="AdminModule.mostrarModalEvento(${Number(evento.id)})">Editar</button>
                   <button class="btn btn-accion btn-danger" onclick="AdminModule.cancelarEventoAdmin(${Number(evento.id)})">Eliminar</button>
                 </td>
               </tr>
@@ -311,56 +256,83 @@ const AdminModule = {
     `;
 
     window.NavbarModule?.renderLucideIcons?.(container);
-    this._bindFormGestionEvento();
   },
 
-  _bindFormGestionEvento() {
-    const form = document.querySelector('#formGestionEvento');
-    if (!form || form === this._boundFormGestionEvento) return;
-    this._boundFormGestionEvento = form;
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
+  mostrarModalEvento(eventoId) {
+    const evento = eventoId ? this.eventos.find((item) => Number(item.id) === Number(eventoId)) : null;
+    const categoryOptions = this.categoriasEvento.map((c) => (
+      `<option value="${c.id}" ${Number(evento?.id_categoria) === Number(c.id) ? 'selected' : ''}>${this.escapeHtml(c.nombre)}</option>`
+    )).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'modalEventoOverlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <h2>${evento ? 'Editar evento' : 'Nuevo evento'}</h2>
+        <form id="formGestionEvento">
+          <input type="hidden" id="eventoIdEditar" value="${evento ? evento.id : ''}">
+          <div class="form-group">
+            <label for="eventoTitulo">Titulo</label>
+            <input type="text" id="eventoTitulo" value="${this.escapeHtml(evento?.titulo || '')}" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoDescripcion">Descripcion</label>
+            <textarea id="eventoDescripcion" rows="3">${this.escapeHtml(evento?.descripcion || '')}</textarea>
+          </div>
+          <div class="form-group">
+            <label for="eventoFechaInicio">Fecha y hora de inicio</label>
+            <input type="datetime-local" id="eventoFechaInicio" value="${this.toDateInputValue(evento?.fecha_inicio)}" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoFechaFin">Fecha y hora de fin</label>
+            <input type="datetime-local" id="eventoFechaFin" value="${this.toDateInputValue(evento?.fecha_fin)}">
+          </div>
+          <div class="form-group">
+            <label for="eventoUbicacion">Sede / ubicacion</label>
+            <input type="text" id="eventoUbicacion" value="${this.escapeHtml(evento?.ubicacion || '')}" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoCapacidad">Capacidad</label>
+            <input type="number" id="eventoCapacidad" min="1" value="${evento?.capacidad || ''}" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoCategoria">Categoria de evento</label>
+            <select id="eventoCategoria">
+              <option value="">Sin categoria</option>
+              ${categoryOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="eventoImagen">Imagen URL</label>
+            <input type="url" id="eventoImagen" value="${this.escapeHtml(evento?.imagen_url || '')}">
+          </div>
+          <div class="form-group">
+            <label for="eventoEstado">Estado</label>
+            <select id="eventoEstado">
+              <option value="borrador" ${(evento?.estado || 'borrador') === 'borrador' ? 'selected' : ''}>Borrador</option>
+              <option value="publicado" ${evento?.estado === 'publicado' ? 'selected' : ''}>Publicado</option>
+              <option value="cancelado" ${evento?.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Guardar evento</button>
+            <button type="button" class="btn btn-outline" onclick="AdminModule.cerrarModalEvento()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) this.cerrarModalEvento(); });
+    overlay.querySelector('#formGestionEvento').addEventListener('submit', async (e) => {
+      e.preventDefault();
       await this.guardarEventoDesdeFormulario();
     });
   },
 
-  limpiarFormularioEvento() {
-    const form = document.querySelector('#formGestionEvento');
-    if (form) form.reset();
-    const idInput = document.querySelector('#eventoIdEditar');
-    if (idInput) idInput.value = '';
-  },
-
-  editarEvento(eventoId) {
-    const evento = this.eventos.find((item) => Number(item.id) === Number(eventoId));
-    if (!evento) {
-      alert('No se encontro el evento.');
-      return;
-    }
-
-    const idInput = document.querySelector('#eventoIdEditar');
-    const fechaInicio = document.querySelector('#eventoFechaInicio');
-    const fechaFin = document.querySelector('#eventoFechaFin');
-
-    if (idInput) idInput.value = String(evento.id);
-    const titulo = document.querySelector('#eventoTitulo');
-    if (titulo) titulo.value = evento.titulo || '';
-    const descripcion = document.querySelector('#eventoDescripcion');
-    if (descripcion) descripcion.value = evento.descripcion || '';
-    if (fechaInicio) fechaInicio.value = this.toDateInputValue(evento.fecha_inicio);
-    if (fechaFin) fechaFin.value = this.toDateInputValue(evento.fecha_fin);
-    const ubicacion = document.querySelector('#eventoUbicacion');
-    if (ubicacion) ubicacion.value = evento.ubicacion || '';
-    const capacidad = document.querySelector('#eventoCapacidad');
-    if (capacidad) capacidad.value = evento.capacidad || 0;
-    const categoria = document.querySelector('#eventoCategoria');
-    if (categoria) categoria.value = evento.id_categoria || '';
-    const imagen = document.querySelector('#eventoImagen');
-    if (imagen) imagen.value = evento.imagen_url || '';
-    const estado = document.querySelector('#eventoEstado');
-    if (estado) estado.value = evento.estado || 'borrador';
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  cerrarModalEvento() {
+    document.getElementById('modalEventoOverlay')?.remove();
   },
 
   toDateInputValue(value) {
@@ -400,7 +372,7 @@ const AdminModule = {
         alert('Evento creado correctamente.');
       }
 
-      this.limpiarFormularioEvento();
+      this.cerrarModalEvento();
       await this.cargarEventosAdmin();
       await this.cargarReportesAdmin();
     } catch (error) {
@@ -477,33 +449,6 @@ const AdminModule = {
           <button class="btn btn-primary" onclick="AdminModule.cargarReporteEventoDesdeSelect()">Ver reporte evento</button>
           <button class="btn btn-outline" onclick="AdminModule.cargarReportesAdmin()">Actualizar panel</button>
         </div>
-      </div>
-
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-header">
-          <h2>Eventos mas populares (por ventas)</h2>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Evento</th>
-              <th>Boletos vendidos</th>
-              <th>Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(this.topEventosVentas || []).length === 0
-              ? '<tr><td colspan="3" style="text-align:center; color: var(--text-light);">Sin datos de ventas por el momento.</td></tr>'
-              : this.topEventosVentas.map((evento) => `
-                <tr>
-                  <td>${this.escapeHtml(evento.titulo)}</td>
-                  <td>${Number(evento.boletos_vendidos || 0)}</td>
-                  <td>${this.formatCurrency(evento.ingresos)}</td>
-                </tr>
-              `).join('')
-            }
-          </tbody>
-        </table>
       </div>
 
       <div class="card">
@@ -882,8 +827,6 @@ const AdminModule = {
   },
 
   bindForms() {
-    this._bindFormGestionEvento();
-
     const formCrearAdmin = document.querySelector('#formCrearAdmin');
     if (formCrearAdmin && formCrearAdmin !== this._boundFormCrearAdmin) {
       this._boundFormCrearAdmin = formCrearAdmin;
