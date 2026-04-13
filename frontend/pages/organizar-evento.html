@@ -71,17 +71,6 @@
         </div>
 
         <div>
-          <label for="eventoCategoria">Categoria en plataforma</label>
-          <select id="eventoCategoria">
-            <option value="">Sin categoria</option>
-          </select>
-        </div>
-        <div>
-          <label for="eventoImagen">Imagen (URL opcional)</label>
-          <input type="url" id="eventoImagen" placeholder="https://...">
-        </div>
-
-        <div>
           <label for="eventoFecha">Fecha</label>
           <input type="date" id="eventoFecha" required>
         </div>
@@ -216,7 +205,6 @@
   <script>
     const form = document.getElementById('organizadorForm');
     const statusBox = document.getElementById('statusMensaje');
-    const categoriaSelect = document.getElementById('eventoCategoria');
 
     const showStatus = (type, message) => {
       statusBox.className = `status ${type}`;
@@ -237,22 +225,6 @@
       return { nombre, cupo, precio };
     };
 
-    const cargarCategorias = async () => {
-      try {
-        const response = await api.listarCategorias();
-        const categorias = response?.categorias || [];
-
-        categorias.forEach((cat) => {
-          const option = document.createElement('option');
-          option.value = cat.id;
-          option.textContent = cat.nombre;
-          categoriaSelect.appendChild(option);
-        });
-      } catch (error) {
-        console.warn('No se pudieron cargar categorias:', error.message);
-      }
-    };
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       showStatus('', '');
@@ -265,8 +237,6 @@
       const ubicacion = document.getElementById('eventoLugar').value.trim();
       const capacidad = Number(document.getElementById('eventoCapacidad').value || 0);
       const descripcionBase = document.getElementById('eventoDescripcion').value.trim();
-      const idCategoria = document.getElementById('eventoCategoria').value;
-      const imagenUrl = document.getElementById('eventoImagen').value.trim();
 
       const permisoFolio = document.getElementById('permisoFolio').value.trim();
       const permisoAutoridad = document.getElementById('permisoAutoridad').value.trim();
@@ -328,9 +298,7 @@
         fecha_inicio: fechaInicioISO,
         fecha_fin: fechaFinISO,
         ubicacion,
-        capacidad,
-        id_categoria: idCategoria ? Number(idCategoria) : null,
-        imagen_url: imagenUrl || null
+        capacidad
       };
 
       try {
@@ -346,8 +314,6 @@
         showStatus('error', error.message || 'Ocurrio un error al enviar el evento.');
       }
     });
-
-    cargarCategorias();
   </script>
 </body>
 </html>
