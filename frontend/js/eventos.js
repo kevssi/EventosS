@@ -4,6 +4,7 @@ const EventosModule = {
   categorias: [],
   filtroActual: null,
   busquedaActual: '',
+  tipoActual: '',
   cacheImagenesArtista: new Map(),
   refreshTimer: null,
   currentLoadId: 0,
@@ -11,6 +12,15 @@ const EventosModule = {
   async init() {
     this.inicializarDesdeURL();
     await this.cargarCategorias();
+
+    if (!this.filtroActual && this.busquedaActual && !this.tipoActual) {
+      const categoriaDetectada = this.resolverCategoriaDesdeBusqueda(this.busquedaActual);
+      if (categoriaDetectada?.id) {
+        this.filtroActual = String(categoriaDetectada.id);
+        this.busquedaActual = '';
+      }
+    }
+
     await this.cargarEventos();
     this.setupEventListeners();
     this.iniciarAutoRefresh();
@@ -27,7 +37,7 @@ const EventosModule = {
         return;
       }
 
-      this.cargarEventos(this.filtroActual || null, this.busquedaActual || '');
+      this.cargarEventos(this.filtroActual || null, this.busquedaActual || '', this.tipoActual || '');
     }, 10000);
   },
 
@@ -35,6 +45,7 @@ const EventosModule = {
     const params = new URLSearchParams(window.location.search);
     this.filtroActual = params.get('id_categoria') || '';
     this.busquedaActual = params.get('q') || '';
+    this.tipoActual = params.get('tipo') || '';
   },
 
   normalizarTexto(value) {
@@ -114,11 +125,11 @@ const EventosModule = {
     });
   },
 
-  async cargarEventos(id_categoria = this.filtroActual || null, q = this.busquedaActual || '') {
+  async cargarEventos(id_categoria = this.filtroActual || null, q = this.busquedaActual || '', tipo = this.tipoActual || '') {
     const loadId = ++this.currentLoadId;
 
     try {
-      const response = await api.listarEventos({ id_categoria, q });
+      const response = await api.listarEventos({ id_categoria, q, tipo });
       let eventosAPI = response.eventos || [];
 
       if (id_categoria) {
@@ -383,6 +394,7 @@ const EventosModule = {
 
     this.filtroActual = categoriaFinal;
     this.busquedaActual = busquedaFinal;
+    this.tipoActual = '';
 
     const params = new URLSearchParams();
     if (categoriaFinal) params.set('id_categoria', categoriaFinal);
@@ -400,7 +412,7 @@ const EventosModule = {
       selectCategoria.value = categoriaFinal;
     }
 
-    await this.cargarEventos(categoriaFinal || null, busquedaFinal);
+    await this.cargarEventos(categoriaFinal || null, busquedaFinal, '');
   },
 
   mostrarError(mensaje) {
