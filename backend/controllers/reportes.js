@@ -343,9 +343,13 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   }
 
   if (!detailsTable) {
+    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
+    if (boletoRows.length) return boletoRows;
+
     const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
     if (orderRows.length) return orderRows;
-    return obtenerVentasDesdeBoletos(connection, eventId);
+
+    return [];
   }
 
   const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
@@ -360,9 +364,13 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const detailSubtotalCol = await findExistingColumn(connection, detailsTable, ['subtotal', 'total', 'importe', 'monto_total']);
 
   if (!orderIdCol || !detailOrderIdCol) {
+    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
+    if (boletoRows.length) return boletoRows;
+
     const orderRows = await obtenerVentasDesdeOrdenes(connection, eventId);
     if (orderRows.length) return orderRows;
-    return obtenerVentasDesdeBoletos(connection, eventId);
+
+    return [];
   }
 
   let ticketJoin = '';
