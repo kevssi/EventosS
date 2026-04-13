@@ -546,6 +546,11 @@ const AdminModule = {
     const container = document.querySelector('#tabUsuarios');
     if (!container) return;
 
+    const toActivo = (value) => {
+      const normalized = String(value ?? '').trim().toLowerCase();
+      return normalized === '1' || normalized === 'true' || normalized === 'activo';
+    };
+
     container.innerHTML = `
       <div class="card">
         <div class="card-header">
@@ -563,25 +568,29 @@ const AdminModule = {
             </tr>
           </thead>
           <tbody>
-            ${this.usuarios.map(usuario => `
+            ${this.usuarios.map(usuario => {
+              const isActivo = toActivo(usuario.activo);
+
+              return `
               <tr>
                 <td>${usuario.nombre}</td>
                 <td>${usuario.email}</td>
                 <td>${usuario.rol}</td>
                 <td>${usuario.compras_realizadas}</td>
                 <td>
-                  <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
-                    ${usuario.activo ? 'Activo' : 'Inactivo'}
+                  <span class="badge ${isActivo ? 'badge-success' : 'badge-danger'}">
+                    ${isActivo ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
                 <td class="acciones">
-                  <button class="btn btn-accion btn-${usuario.activo ? 'danger' : 'success'}" 
-                          onclick="AdminModule.cambiarEstadoUsuario(${usuario.id}, ${!usuario.activo})">
-                    ${usuario.activo ? 'Desactivar' : 'Activar'}
+                  <button class="btn btn-accion btn-${isActivo ? 'danger' : 'success'}" 
+                          onclick="AdminModule.cambiarEstadoUsuario(${usuario.id}, ${isActivo ? 0 : 1})">
+                    ${isActivo ? 'Desactivar' : 'Activar'}
                   </button>
                 </td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
           </tbody>
         </table>
       </div>

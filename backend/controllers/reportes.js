@@ -105,9 +105,19 @@ exports.desactivarUsuario = async (req, res) => {
 
     await connection.release();
 
+    const row = resultado?.[0]?.[0] || {};
+    const estadoResultado = String(row.resultado || '').toLowerCase();
+
+    if (estadoResultado === 'error') {
+      return res.status(400).json({
+        success: false,
+        error: row.mensaje || 'No se pudo actualizar el estado del usuario'
+      });
+    }
+
     res.json({
       success: true,
-      message: resultado[0][0].mensaje
+      message: row.mensaje || 'Estado de usuario actualizado'
     });
   } catch (error) {
     console.error('Error en desactivarUsuario:', error);
