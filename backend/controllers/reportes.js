@@ -593,7 +593,7 @@ const construirReporteGeneralManual = async (connection) => {
   const usuariosTable = await findExistingTable(connection, ['usuarios']);
   const eventosTable = await findExistingTable(connection, ['eventos', 'evento']);
   const ventasRowsSold = await obtenerVentasDetalladas(connection, null, { paidOnly: false });
-  const ventasRowsPaid = await obtenerVentasDetalladas(connection, null, { paidOnly: true });
+  const ventasRowsPaid = ventasRowsSold;
 
   let totalUsuarios = 0;
   if (usuariosTable) {
@@ -762,8 +762,7 @@ exports.reporteVentasEvento = async (req, res) => {
       }
 
       const manualRowsSold = await obtenerVentasDetalladas(connection, eventId, { paidOnly: false });
-      const manualRowsPaid = await obtenerVentasDetalladas(connection, eventId, { paidOnly: true });
-      const manualReport = construirReporteEventoManual(manualRowsSold, manualRowsPaid, eventId);
+      const manualReport = construirReporteEventoManual(manualRowsSold, manualRowsSold, eventId);
 
       const spVendidos = Number(bestResult?.resumen?.boletos_vendidos || bestResult?.resumen?.vendidos || 0);
       const spIngresos = Number(bestResult?.resumen?.ingresos_totales || bestResult?.resumen?.ingresos || 0);
