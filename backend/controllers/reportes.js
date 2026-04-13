@@ -172,6 +172,182 @@ const obtenerHistorialComprasDetallado = async (connection, userId) => {
   return rows || [];
 };
 
+const PAID_STATUSES = ['pagado', 'paid', 'approved', 'accredited', 'authorized', 'success', 'completed'];
+
+const obtenerVentasDetalladas = async (connection, eventId = null) => {
+  const ordersTable = await findExistingTable(connection, ['ordenes']);
+  const detailsTable = await findExistingTable(connection, ['detalle_orden', 'detalles_orden', 'orden_detalle', 'ordenes_detalle']);
+  const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
+  const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
+
+  if (!ordersTable || !detailsTable) {
+    return [];
+  }
+
+  const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
+  const orderStatusCol = await findExistingColumn(connection, ordersTable, ['estado_pago', 'estado', 'status']);
+
+  const detailOrderIdCol = await findExistingColumn(connection, detailsTable, ['id_orden', 'orden_id']);
+  const detailTicketTypeCol = await findExistingColumn(connection, detailsTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const detailQtyCol = await findExistingColumn(connection, detailsTable, ['cantidad', 'cantidad_boletos', 'boletos', 'qty']);
+  const detailPriceCol = await findExistingColumn(connection, detailsTable, ['precio_unitario', 'precio', 'costo_unitario']);
+  const detailSubtotalCol = await findExistingColumn(connection, detailsTable, ['subtotal', 'total', 'importe', 'monto_total']);
+
+  if (!orderIdCol || !detailOrderIdCol) {
+    return [];
+  }
+
+  let ticketJoin = '';
+  let eventJoin = '';
+  let eventIdExpr = 'NULL';
+  let eventTitleExpr = "'-'";
+  let ticketTypeExpr = "'-'";
+
+  if (ticketTypesTable && detailTicketTypeCol) {
+    const ticketTypeIdCol = await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']);
+    const ticketTypeNameCol = await findExistingColumn(connection, ticketTypesTable, ['nombre', 'tipo_boleto', 'descripcion', 'titulo']);
+    const ticketEventIdCol = await findExistingColumn(connection, ticketTypesTable, ['id_evento', 'evento_id']);
+
+    if (ticketTypeIdCol) {
+      ticketJoin = `\n      LEFT JOIN ${escapeIdentifier(ticketTypesTable)} tb ON tb.${escapeIdentifier(ticketTypeIdCol)} = d.${escapeIdentifier(detailTicketTypeCol)}`;
+      if (ticketTypeNameCol) {
+        ticketTypeExpr = `COALESCE(tb.${escapeIdentifier(ticketTypeNameCol)}, '-')`;
+      }
+
+      if (eventsTable && ticketEventIdCol) {
+        const eventIdCol = await findExistingColumn(connection, eventsTable, ['id', 'id_evento']);
+        const eventTitleCol = await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']);
+
+        if (eventIdCol) {
+          eventIdExpr = `e.${escapeIdentifier(eventIdCol)}`;
+          eventJoin = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = tb.${escapeIdentifier(ticketEventIdCol)}`;
+          if (eventTitleCol) {
+            eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+          }
+        }
+      }
+    }
+  }
+
+  if (eventId !== null && eventIdExpr === 'NULL') {
+    return [];
+  }
+
+  const qtyExpr = detailQtyCol
+    ? `COALESCE(d.${escapeIdentifier(detailQtyCol)}, 0)`
+    : '0';
+  const subtotalExpr = detailSubtotalCol
+    ? `COALESCE(d.${escapeIdentifier(detailSubtotalCol)}, 0)`
+    : detailPriceCol
+      ? `COALESCE(d.${escapeIdentifier(detailPriceCol)}, 0) * ${qtyExpr}`
+      : '0';
+
+  const where = [];
+  const params = [];
+
+  if (orderStatusCol) {
+    where.push(`LOWER(COALESCE(o.${escapeIdentifier(orderStatusCol)}, '')) IN (${PAID_STATUSES.map(() => '?').join(', ')})`);
+    params.push(...PAID_STATUSES);
+  }
+
+  if (eventId !== null) {
+    where.push(`${eventIdExpr} = ?`);
+    params.push(eventId);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const query = `
+    SELECT
+      ${eventIdExpr} AS id_evento,
+      ${eventTitleExpr} AS evento,
+      ${ticketTypeExpr} AS tipo_boleto,
+      ${qtyExpr} AS cantidad,
+      ${subtotalExpr} AS subtotal
+    FROM ${escapeIdentifier(ordersTable)} o
+    LEFT JOIN ${escapeIdentifier(detailsTable)} d ON d.${escapeIdentifier(detailOrderIdCol)} = o.${escapeIdentifier(orderIdCol)}${ticketJoin}${eventJoin}
+    ${whereClause}
+  `;
+
+  const [rows] = await connection.query(query, params);
+  return rows || [];
+};
+
+const construirReporteEventoManual = (rows = [], eventId) => {
+  const filtered = rows.filter((row) => Number(row?.id_evento || 0) === Number(eventId));
+  const totalVendidos = filtered.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
+  const totalIngresos = filtered.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
+
+  const byTipo = new Map();
+  for (const row of filtered) {
+    const tipo = String(row?.tipo_boleto || '-');
+    const prev = byTipo.get(tipo) || { tipo_boleto: tipo, vendidos: 0, ingresos: 0 };
+    prev.vendidos += Number(row?.cantidad || 0);
+    prev.ingresos += Number(row?.subtotal || 0);
+    byTipo.set(tipo, prev);
+  }
+
+  return {
+    resumen: {
+      boletos_vendidos: totalVendidos,
+      ingresos_totales: totalIngresos,
+      total_ordenes: 0,
+      titulo: filtered[0]?.evento || '-'
+    },
+    desglose: Array.from(byTipo.values())
+  };
+};
+
+const construirReporteGeneralManual = async (connection) => {
+  const usuariosTable = await findExistingTable(connection, ['usuarios']);
+  const eventosTable = await findExistingTable(connection, ['eventos', 'evento']);
+  const ventasRows = await obtenerVentasDetalladas(connection);
+
+  let totalUsuarios = 0;
+  if (usuariosTable) {
+    const activoCol = await findExistingColumn(connection, usuariosTable, ['activo']);
+    const [rows] = await connection.query(
+      `SELECT COUNT(*) AS total FROM ${escapeIdentifier(usuariosTable)} ${activoCol ? `WHERE COALESCE(${escapeIdentifier(activoCol)}, 0) IN (1, true)` : ''}`
+    );
+    totalUsuarios = Number(rows?.[0]?.total || 0);
+  }
+
+  let eventosActivos = 0;
+  if (eventosTable) {
+    const estadoCol = await findExistingColumn(connection, eventosTable, ['estado']);
+    const [rows] = await connection.query(
+      `SELECT COUNT(*) AS total FROM ${escapeIdentifier(eventosTable)} ${estadoCol ? `WHERE LOWER(COALESCE(${escapeIdentifier(estadoCol)}, '')) IN ('publicado', 'activo')` : ''}`
+    );
+    eventosActivos = Number(rows?.[0]?.total || 0);
+  }
+
+  const boletosVendidos = ventasRows.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
+  const ingresosTotales = ventasRows.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
+
+  const topMap = new Map();
+  for (const row of ventasRows) {
+    const key = String(row?.evento || '-');
+    const prev = topMap.get(key) || { titulo: key, boletos_vendidos: 0, ingresos: 0 };
+    prev.boletos_vendidos += Number(row?.cantidad || 0);
+    prev.ingresos += Number(row?.subtotal || 0);
+    topMap.set(key, prev);
+  }
+
+  const topEventos = Array.from(topMap.values())
+    .sort((a, b) => Number(b.ingresos) - Number(a.ingresos))
+    .slice(0, 5);
+
+  return {
+    resumen: {
+      total_usuarios: totalUsuarios,
+      eventos_activos: eventosActivos,
+      boletos_vendidos: boletosVendidos,
+      ingresos_totales: ingresosTotales
+    },
+    top_eventos: topEventos
+  };
+};
+
 const cascadeDeleteFromParent = async ({
   connection,
   tableName,
@@ -284,10 +460,19 @@ exports.reporteVentasEvento = async (req, res) => {
       }
 
       if (!bestResult) {
-        return res.status(403).json({
-          success: false,
-          message: lastErrorMessage || 'No se pudo obtener el reporte del evento'
-        });
+        bestResult = { resumen: { boletos_vendidos: 0, ingresos_totales: 0, total_ordenes: 0, titulo: '-' }, desglose: [] };
+      }
+
+      const manualRows = await obtenerVentasDetalladas(connection, eventId);
+      const manualReport = construirReporteEventoManual(manualRows, eventId);
+
+      const spVendidos = Number(bestResult?.resumen?.boletos_vendidos || bestResult?.resumen?.vendidos || 0);
+      const spIngresos = Number(bestResult?.resumen?.ingresos_totales || bestResult?.resumen?.ingresos || 0);
+      const manualVendidos = Number(manualReport?.resumen?.boletos_vendidos || 0);
+      const manualIngresos = Number(manualReport?.resumen?.ingresos_totales || 0);
+
+      if ((spVendidos <= 0 && spIngresos <= 0) && (manualVendidos > 0 || manualIngresos > 0)) {
+        bestResult = manualReport;
       }
 
       return res.json({
@@ -308,25 +493,52 @@ exports.reporteVentasEvento = async (req, res) => {
 exports.reporteGeneralAdmin = async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [resultado] = await connection.query(
-      'CALL sp_reporte_general_admin(?)',
-      [req.user.id]
-    );
+    try {
+      let resumen = null;
+      let topEventos = [];
 
-    await connection.release();
+      try {
+        const [resultado] = await connection.query('CALL sp_reporte_general_admin(?)', [req.user.id]);
+        const row = resultado?.[0]?.[0] || null;
 
-    if (resultado[0][0].resultado === 'error') {
-      return res.status(403).json({
-        success: false,
-        message: resultado[0][0].mensaje
+        if (row && String(row.resultado || '').toLowerCase() !== 'error') {
+          resumen = row;
+          topEventos = resultado?.[1] || [];
+        }
+      } catch (spError) {
+        resumen = null;
+        topEventos = [];
+      }
+
+      const manual = await construirReporteGeneralManual(connection);
+
+      if (!resumen) {
+        resumen = manual.resumen;
+      } else {
+        const merged = { ...resumen };
+        const keys = ['total_usuarios', 'eventos_activos', 'boletos_vendidos', 'ingresos_totales'];
+        for (const key of keys) {
+          const current = Number(merged[key] || 0);
+          const fallback = Number(manual.resumen?.[key] || 0);
+          if ((Number.isNaN(current) || current <= 0) && fallback > 0) {
+            merged[key] = fallback;
+          }
+        }
+        resumen = merged;
+      }
+
+      if (!Array.isArray(topEventos) || topEventos.length === 0) {
+        topEventos = manual.top_eventos || [];
+      }
+
+      return res.json({
+        success: true,
+        resumen,
+        top_eventos: topEventos
       });
+    } finally {
+      await connection.release();
     }
-
-    res.json({
-      success: true,
-      resumen: resultado[0][0],
-      top_eventos: resultado[1]
-    });
   } catch (error) {
     console.error('Error en reporteGeneralAdmin:', error);
     res.status(500).json({ error: 'Error al obtener reporte' });

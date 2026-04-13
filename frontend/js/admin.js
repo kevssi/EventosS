@@ -92,26 +92,30 @@ const AdminModule = {
     const container = document.querySelector('#tabDashboard');
     if (!container) return;
 
-    const resumen = response.resumen;
-    const topEventos = response.top_eventos;
+    const resumen = response.resumen || {};
+    const topEventos = response.top_eventos || [];
+    const totalUsuarios = Number(resumen.total_usuarios || resumen.usuarios_activos || 0);
+    const eventosActivos = Number(resumen.eventos_activos || resumen.eventos_publicados || 0);
+    const boletosVendidos = Number(resumen.boletos_vendidos || resumen.vendidos || 0);
+    const ingresosTotales = Number(resumen.ingresos_totales || resumen.ingresos || 0);
 
     container.innerHTML = `
       <div class="resumen-cards">
         <div class="resumen-card success">
           <h3>Usuarios Activos</h3>
-          <div class="valor">${resumen.total_usuarios}</div>
+          <div class="valor">${totalUsuarios}</div>
         </div>
         <div class="resumen-card">
           <h3>Eventos Publicados</h3>
-          <div class="valor">${resumen.eventos_activos}</div>
+          <div class="valor">${eventosActivos}</div>
         </div>
         <div class="resumen-card warning">
           <h3>Boletos Vendidos</h3>
-          <div class="valor">${resumen.boletos_vendidos}</div>
+          <div class="valor">${boletosVendidos}</div>
         </div>
         <div class="resumen-card danger">
           <h3>Ingresos Totales</h3>
-          <div class="valor">$${parseFloat(resumen.ingresos_totales).toFixed(2)}</div>
+          <div class="valor">$${ingresosTotales.toFixed(2)}</div>
         </div>
       </div>
 
