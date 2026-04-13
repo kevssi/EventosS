@@ -117,10 +117,19 @@
             mostrarMensajePagoPruebaSiAplica() {
                 const params = new URLSearchParams(window.location.search);
                 const pago = (params.get('pago') || '').toLowerCase();
+                const status = (params.get('status') || '').toLowerCase();
+                const collectionStatus = (params.get('collection_status') || '').toLowerCase();
+                const paymentId = params.get('payment_id') || params.get('collection_id');
+                const checkoutFlag = sessionStorage.getItem('mp_demo_checkout_started') === '1';
                 const box = document.getElementById('mensajePagoPrueba');
                 if (!box) return;
 
-                if (pago === 'success') {
+                const retornoExitoso = pago === 'success'
+                    || status === 'approved'
+                    || collectionStatus === 'approved'
+                    || (checkoutFlag && (pago === 'success' || Boolean(paymentId)));
+
+                if (retornoExitoso) {
                     box.style.display = 'block';
                     box.innerHTML = `
                         <div class="alert alert-info" style="font-size: 15px;">
@@ -132,6 +141,7 @@
                     `;
 
                     window.NavbarModule?.renderLucideIcons?.(box);
+                    sessionStorage.removeItem('mp_demo_checkout_started');
 
                     // Limpiamos el parametro para evitar mostrar el mensaje en cada recarga.
                     const cleanUrl = `${window.location.pathname}`;
