@@ -1,25 +1,15 @@
-const cloudinary = require('cloudinary').v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
 exports.subirImagen = async (req, res) => {
   try {
-    if (!req.file || !req.file.path) {
+    if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se ha subido archivo' });
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'eventos'
-    });
+    const imagen_url = `/publi/uploads/${req.file.filename}`;
 
     return res.status(201).json({
       success: true,
-      imagen_url: result.secure_url,
-      public_id: result.public_id
+      imagen_url,
+      public_id: req.file.filename
     });
   } catch (error) {
     console.error('Error subirImagen:', error);
