@@ -2,6 +2,106 @@ const pool = require('../config/database');
 
 const escapeIdentifier = (identifier) => `\`${String(identifier || '').replace(/`/g, '``')}\``;
 
+const buildRelationsByParent = (relations = []) => {
+  const map = new Map();
+
+  for (const relation of relations) {
+    const parentTable = String(relation.parentTable || '');
+    const parentColumn = String(relation.parentColumn || '');
+    if (!parentTable || !parentColumn) continue;
+
+    const key = `${parentTable}.${parentColumn}`;
+    const list = map.get(key) || [];
+    list.push(relation);
+    map.set(key, list);
+  }
+
+  return map;
+};
+
+const buildSinglePrimaryKeyMap = (pkRows = []) => {
+  const grouped = new Map();
+
+  for (const row of pkRows) {
+    const table = String(row.tableName || '');
+    const column = String(row.columnName || '');
+    if (!table || !column) continue;
+
+    const cols = grouped.get(table) || [];
+    cols.push(column);
+    grouped.set(table, cols);
+  }
+
+  const singlePkMap = new Map();
+  for (const [table, cols] of grouped.entries()) {
+    if (cols.length === 1) {
+      singlePkMap.set(table, cols[0]);
+    }
+  }
+
+  return singlePkMap;
+};
+
+const cascadeDeleteFromParent = async ({
+  connection,
+  tableName,
+  keyColumn,
+  keyValue,
+  relationsByParent,
+  primaryKeyByTable,
+  visited
+}) => {
+  const visitKey = `${tableName}.${keyColumn}.${keyValue}`;
+  if (visited.has(visitKey)) {
+    return;
+  }
+  visited.add(visitKey);
+
+  const childRelations = relationsByParent.get(`${tableName}.${keyColumn}`) || [];
+
+  for (const relation of childRelations) {
+    const childTable = String(relation.childTable || '');
+    const childColumn = String(relation.childColumn || '');
+    if (!childTable || !childColumn) continue;
+
+    const childPkColumn = primaryKeyByTable.get(childTable);
+
+    if (childPkColumn) {
+      const [childRows] = await connection.query(
+        `SELECT ${escapeIdentifier(childPkColumn)} AS pk
+         FROM ${escapeIdentifier(childTable)}
+         WHERE ${escapeIdentifier(childColumn)} = ?`,
+        [keyValue]
+      );
+
+      for (const childRow of childRows) {
+        await cascadeDeleteFromParent({
+          connection,
+          tableName: childTable,
+          keyColumn: childPkColumn,
+          keyValue: childRow.pk,
+          relationsByParent,
+          primaryKeyByTable,
+          visited
+        });
+      }
+    }
+
+    await connection.query(
+      `DELETE FROM ${escapeIdentifier(childTable)}
+       WHERE ${escapeIdentifier(childColumn)} = ?`,
+      [keyValue]
+    );
+  }
+
+  await connection.query(
+    `DELETE FROM ${escapeIdentifier(tableName)}
+     WHERE ${escapeIdentifier(keyColumn)} = ?
+     LIMIT 1`,
+    [keyValue]
+  );
+};
+
 // Reporte de ventas de un evento
 exports.reporteVentasEvento = async (req, res) => {
   const { id_evento } = req.params;
@@ -164,30 +264,44 @@ exports.eliminarUsuario = async (req, res) => {
     }
 
     const [fkRows] = await connection.query(
-      `SELECT TABLE_NAME, COLUMN_NAME
+      `SELECT
+         TABLE_NAME AS childTable,
+         COLUMN_NAME AS childColumn,
+         REFERENCED_TABLE_NAME AS parentTable,
+         REFERENCED_COLUMN_NAME AS parentColumn
        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
        WHERE TABLE_SCHEMA = DATABASE()
-         AND REFERENCED_TABLE_NAME = 'usuarios'
-         AND REFERENCED_COLUMN_NAME = 'id'
+         AND REFERENCED_TABLE_NAME IS NOT NULL
        ORDER BY TABLE_NAME, COLUMN_NAME`
     );
 
-    for (const fk of fkRows) {
-      const tableName = String(fk.TABLE_NAME || '');
-      const columnName = String(fk.COLUMN_NAME || '');
-      if (!tableName || !columnName || tableName === 'usuarios') {
-        continue;
-      }
+    const [pkRows] = await connection.query(
+      `SELECT
+         TABLE_NAME AS tableName,
+         COLUMN_NAME AS columnName
+       FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND CONSTRAINT_NAME = 'PRIMARY'
+       ORDER BY TABLE_NAME, ORDINAL_POSITION`
+    );
 
-      const deleteChildSql = `DELETE FROM ${escapeIdentifier(tableName)} WHERE ${escapeIdentifier(columnName)} = ?`;
-      await connection.query(deleteChildSql, [userId]);
-    }
+    const relationsByParent = buildRelationsByParent(fkRows || []);
+    const primaryKeyByTable = buildSinglePrimaryKeyMap(pkRows || []);
 
-    const [deleteResult] = await connection.query('DELETE FROM usuarios WHERE id = ? LIMIT 1', [userId]);
+    await cascadeDeleteFromParent({
+      connection,
+      tableName: 'usuarios',
+      keyColumn: 'id',
+      keyValue: userId,
+      relationsByParent,
+      primaryKeyByTable,
+      visited: new Set()
+    });
 
-    if (!deleteResult?.affectedRows) {
+    const [existsAfterDelete] = await connection.query('SELECT id FROM usuarios WHERE id = ? LIMIT 1', [userId]);
+    if (existsAfterDelete.length > 0) {
       await connection.rollback();
-      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+      return res.status(500).json({ success: false, error: 'No se pudo eliminar completamente el usuario' });
     }
 
     await connection.commit();
@@ -205,13 +319,6 @@ exports.eliminarUsuario = async (req, res) => {
       } catch (rollbackError) {
         console.error('Error haciendo rollback al eliminar usuario:', rollbackError);
       }
-    }
-
-    if (error?.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res.status(409).json({
-        success: false,
-        error: 'No se puede eliminar: el usuario tiene registros relacionados. Puedes desactivarlo en su lugar.'
-      });
     }
 
     return res.status(500).json({ success: false, error: 'Error al eliminar usuario' });
