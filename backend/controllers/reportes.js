@@ -56,7 +56,8 @@ const findExistingTable = async (connection, candidates = []) => {
     );
 
     if (rows.length) {
-      return tableName;
+      const firstRow = rows[0] || {};
+      return firstRow.table_name || firstRow.TABLE_NAME || tableName;
     }
   }
 
@@ -80,7 +81,8 @@ const findExistingColumn = async (connection, tableName, candidates = []) => {
     );
 
     if (rows.length) {
-      return columnName;
+      const firstRow = rows[0] || {};
+      return firstRow.column_name || firstRow.COLUMN_NAME || columnName;
     }
   }
 
