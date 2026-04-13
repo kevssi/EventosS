@@ -172,7 +172,101 @@ const obtenerHistorialComprasDetallado = async (connection, userId) => {
   return rows || [];
 };
 
-const PAID_STATUSES = ['pagado', 'paid', 'approved', 'accredited', 'authorized', 'success', 'completed'];
+const PAID_STATUSES = [
+  'pagado',
+  'paid',
+  'approved',
+  'accredited',
+  'authorized',
+  'success',
+  'completed',
+  'pendiente',
+  'pending',
+  'in_process'
+];
+
+const obtenerVentasDesdeBoletos = async (connection, eventId = null) => {
+  const boletosTable = await findExistingTable(connection, ['boletos', 'boleto']);
+  const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
+  const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
+
+  if (!boletosTable) {
+    return [];
+  }
+
+  const boletoEventCol = await findExistingColumn(connection, boletosTable, ['id_evento', 'evento_id']);
+  const boletoTipoCol = await findExistingColumn(connection, boletosTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const boletoQtyCol = await findExistingColumn(connection, boletosTable, ['cantidad', 'qty']);
+  const boletoPriceCol = await findExistingColumn(connection, boletosTable, ['precio_pagado', 'precio', 'monto', 'total']);
+
+  if (!boletoEventCol && !boletoTipoCol) {
+    return [];
+  }
+
+  let eventIdExpr = boletoEventCol ? `b.${escapeIdentifier(boletoEventCol)}` : 'NULL';
+  let eventTitleExpr = "'-'";
+  let ticketTypeExpr = "'-'";
+  let joins = '';
+
+  if (ticketTypesTable && boletoTipoCol) {
+    const ticketTypeIdCol = await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']);
+    const ticketTypeNameCol = await findExistingColumn(connection, ticketTypesTable, ['nombre', 'tipo_boleto', 'descripcion', 'titulo']);
+    const ticketEventIdCol = await findExistingColumn(connection, ticketTypesTable, ['id_evento', 'evento_id']);
+
+    if (ticketTypeIdCol) {
+      joins += `\n      LEFT JOIN ${escapeIdentifier(ticketTypesTable)} tb ON tb.${escapeIdentifier(ticketTypeIdCol)} = b.${escapeIdentifier(boletoTipoCol)}`;
+      if (ticketTypeNameCol) {
+        ticketTypeExpr = `COALESCE(tb.${escapeIdentifier(ticketTypeNameCol)}, '-')`;
+      }
+      if (!boletoEventCol && ticketEventIdCol) {
+        eventIdExpr = `tb.${escapeIdentifier(ticketEventIdCol)}`;
+      }
+    }
+  }
+
+  if (eventsTable) {
+    const eventIdCol = await findExistingColumn(connection, eventsTable, ['id', 'id_evento']);
+    const eventTitleCol = await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']);
+
+    if (eventIdCol) {
+      joins += `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = ${eventIdExpr}`;
+      if (eventTitleCol) {
+        eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+      }
+    }
+  }
+
+  if (eventId !== null && eventIdExpr === 'NULL') {
+    return [];
+  }
+
+  const qtyExpr = boletoQtyCol ? `COALESCE(b.${escapeIdentifier(boletoQtyCol)}, 1)` : '1';
+  const subtotalExpr = boletoPriceCol ? `COALESCE(b.${escapeIdentifier(boletoPriceCol)}, 0) * ${qtyExpr}` : '0';
+
+  const where = [];
+  const params = [];
+
+  if (eventId !== null) {
+    where.push(`${eventIdExpr} = ?`);
+    params.push(eventId);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const query = `
+    SELECT
+      ${eventIdExpr} AS id_evento,
+      ${eventTitleExpr} AS evento,
+      ${ticketTypeExpr} AS tipo_boleto,
+      ${qtyExpr} AS cantidad,
+      ${subtotalExpr} AS subtotal
+    FROM ${escapeIdentifier(boletosTable)} b${joins}
+    ${whereClause}
+  `;
+
+  const [rows] = await connection.query(query, params);
+  return rows || [];
+};
 
 const obtenerVentasDetalladas = async (connection, eventId = null) => {
   const ordersTable = await findExistingTable(connection, ['ordenes']);
@@ -189,6 +283,7 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
 
   const detailOrderIdCol = await findExistingColumn(connection, detailsTable, ['id_orden', 'orden_id']);
   const detailTicketTypeCol = await findExistingColumn(connection, detailsTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const detailEventCol = await findExistingColumn(connection, detailsTable, ['id_evento', 'evento_id']);
   const detailQtyCol = await findExistingColumn(connection, detailsTable, ['cantidad', 'cantidad_boletos', 'boletos', 'qty']);
   const detailPriceCol = await findExistingColumn(connection, detailsTable, ['precio_unitario', 'precio', 'costo_unitario']);
   const detailSubtotalCol = await findExistingColumn(connection, detailsTable, ['subtotal', 'total', 'importe', 'monto_total']);
@@ -229,8 +324,24 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
     }
   }
 
+  if (eventIdExpr === 'NULL' && detailEventCol) {
+    eventIdExpr = `d.${escapeIdentifier(detailEventCol)}`;
+
+    if (eventsTable) {
+      const eventIdCol = await findExistingColumn(connection, eventsTable, ['id', 'id_evento']);
+      const eventTitleCol = await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']);
+
+      if (eventIdCol) {
+        eventJoin = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = d.${escapeIdentifier(detailEventCol)}`;
+        if (eventTitleCol) {
+          eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+        }
+      }
+    }
+  }
+
   if (eventId !== null && eventIdExpr === 'NULL') {
-    return [];
+    return obtenerVentasDesdeBoletos(connection, eventId);
   }
 
   const qtyExpr = detailQtyCol
@@ -270,7 +381,19 @@ const obtenerVentasDetalladas = async (connection, eventId = null) => {
   `;
 
   const [rows] = await connection.query(query, params);
-  return rows || [];
+  const normalizedRows = rows || [];
+
+  const totalIngresos = normalizedRows.reduce((acc, row) => acc + Number(row?.subtotal || 0), 0);
+  const totalCantidad = normalizedRows.reduce((acc, row) => acc + Number(row?.cantidad || 0), 0);
+
+  if (totalIngresos <= 0 && totalCantidad <= 0) {
+    const boletoRows = await obtenerVentasDesdeBoletos(connection, eventId);
+    if (boletoRows.length) {
+      return boletoRows;
+    }
+  }
+
+  return normalizedRows;
 };
 
 const construirReporteEventoManual = (rows = [], eventId) => {
