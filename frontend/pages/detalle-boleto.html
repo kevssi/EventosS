@@ -43,6 +43,57 @@
     <script src="../js/boleto-pdf.js"></script>
     <script>
         const DetalleBoletoModule = {
+            esMovil() {
+                return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+            },
+
+            async guardarQREnGaleria(codigoQR, nombreEvento) {
+                if (!this.esMovil()) {
+                    alert('Esta opción solo está disponible en celular.');
+                    return;
+                }
+
+                try {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=900x900&data=${encodeURIComponent(codigoQR || '')}`;
+                    const response = await fetch(qrUrl);
+                    if (!response.ok) {
+                        throw new Error('No se pudo generar la imagen QR');
+                    }
+
+                    const blob = await response.blob();
+                    const safeName = String(nombreEvento || 'evento')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                    const fileName = `qr-${safeName || 'boleto'}.png`;
+
+                    if (navigator.canShare && navigator.share && window.File) {
+                        const qrFile = new File([blob], fileName, { type: 'image/png' });
+                        const canShareFiles = navigator.canShare({ files: [qrFile] });
+
+                        if (canShareFiles) {
+                            await navigator.share({
+                                title: 'QR de boleto',
+                                text: 'Guarda este QR en tu galeria',
+                                files: [qrFile]
+                            });
+                            return;
+                        }
+                    }
+
+                    const imageUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(imageUrl);
+                } catch (error) {
+                    alert(error.message || 'No se pudo guardar el QR');
+                }
+            },
+
             getBoletoId() {
                 const params = new URLSearchParams(window.location.search);
                 return params.get('id');
@@ -130,6 +181,7 @@
 
                     <div style="margin: 0 20px 20px; display: flex; justify-content: center;">
                         <button class="btn btn-primary" id="btnDescargarBoletoPdf">Descargar boleto PDF</button>
+                        ${this.esMovil() ? `<button class="btn btn-secondary" id="btnGuardarQRGaleria" style="margin-left: 10px;">Guardar QR en galería</button>` : ''}
                     </div>
                 `;
 
@@ -141,6 +193,13 @@
                         } catch (error) {
                             alert(error.message || 'No se pudo generar el PDF del boleto');
                         }
+                    });
+                }
+
+                const btnQR = document.getElementById('btnGuardarQRGaleria');
+                if (btnQR) {
+                    btnQR.addEventListener('click', async () => {
+                        await this.guardarQREnGaleria(boleto.codigo_qr || '', boleto.evento || 'evento');
                     });
                 }
 

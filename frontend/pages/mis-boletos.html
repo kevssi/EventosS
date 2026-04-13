@@ -112,6 +112,57 @@
         const MisBoletosModule = {
             boletosPorId: {},
 
+            esMovil() {
+                return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+            },
+
+            async guardarQREnGaleria(codigoQR, nombreEvento) {
+                if (!this.esMovil()) {
+                    alert('Esta opción solo está disponible en celular.');
+                    return;
+                }
+
+                try {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=900x900&data=${encodeURIComponent(codigoQR || '')}`;
+                    const response = await fetch(qrUrl);
+                    if (!response.ok) {
+                        throw new Error('No se pudo generar la imagen QR');
+                    }
+
+                    const blob = await response.blob();
+                    const safeName = String(nombreEvento || 'evento')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                    const fileName = `qr-${safeName || 'boleto'}.png`;
+
+                    if (navigator.canShare && navigator.share && window.File) {
+                        const qrFile = new File([blob], fileName, { type: 'image/png' });
+                        const canShareFiles = navigator.canShare({ files: [qrFile] });
+
+                        if (canShareFiles) {
+                            await navigator.share({
+                                title: 'QR de boleto',
+                                text: 'Guarda este QR en tu galeria',
+                                files: [qrFile]
+                            });
+                            return;
+                        }
+                    }
+
+                    const imageUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(imageUrl);
+                } catch (error) {
+                    alert(error.message || 'No se pudo guardar el QR');
+                }
+            },
+
             async cargarBoletos() {
                 try {
                     const response = await api.misBoletos();
@@ -167,6 +218,7 @@
 
                             <div class="boleto-actions">
                                 <button class="btn btn-primary" onclick="MisBoletosModule.descargarBoletoPDF('${String(boleto.boleto_id || boleto.id_boleto || boleto.id || boleto.codigo_qr || '').replace(/'/g, "\\'")}')">Descargar boleto PDF</button>
+                                ${this.esMovil() ? `<button class="btn btn-secondary" onclick="MisBoletosModule.guardarQREnGaleria('${String(boleto.codigo_qr || '').replace(/'/g, "\\'")}', '${String(boleto.evento || '').replace(/'/g, "\\'")}')">Guardar QR en galería</button>` : ''}
                                 <button class="btn btn-secondary" onclick="location.href='detalle-boleto.html?id=${boleto.boleto_id || boleto.id_boleto || boleto.id}'">Ver Detalle</button>
                             </div>
                         </div>
