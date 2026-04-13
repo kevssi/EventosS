@@ -9,6 +9,9 @@ const AdminModule = {
   solicitudSeleccionadaId: null,
   solicitudesError: '',
   tab_activo: 'dashboard',
+  autoRefreshMs: 12000,
+  autoRefreshTimer: null,
+  isAutoRefreshing: false,
 
   escapeHtml(value) {
     return String(value ?? '')
@@ -34,6 +37,7 @@ const AdminModule = {
     await this.cargarDatos();
     this.setupEventListeners();
     this.bindForms();
+    this.startAutoRefresh();
   },
 
   verificarPermiso() {
@@ -645,6 +649,68 @@ const AdminModule = {
       }
     } catch (error) {
       alert('Error: ' + error.message);
+    }
+  },
+
+  startAutoRefresh() {
+    this.stopAutoRefresh();
+
+    this.autoRefreshTimer = setInterval(() => {
+      this.refreshTabData();
+    }, this.autoRefreshMs);
+
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('beforeunload', this.stopAutoRefresh.bind(this));
+  },
+
+  stopAutoRefresh() {
+    if (this.autoRefreshTimer) {
+      clearInterval(this.autoRefreshTimer);
+      this.autoRefreshTimer = null;
+    }
+
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+  },
+
+  handleVisibilityChange() {
+    if (document.hidden) {
+      return;
+    }
+
+    AdminModule.refreshTabData();
+  },
+
+  async refreshTabData() {
+    if (document.hidden || this.isAutoRefreshing) {
+      return;
+    }
+
+    this.isAutoRefreshing = true;
+
+    try {
+      if (this.tab_activo === 'dashboard') {
+        await this.cargarReportesAdmin();
+        return;
+      }
+
+      if (this.tab_activo === 'usuarios') {
+        await this.cargarUsuarios();
+        return;
+      }
+
+      if (this.tab_activo === 'solicitudes') {
+        await this.cargarSolicitudesOrganizador(this.filtroSolicitudes);
+        await this.cargarReportesAdmin();
+        return;
+      }
+
+      if (this.tab_activo === 'passwordAdmin' || this.tab_activo === 'crearAdmin') {
+        await this.cargarAdministradores();
+      }
+    } catch (error) {
+      console.error('Error en auto refresh admin:', error);
+    } finally {
+      this.isAutoRefreshing = false;
     }
   },
 
