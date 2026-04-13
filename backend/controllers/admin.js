@@ -21,6 +21,20 @@ const resolveRoleColumnName = async (connection) => {
   return rows[0]?.COLUMN_NAME || null;
 };
 
+const resolveRoleColumnNames = async (connection) => {
+  const [rows] = await connection.query(
+    `SELECT COLUMN_NAME
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'usuarios'
+       AND COLUMN_NAME IN ('rol', 'id_rol', 'rol_id')`
+  );
+
+  const order = ['rol', 'id_rol', 'rol_id'];
+  const available = new Set((rows || []).map((row) => row.COLUMN_NAME));
+  return order.filter((name) => available.has(name));
+};
+
 const resolveRoleValueForColumn = async (connection, columnName, roleId, roleText) => {
   if (!columnName) {
     return roleId;
@@ -61,6 +75,14 @@ const resolveRoleValueForColumn = async (connection, columnName, roleId, roleTex
 };
 
 const buildAdminRoleExpr = (columnName) => `(TRIM(CAST(${columnName} AS CHAR)) = '3' OR TRIM(LOWER(CAST(${columnName} AS CHAR))) IN ('administrador', 'admin'))`;
+
+const buildAdminRoleExprFromColumns = (columns = []) => {
+  if (!Array.isArray(columns) || columns.length === 0) {
+    return '1 = 0';
+  }
+
+  return columns.map((column) => buildAdminRoleExpr(column)).join(' OR ');
+};
 
 const ESTADOS_PERMITIDOS = new Set(['pendiente', 'aprobada', 'rechazada']);
 
@@ -433,16 +455,16 @@ exports.listarAdministradores = async (req, res) => {
 
   try {
     connection = await pool.getConnection();
-    const roleColumn = await resolveRoleColumnName(connection);
+    const roleColumns = await resolveRoleColumnNames(connection);
 
-    if (!roleColumn) {
+    if (!roleColumns.length) {
       return res.status(500).json({
         success: false,
         error: 'No se encontro columna de rol en usuarios (rol, id_rol o rol_id)'
       });
     }
 
-    const isAdminRoleExpr = buildAdminRoleExpr(roleColumn);
+    const isAdminRoleExpr = buildAdminRoleExprFromColumns(roleColumns);
 
     const [rows] = await connection.query(
       `SELECT id, nombre, email, telefono, activo
@@ -481,16 +503,15 @@ exports.crearAdministrador = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     connection = await pool.getConnection();
-    const roleColumn = await resolveRoleColumnName(connection);
+    const roleColumns = await resolveRoleColumnNames(connection);
 
-    if (!roleColumn) {
+    if (!roleColumns.length) {
       return res.status(500).json({
         success: false,
         error: 'No se encontro columna de rol en usuarios (rol, id_rol o rol_id)'
       });
     }
 
-    const roleValue = await resolveRoleValueForColumn(connection, roleColumn, ADMIN_ROLE_ID, 'administrador');
     await connection.beginTransaction();
 
     const [resultado] = await connection.query(
@@ -510,12 +531,16 @@ exports.crearAdministrador = async (req, res) => {
 
     const idUsuario = Number(registro.id_usuario);
 
-    await connection.query(
-      `UPDATE usuarios
-       SET ${roleColumn} = ?
-       WHERE id = ?`,
-      [roleValue, idUsuario]
-    );
+    for (const roleColumn of roleColumns) {
+      const roleValue = await resolveRoleValueForColumn(connection, roleColumn, ADMIN_ROLE_ID, 'administrador');
+
+      await connection.query(
+        `UPDATE usuarios
+         SET ${roleColumn} = ?
+         WHERE id = ?`,
+        [roleValue, idUsuario]
+      );
+    }
 
     await connection.commit();
 
@@ -529,7 +554,7 @@ exports.crearAdministrador = async (req, res) => {
         telefono: telefono || null,
         rol: 'administrador',
         rol_id: ADMIN_ROLE_ID,
-        rol_guardado: roleValue
+        rol_guardado: 'sincronizado'
       }
     });
   } catch (error) {
@@ -569,16 +594,16 @@ exports.cambiarPasswordAdministrador = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password.toString().trim(), 10);
     connection = await pool.getConnection();
-    const roleColumn = await resolveRoleColumnName(connection);
+    const roleColumns = await resolveRoleColumnNames(connection);
 
-    if (!roleColumn) {
+    if (!roleColumns.length) {
       return res.status(500).json({
         success: false,
         error: 'No se encontro columna de rol en usuarios (rol, id_rol o rol_id)'
       });
     }
 
-    const isAdminRoleExpr = buildAdminRoleExpr(roleColumn);
+    const isAdminRoleExpr = buildAdminRoleExprFromColumns(roleColumns);
 
     const [targetRows] = await connection.query(
       `SELECT id

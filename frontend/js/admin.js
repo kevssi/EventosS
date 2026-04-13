@@ -183,10 +183,6 @@ const AdminModule = {
     const resumen = this.resumenSolicitudes || { pendientes: 0, aprobadas: 0, rechazadas: 0, total: 0 };
     const filtroActual = this.filtroSolicitudes || 'todas';
     const solicitudSeleccionada = this.solicitudes.find((item) => Number(item.id) === Number(this.solicitudSeleccionadaId)) || this.solicitudes[0] || null;
-    const opcionesSolicitudes = this.solicitudes.map((solicitud) => {
-      const selected = Number(solicitud.id) === Number(solicitudSeleccionada?.id) ? 'selected' : '';
-      return `<option value="${solicitud.id}" ${selected}>#${solicitud.id} - ${this.escapeHtml(solicitud.nombre_completo)} (${this.escapeHtml(solicitud.estado)})</option>`;
-    }).join('');
 
     container.innerHTML = `
       <div class="card" style="margin-bottom: 16px;">
@@ -235,11 +231,30 @@ const AdminModule = {
         ${this.solicitudes.length === 0 ? `
           <div class="solicitudes-empty">No hay solicitudes para el filtro seleccionado.</div>
         ` : `
-          <div class="solicitud-selector-wrap">
-            <label for="selectorSolicitud" class="solicitud-selector-label">Selecciona la solicitud que deseas revisar</label>
-            <select id="selectorSolicitud" class="solicitud-selector" onchange="AdminModule.seleccionarSolicitud(this.value)">
-              ${opcionesSolicitudes}
-            </select>
+          <div class="solicitud-lista-wrap">
+            <div class="solicitud-lista-title">Solicitudes enlistadas (haz clic para abrir detalle)</div>
+            <div class="solicitudes-lista">
+              ${this.solicitudes.map((solicitud) => {
+                const isSelected = Number(solicitud.id) === Number(solicitudSeleccionada?.id);
+                return `
+                  <button
+                    type="button"
+                    class="solicitud-item ${isSelected ? 'active' : ''}"
+                    onclick="AdminModule.seleccionarSolicitud(${solicitud.id})"
+                  >
+                    <div class="solicitud-item-main">
+                      <strong>#${solicitud.id}</strong>
+                      <span>${this.escapeHtml(solicitud.nombre_completo)}</span>
+                      <small>${this.escapeHtml(solicitud.email)}</small>
+                    </div>
+                    <div class="solicitud-item-side">
+                      <span class="badge badge-${solicitud.estado === 'aprobada' ? 'success' : solicitud.estado === 'rechazada' ? 'danger' : 'pending'}">${this.escapeHtml(solicitud.estado)}</span>
+                      <small>${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</small>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
           </div>
 
           ${solicitudSeleccionada ? `
