@@ -1,6 +1,21 @@
 const pool = require('../config/database');
 
 const escapeIdentifier = (identifier) => `\`${String(identifier || '').replace(/`/g, '``')}\``;
+const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000;
+const schemaCache = {
+  tableExists: new Map(),
+  columnExists: new Map(),
+  expiresAt: 0
+};
+
+const isSchemaCacheExpired = () => Date.now() > schemaCache.expiresAt;
+
+const resetSchemaCacheIfNeeded = () => {
+  if (!isSchemaCacheExpired()) return;
+  schemaCache.tableExists.clear();
+  schemaCache.columnExists.clear();
+  schemaCache.expiresAt = Date.now() + SCHEMA_CACHE_TTL_MS;
+};
 
 const buildRelationsByParent = (relations = []) => {
   const map = new Map();
@@ -43,7 +58,15 @@ const buildSinglePrimaryKeyMap = (pkRows = []) => {
 };
 
 const findExistingTable = async (connection, candidates = []) => {
+  resetSchemaCacheIfNeeded();
+
   for (const tableName of candidates) {
+    if (schemaCache.tableExists.has(tableName)) {
+      const exists = schemaCache.tableExists.get(tableName);
+      if (exists) return tableName;
+      continue;
+    }
+
     const [rows] = await connection.query(
       `
         SELECT 1
@@ -56,9 +79,12 @@ const findExistingTable = async (connection, candidates = []) => {
     );
 
     if (rows.length) {
+      schemaCache.tableExists.set(tableName, true);
       const firstRow = rows[0] || {};
       return firstRow.table_name || firstRow.TABLE_NAME || tableName;
     }
+
+    schemaCache.tableExists.set(tableName, false);
   }
 
   return null;
@@ -67,7 +93,16 @@ const findExistingTable = async (connection, candidates = []) => {
 const findExistingColumn = async (connection, tableName, candidates = []) => {
   if (!tableName) return null;
 
+  resetSchemaCacheIfNeeded();
+
   for (const columnName of candidates) {
+    const cacheKey = `${tableName}.${columnName}`;
+    if (schemaCache.columnExists.has(cacheKey)) {
+      const exists = schemaCache.columnExists.get(cacheKey);
+      if (exists) return columnName;
+      continue;
+    }
+
     const [rows] = await connection.query(
       `
         SELECT 1
@@ -81,9 +116,12 @@ const findExistingColumn = async (connection, tableName, candidates = []) => {
     );
 
     if (rows.length) {
+      schemaCache.columnExists.set(cacheKey, true);
       const firstRow = rows[0] || {};
       return firstRow.column_name || firstRow.COLUMN_NAME || columnName;
     }
+
+    schemaCache.columnExists.set(cacheKey, false);
   }
 
   return null;

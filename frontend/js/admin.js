@@ -16,9 +16,18 @@ const AdminModule = {
   solicitudSeleccionadaId: null,
   solicitudesError: '',
   tab_activo: 'dashboard',
-  autoRefreshMs: 12000,
+  autoRefreshMs: 25000,
   autoRefreshTimer: null,
   isAutoRefreshing: false,
+  loadedTabs: {
+    dashboard: false,
+    eventos: false,
+    usuarios: false,
+    ventas: false,
+    solicitudes: false,
+    crearAdmin: false,
+    passwordAdmin: false
+  },
 
   escapeHtml(value) {
     return String(value ?? '')
@@ -52,7 +61,9 @@ const AdminModule = {
   async init() {
     this.usuario = JSON.parse(localStorage.getItem('usuario'));
     this.verificarPermiso();
-    await this.cargarDatos();
+    this.renderCrearAdmin();
+    this.renderPasswordAdmin();
+    await this.ensureTabData('dashboard');
     this.setupEventListeners();
     this.bindForms();
     this.startAutoRefresh();
@@ -64,16 +75,54 @@ const AdminModule = {
     }
   },
 
-  async cargarDatos() {
-    await this.cargarReportesAdmin();
-    await this.cargarCategoriasEvento();
-    await this.cargarEventosAdmin();
-    await this.cargarUsuarios();
-    await this.cargarSolicitudesOrganizador();
-    await this.cargarAdministradores();
-    this.renderCrearAdmin();
-    this.renderPasswordAdmin();
-    this.renderVentas();
+  async ensureTabData(tabNombre, force = false) {
+    if (!tabNombre) return;
+
+    if (!force && this.loadedTabs[tabNombre]) {
+      return;
+    }
+
+    if (tabNombre === 'dashboard') {
+      await this.cargarReportesAdmin();
+      this.loadedTabs.dashboard = true;
+      return;
+    }
+
+    if (tabNombre === 'eventos') {
+      await Promise.all([this.cargarCategoriasEvento(), this.cargarEventosAdmin()]);
+      this.loadedTabs.eventos = true;
+      return;
+    }
+
+    if (tabNombre === 'usuarios') {
+      await this.cargarUsuarios();
+      this.loadedTabs.usuarios = true;
+      return;
+    }
+
+    if (tabNombre === 'ventas') {
+      if (!this.loadedTabs.eventos) {
+        await this.cargarEventosAdmin();
+        this.loadedTabs.eventos = true;
+      }
+      await this.cargarReportesAdmin();
+      this.renderVentas();
+      this.loadedTabs.ventas = true;
+      this.loadedTabs.dashboard = true;
+      return;
+    }
+
+    if (tabNombre === 'solicitudes') {
+      await this.cargarSolicitudesOrganizador();
+      this.loadedTabs.solicitudes = true;
+      return;
+    }
+
+    if (tabNombre === 'crearAdmin' || tabNombre === 'passwordAdmin') {
+      await this.cargarAdministradores();
+      this.loadedTabs.crearAdmin = true;
+      this.loadedTabs.passwordAdmin = true;
+    }
   },
 
   async cargarReportesAdmin() {
@@ -1061,7 +1110,7 @@ const AdminModule = {
     });
   },
 
-  cambiarTab(tabNombre) {
+  async cambiarTab(tabNombre) {
     if (!tabNombre) return;
     this.tab_activo = tabNombre;
 
@@ -1082,6 +1131,8 @@ const AdminModule = {
     if (tabContent) {
       tabContent.classList.add('active');
     }
+
+    await this.ensureTabData(tabNombre);
   },
 
   async cambiarEstadoUsuario(id, activo) {
@@ -1144,7 +1195,6 @@ const AdminModule = {
 
       if (this.tab_activo === 'eventos') {
         await this.cargarEventosAdmin();
-        await this.cargarReportesAdmin();
         return;
       }
 
@@ -1158,7 +1208,6 @@ const AdminModule = {
 
       if (this.tab_activo === 'solicitudes') {
         await this.cargarSolicitudesOrganizador(this.filtroSolicitudes);
-        await this.cargarReportesAdmin();
         return;
       }
 
