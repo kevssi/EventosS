@@ -529,17 +529,44 @@ exports.crearAdministrador = async (req, res) => {
       });
     }
 
-    const idUsuario = Number(registro.id_usuario);
+    let idUsuario = Number(registro.id_usuario);
+
+    // El SP puede devolver un id inconsistente en algunos entornos; priorizamos el usuario real por email.
+    const [usuarioRows] = await connection.query(
+      'SELECT id FROM usuarios WHERE email = ? ORDER BY id DESC LIMIT 1',
+      [email]
+    );
+
+    const usuarioCreado = usuarioRows?.[0] || null;
+    if (usuarioCreado?.id) {
+      idUsuario = Number(usuarioCreado.id);
+    }
+
+    if (Number.isNaN(idUsuario) || idUsuario <= 0) {
+      await connection.rollback();
+      return res.status(500).json({
+        success: false,
+        error: 'No se pudo identificar el usuario creado para asignar rol de administrador'
+      });
+    }
 
     for (const roleColumn of roleColumns) {
       const roleValue = await resolveRoleValueForColumn(connection, roleColumn, ADMIN_ROLE_ID, 'administrador');
 
-      await connection.query(
+      const [updateRoleResult] = await connection.query(
         `UPDATE usuarios
          SET ${roleColumn} = ?
          WHERE id = ?`,
         [roleValue, idUsuario]
       );
+
+      if (!updateRoleResult?.affectedRows) {
+        await connection.rollback();
+        return res.status(500).json({
+          success: false,
+          error: `No se pudo guardar el rol administrador en columna ${roleColumn}`
+        });
+      }
     }
 
     await connection.commit();
