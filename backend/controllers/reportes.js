@@ -190,6 +190,41 @@ exports.listarUsuarios = async (req, res) => {
   }
 };
 
+// Historial de compras por usuario (solo admin)
+exports.historialComprasUsuario = async (req, res) => {
+  const userId = Number(req.params.id_usuario);
+
+  if (Number.isNaN(userId) || userId <= 0) {
+    return res.status(400).json({ success: false, error: 'id_usuario invalido' });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+
+    const [usuarioRows] = await connection.query(
+      'SELECT id, nombre, email FROM usuarios WHERE id = ? LIMIT 1',
+      [userId]
+    );
+
+    if (!usuarioRows.length) {
+      await connection.release();
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    const [resultado] = await connection.query('CALL sp_mis_ordenes(?)', [userId]);
+    await connection.release();
+
+    return res.json({
+      success: true,
+      usuario: usuarioRows[0],
+      ordenes: resultado?.[0] || []
+    });
+  } catch (error) {
+    console.error('Error en historialComprasUsuario:', error);
+    return res.status(500).json({ success: false, error: 'Error al obtener historial de compras' });
+  }
+};
+
 // Desactivar usuario (solo admin)
 exports.desactivarUsuario = async (req, res) => {
   const { id_usuario, activo } = req.body;

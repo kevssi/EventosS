@@ -3,6 +3,12 @@ const AdminModule = {
   usuario: null,
   usuarios: [],
   administradores: [],
+  eventos: [],
+  categoriasEvento: [],
+  topEventosVentas: [],
+  historialComprasUsuarioActual: null,
+  historialCompras: [],
+  reporteEventoSeleccionado: null,
   solicitudes: [],
   resumenSolicitudes: null,
   filtroSolicitudes: null,
@@ -24,6 +30,17 @@ const AdminModule = {
 
   formatMultiline(value) {
     return this.escapeHtml(value || 'No especificado').replace(/\n/g, '<br>');
+  },
+
+  formatCurrency(value) {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric) ? `$${numeric.toFixed(2)}` : '$0.00';
+  },
+
+  formatDate(value) {
+    if (!value) return 'No definido';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? 'No definido' : parsed.toLocaleString();
   },
 
   isAdminRole(rol) {
@@ -48,17 +65,24 @@ const AdminModule = {
 
   async cargarDatos() {
     await this.cargarReportesAdmin();
+    await this.cargarCategoriasEvento();
+    await this.cargarEventosAdmin();
     await this.cargarUsuarios();
     await this.cargarSolicitudesOrganizador();
     await this.cargarAdministradores();
     this.renderCrearAdmin();
     this.renderPasswordAdmin();
+    this.renderVentas();
   },
 
   async cargarReportesAdmin() {
     try {
       const response = await api.reporteGeneralAdmin();
+      this.topEventosVentas = response.top_eventos || [];
       this.renderDashboard(response);
+      if (this.tab_activo === 'ventas') {
+        this.renderVentas();
+      }
     } catch (error) {
       console.error('Error al cargar reportes:', error);
     }
@@ -146,6 +170,377 @@ const AdminModule = {
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
     }
+  },
+
+  async cargarCategoriasEvento() {
+    try {
+      const response = await api.listarCategorias();
+      this.categoriasEvento = response.categorias || [];
+    } catch (error) {
+      console.error('Error al cargar categorias de evento:', error);
+      this.categoriasEvento = [];
+    }
+  },
+
+  async cargarEventosAdmin() {
+    try {
+      const response = await api.listarEventos({ realtime: 1 });
+      this.eventos = response.eventos || [];
+      this.renderEventosAdmin();
+      if (this.tab_activo === 'ventas') {
+        this.renderVentas();
+      }
+    } catch (error) {
+      console.error('Error al cargar eventos admin:', error);
+    }
+  },
+
+  renderEventosAdmin() {
+    const container = document.querySelector('#tabEventos');
+    if (!container) return;
+
+    const total = this.eventos.length;
+    const publicados = this.eventos.filter((evento) => String(evento.estado || '').toLowerCase() === 'publicado').length;
+    const borrador = this.eventos.filter((evento) => String(evento.estado || '').toLowerCase() === 'borrador').length;
+    const cancelados = this.eventos.filter((evento) => String(evento.estado || '').toLowerCase() === 'cancelado').length;
+
+    const categoryOptions = this.categoriasEvento.map((categoria) => (
+      `<option value="${categoria.id}">${this.escapeHtml(categoria.nombre)}</option>`
+    )).join('');
+
+    container.innerHTML = `
+      <div class="resumen-cards">
+        <div class="resumen-card"><h3>Total Eventos</h3><div class="valor">${total}</div></div>
+        <div class="resumen-card success"><h3>Publicados</h3><div class="valor">${publicados}</div></div>
+        <div class="resumen-card warning"><h3>Borrador</h3><div class="valor">${borrador}</div></div>
+        <div class="resumen-card danger"><h3>Cancelados</h3><div class="valor">${cancelados}</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <h2>Crear o editar evento</h2>
+        </div>
+        <form id="formGestionEvento" class="form-container" style="max-width: 900px; margin: 0;">
+          <input type="hidden" id="eventoIdEditar">
+          <div class="form-group">
+            <label for="eventoTitulo">Titulo</label>
+            <input type="text" id="eventoTitulo" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoDescripcion">Descripcion</label>
+            <textarea id="eventoDescripcion" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="eventoFechaInicio">Fecha y hora de inicio</label>
+            <input type="datetime-local" id="eventoFechaInicio" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoFechaFin">Fecha y hora de fin</label>
+            <input type="datetime-local" id="eventoFechaFin">
+          </div>
+          <div class="form-group">
+            <label for="eventoUbicacion">Sede / ubicacion</label>
+            <input type="text" id="eventoUbicacion" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoCapacidad">Capacidad (control de zona/asientos)</label>
+            <input type="number" id="eventoCapacidad" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="eventoCategoria">Categoria de evento</label>
+            <select id="eventoCategoria">
+              <option value="">Sin categoria</option>
+              ${categoryOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="eventoImagen">Imagen URL</label>
+            <input type="url" id="eventoImagen">
+          </div>
+          <div class="form-group">
+            <label for="eventoEstado">Estado</label>
+            <select id="eventoEstado">
+              <option value="borrador">Borrador</option>
+              <option value="publicado">Publicado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="acciones" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary">Guardar evento</button>
+            <button type="button" class="btn btn-outline" onclick="AdminModule.limpiarFormularioEvento()">Limpiar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Gestion de eventos</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Evento</th>
+              <th>Fecha</th>
+              <th>Sede</th>
+              <th>Categoria</th>
+              <th>Precio base</th>
+              <th>Disponibilidad</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${this.eventos.length === 0 ? '<tr><td colspan="8" style="text-align:center; color: var(--text-light);">No hay eventos registrados.</td></tr>' : this.eventos.map((evento) => `
+              <tr>
+                <td>${this.escapeHtml(evento.titulo)}</td>
+                <td>${this.formatDate(evento.fecha_inicio)}</td>
+                <td>${this.escapeHtml(evento.ubicacion || '-')}</td>
+                <td>${this.escapeHtml(evento.categoria || '-')}</td>
+                <td>${this.formatCurrency(evento.precio_desde)}</td>
+                <td>${Number(evento.boletos_disponibles || 0)}</td>
+                <td><span class="badge badge-${String(evento.estado || '').toLowerCase() === 'publicado' ? 'success' : String(evento.estado || '').toLowerCase() === 'cancelado' ? 'danger' : 'pending'}">${this.escapeHtml(evento.estado || 'borrador')}</span></td>
+                <td class="acciones">
+                  <button class="btn btn-accion btn-outline" onclick="AdminModule.editarEvento(${Number(evento.id)})">Editar</button>
+                  <button class="btn btn-accion btn-danger" onclick="AdminModule.cancelarEventoAdmin(${Number(evento.id)})">Eliminar</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    window.NavbarModule?.renderLucideIcons?.(container);
+    this.bindForms();
+  },
+
+  limpiarFormularioEvento() {
+    const form = document.querySelector('#formGestionEvento');
+    if (form) form.reset();
+    const idInput = document.querySelector('#eventoIdEditar');
+    if (idInput) idInput.value = '';
+  },
+
+  editarEvento(eventoId) {
+    const evento = this.eventos.find((item) => Number(item.id) === Number(eventoId));
+    if (!evento) {
+      alert('No se encontro el evento.');
+      return;
+    }
+
+    const idInput = document.querySelector('#eventoIdEditar');
+    const fechaInicio = document.querySelector('#eventoFechaInicio');
+    const fechaFin = document.querySelector('#eventoFechaFin');
+
+    if (idInput) idInput.value = String(evento.id);
+    const titulo = document.querySelector('#eventoTitulo');
+    if (titulo) titulo.value = evento.titulo || '';
+    const descripcion = document.querySelector('#eventoDescripcion');
+    if (descripcion) descripcion.value = evento.descripcion || '';
+    if (fechaInicio) fechaInicio.value = this.toDateInputValue(evento.fecha_inicio);
+    if (fechaFin) fechaFin.value = this.toDateInputValue(evento.fecha_fin);
+    const ubicacion = document.querySelector('#eventoUbicacion');
+    if (ubicacion) ubicacion.value = evento.ubicacion || '';
+    const capacidad = document.querySelector('#eventoCapacidad');
+    if (capacidad) capacidad.value = evento.capacidad || 0;
+    const categoria = document.querySelector('#eventoCategoria');
+    if (categoria) categoria.value = evento.id_categoria || '';
+    const imagen = document.querySelector('#eventoImagen');
+    if (imagen) imagen.value = evento.imagen_url || '';
+    const estado = document.querySelector('#eventoEstado');
+    if (estado) estado.value = evento.estado || 'borrador';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  toDateInputValue(value) {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    const offset = parsed.getTimezoneOffset();
+    const localDate = new Date(parsed.getTime() - (offset * 60000));
+    return localDate.toISOString().slice(0, 16);
+  },
+
+  async guardarEventoDesdeFormulario() {
+    const id = Number(document.querySelector('#eventoIdEditar')?.value || 0);
+    const payload = {
+      titulo: document.querySelector('#eventoTitulo')?.value?.trim(),
+      descripcion: document.querySelector('#eventoDescripcion')?.value?.trim() || null,
+      fecha_inicio: document.querySelector('#eventoFechaInicio')?.value,
+      fecha_fin: document.querySelector('#eventoFechaFin')?.value || null,
+      ubicacion: document.querySelector('#eventoUbicacion')?.value?.trim(),
+      capacidad: Number(document.querySelector('#eventoCapacidad')?.value || 0),
+      id_categoria: Number(document.querySelector('#eventoCategoria')?.value || 0) || null,
+      imagen_url: document.querySelector('#eventoImagen')?.value?.trim() || null,
+      estado: document.querySelector('#eventoEstado')?.value || 'borrador'
+    };
+
+    if (!payload.titulo || !payload.fecha_inicio || !payload.ubicacion || !payload.capacidad) {
+      alert('Completa titulo, fecha de inicio, ubicacion y capacidad.');
+      return;
+    }
+
+    try {
+      if (id > 0) {
+        await api.actualizarEvento(id, payload);
+        alert('Evento actualizado correctamente.');
+      } else {
+        await api.crearEvento(payload);
+        alert('Evento creado correctamente.');
+      }
+
+      this.limpiarFormularioEvento();
+      await this.cargarEventosAdmin();
+      await this.cargarReportesAdmin();
+    } catch (error) {
+      alert('Error al guardar evento: ' + error.message);
+    }
+  },
+
+  async cancelarEventoAdmin(eventoId) {
+    const motivo = prompt('Escribe motivo de eliminacion/cancelacion:');
+    if (!motivo || !motivo.trim()) return;
+
+    try {
+      await api.cancelarEvento(eventoId, motivo.trim());
+      alert('Evento cancelado correctamente.');
+      await this.cargarEventosAdmin();
+      await this.cargarReportesAdmin();
+    } catch (error) {
+      alert('Error al cancelar evento: ' + error.message);
+    }
+  },
+
+  async verHistorialComprasUsuario(idUsuario) {
+    if (!idUsuario) return;
+
+    try {
+      const response = await api.historialComprasUsuario(idUsuario);
+      this.historialComprasUsuarioActual = response.usuario || null;
+      this.historialCompras = response.ordenes || [];
+      this.renderUsuarios();
+    } catch (error) {
+      alert('No se pudo obtener historial de compras: ' + error.message);
+    }
+  },
+
+  async cargarReporteEventoSeleccionado(idEvento) {
+    if (!idEvento) return;
+
+    try {
+      const response = await api.reporteVentasEvento(idEvento);
+      this.reporteEventoSeleccionado = {
+        id_evento: idEvento,
+        resumen: response.resumen || null,
+        desglose: response.desglose || []
+      };
+      this.renderVentas();
+    } catch (error) {
+      alert('No se pudo cargar reporte del evento: ' + error.message);
+    }
+  },
+
+  renderVentas() {
+    const container = document.querySelector('#tabVentas');
+    if (!container) return;
+
+    const selectedId = Number(this.reporteEventoSeleccionado?.id_evento || 0);
+    const options = this.eventos.map((evento) => (
+      `<option value="${evento.id}" ${Number(evento.id) === selectedId ? 'selected' : ''}>${this.escapeHtml(evento.titulo)}</option>`
+    )).join('');
+
+    const resumen = this.reporteEventoSeleccionado?.resumen;
+    const desglose = this.reporteEventoSeleccionado?.desglose || [];
+
+    container.innerHTML = `
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <h2>Monitoreo de ventas en tiempo real</h2>
+        </div>
+        <p style="margin: 0 0 12px; color: var(--text-light);">Este modulo se actualiza automaticamente cada ${Math.round(this.autoRefreshMs / 1000)} segundos cuando esta pestaña esta activa.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <select id="ventasEventoSelect" style="min-width: 280px;">
+            <option value="">Selecciona un evento para reporte detallado</option>
+            ${options}
+          </select>
+          <button class="btn btn-primary" onclick="AdminModule.cargarReporteEventoDesdeSelect()">Ver reporte evento</button>
+          <button class="btn btn-outline" onclick="AdminModule.cargarReportesAdmin()">Actualizar panel</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <h2>Eventos mas populares (por ventas)</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Evento</th>
+              <th>Boletos vendidos</th>
+              <th>Ingresos</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(this.topEventosVentas || []).length === 0
+              ? '<tr><td colspan="3" style="text-align:center; color: var(--text-light);">Sin datos de ventas por el momento.</td></tr>'
+              : this.topEventosVentas.map((evento) => `
+                <tr>
+                  <td>${this.escapeHtml(evento.titulo)}</td>
+                  <td>${Number(evento.boletos_vendidos || 0)}</td>
+                  <td>${this.formatCurrency(evento.ingresos)}</td>
+                </tr>
+              `).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Reporte detallado por evento</h2>
+        </div>
+        ${!resumen ? '<p style="color: var(--text-light); margin: 0;">Selecciona un evento para ver desglose de ingresos y boletos vendidos.</p>' : `
+          <div class="resumen-cards" style="margin-bottom: 14px;">
+            <div class="resumen-card success"><h3>Ingresos</h3><div class="valor">${this.formatCurrency(resumen.ingresos_totales || resumen.ingresos || 0)}</div></div>
+            <div class="resumen-card warning"><h3>Boletos vendidos</h3><div class="valor">${Number(resumen.boletos_vendidos || 0)}</div></div>
+            <div class="resumen-card"><h3>Ordenes</h3><div class="valor">${Number(resumen.total_ordenes || resumen.ordenes || 0)}</div></div>
+            <div class="resumen-card"><h3>Evento</h3><div class="valor" style="font-size:1rem;">${this.escapeHtml(resumen.titulo || '-')}</div></div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo boleto</th>
+                <th>Vendidos</th>
+                <th>Ingreso</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${desglose.length === 0
+                ? '<tr><td colspan="3" style="text-align:center; color: var(--text-light);">Sin detalle disponible para este evento.</td></tr>'
+                : desglose.map((item) => `
+                  <tr>
+                    <td>${this.escapeHtml(item.tipo_boleto || item.nombre || '-')}</td>
+                    <td>${Number(item.vendidos || item.boletos_vendidos || 0)}</td>
+                    <td>${this.formatCurrency(item.ingresos || item.total || 0)}</td>
+                  </tr>
+                `).join('')
+              }
+            </tbody>
+          </table>
+        `}
+      </div>
+    `;
+  },
+
+  cargarReporteEventoDesdeSelect() {
+    const selectedId = Number(document.querySelector('#ventasEventoSelect')?.value || 0);
+    if (!selectedId) {
+      alert('Selecciona un evento para generar el reporte.');
+      return;
+    }
+
+    this.cargarReporteEventoSeleccionado(selectedId);
   },
 
   async cargarSolicitudesOrganizador(estado = this.filtroSolicitudes) {
@@ -477,6 +872,14 @@ const AdminModule = {
   },
 
   bindForms() {
+    const formGestionEvento = document.querySelector('#formGestionEvento');
+    if (formGestionEvento) {
+      formGestionEvento.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await this.guardarEventoDesdeFormulario();
+      });
+    }
+
     const formCrearAdmin = document.querySelector('#formCrearAdmin');
     if (formCrearAdmin) {
       formCrearAdmin.addEventListener('submit', async (event) => {
@@ -593,6 +996,9 @@ const AdminModule = {
                           ${userId ? '' : 'disabled'}>
                     ${isActivo ? 'Desactivar' : 'Activar'}
                   </button>
+                  <button class="btn btn-accion btn-outline" onclick="AdminModule.verHistorialComprasUsuario(${userId})" ${userId ? '' : 'disabled'}>
+                    Historial
+                  </button>
                   <button class="btn btn-accion btn-outline" onclick="AdminModule.eliminarUsuario(${userId})" ${userId ? '' : 'disabled'}>
                     Eliminar
                   </button>
@@ -603,6 +1009,37 @@ const AdminModule = {
           </tbody>
         </table>
       </div>
+
+      ${this.historialComprasUsuarioActual ? `
+        <div class="card" style="margin-top: 16px;">
+          <div class="card-header">
+            <h2>Historial de compras: ${this.escapeHtml(this.historialComprasUsuarioActual.nombre)} (${this.escapeHtml(this.historialComprasUsuarioActual.email)})</h2>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Orden</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${this.historialCompras.length === 0
+                ? '<tr><td colspan="4" style="text-align:center; color: var(--text-light);">Este usuario aun no tiene compras registradas.</td></tr>'
+                : this.historialCompras.map((orden) => `
+                  <tr>
+                    <td>#${this.escapeHtml(orden.id_orden || orden.id || '-')}</td>
+                    <td>${this.formatDate(orden.fecha_orden || orden.fecha_compra || orden.fecha_pago)}</td>
+                    <td>${this.escapeHtml(orden.estado_pago || orden.estado || '-')}</td>
+                    <td>${this.formatCurrency(orden.total || orden.monto_total || 0)}</td>
+                  </tr>
+                `).join('')
+              }
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
     `;
   },
 
@@ -695,6 +1132,20 @@ const AdminModule = {
 
       if (this.tab_activo === 'usuarios') {
         await this.cargarUsuarios();
+        return;
+      }
+
+      if (this.tab_activo === 'eventos') {
+        await this.cargarEventosAdmin();
+        await this.cargarReportesAdmin();
+        return;
+      }
+
+      if (this.tab_activo === 'ventas') {
+        await this.cargarReportesAdmin();
+        if (this.reporteEventoSeleccionado?.id_evento) {
+          await this.cargarReporteEventoSeleccionado(this.reporteEventoSeleccionado.id_evento);
+        }
         return;
       }
 

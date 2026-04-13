@@ -7,6 +7,7 @@ const { authMiddleware, requireAdmin } = require('../middleware/auth');
 router.get('/evento/:id_evento', authMiddleware, reportesController.reporteVentasEvento);
 router.get('/admin/general', authMiddleware, requireAdmin, reportesController.reporteGeneralAdmin);
 router.get('/admin/usuarios', authMiddleware, requireAdmin, reportesController.listarUsuarios);
+router.get('/admin/usuarios/:id_usuario/compras', authMiddleware, requireAdmin, reportesController.historialComprasUsuario);
 router.post('/admin/desactivar-usuario', authMiddleware, requireAdmin, reportesController.desactivarUsuario);
 router.delete('/admin/usuarios/:id_usuario', authMiddleware, requireAdmin, reportesController.eliminarUsuario);
 

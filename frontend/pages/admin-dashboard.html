@@ -36,7 +36,9 @@
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="dashboard"><i data-lucide="bar-chart-3"></i><span>Dashboard</span></button>
+            <button class="tab-btn" data-tab="eventos"><i data-lucide="calendar-days"></i><span>Eventos</span></button>
             <button class="tab-btn" data-tab="usuarios"><i data-lucide="users"></i><span>Usuarios</span></button>
+            <button class="tab-btn" data-tab="ventas"><i data-lucide="receipt-text"></i><span>Ventas</span></button>
             <button class="tab-btn" data-tab="solicitudes"><i data-lucide="file-text"></i><span>Solicitudes Organizador</span></button>
             <button class="tab-btn" data-tab="crearAdmin"><i data-lucide="plus"></i><span>Agregar Admin</span></button>
             <button class="tab-btn" data-tab="passwordAdmin"><i data-lucide="lock-keyhole"></i><span>Password Admin</span></button>
@@ -47,9 +49,19 @@
             <div id="contenidoDashboard"></div>
         </div>
 
+        <!-- Eventos -->
+        <div class="tab-content" id="tabEventos">
+            <div id="contenidoEventos"></div>
+        </div>
+
         <!-- Usuarios -->
         <div class="tab-content" id="tabUsuarios">
             <div id="contenidoUsuarios"></div>
+        </div>
+
+        <!-- Ventas -->
+        <div class="tab-content" id="tabVentas">
+            <div id="contenidoVentas"></div>
         </div>
 
         <!-- Solicitudes -->

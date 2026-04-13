@@ -85,6 +85,10 @@ class APIClient {
       searchParams.set('limit', normalized.limit);
     }
 
+    if (normalized.realtime) {
+      searchParams.set('realtime', normalized.realtime);
+    }
+
     const params = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return this.request(`/eventos${params}`);
   }
@@ -219,6 +223,10 @@ class APIClient {
 
   listarUsuarios() {
     return this.request('/reportes/admin/usuarios');
+  }
+
+  historialComprasUsuario(id_usuario) {
+    return this.request(`/reportes/admin/usuarios/${id_usuario}/compras`);
   }
 
   desactivarUsuario(id_usuario, activo) {
