@@ -566,7 +566,8 @@ exports.crearEvento = async (req, res) => {
       await connection.release();
     }
     console.error('Error en crearEvento:', error);
-    return res.status(500).json({ error: 'Error al crear evento' });
+    const detalle = error?.sqlMessage || error?.message || 'Error al crear evento';
+    return res.status(500).json({ error: detalle });
   }
 };
 
