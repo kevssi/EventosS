@@ -103,10 +103,6 @@
           <label for="eventoCapacidad">Capacidad del lugar</label>
           <input type="number" id="eventoCapacidad" min="1" step="1" placeholder="Ej. 12000" required>
         </div>
-        <div>
-          <label for="eventoMapa">Mapa de asientos o zonas (URL/descripcion)</label>
-          <input type="text" id="eventoMapa" placeholder="URL del mapa o descripcion de zonas" required>
-        </div>
 
         <div class="full">
           <label for="eventoDescripcion">Descripcion del evento</label>
@@ -268,7 +264,6 @@
       const horaFin = document.getElementById('eventoHoraFin').value;
       const ubicacion = document.getElementById('eventoLugar').value.trim();
       const capacidad = Number(document.getElementById('eventoCapacidad').value || 0);
-      const mapaZonas = document.getElementById('eventoMapa').value.trim();
       const descripcionBase = document.getElementById('eventoDescripcion').value.trim();
       const idCategoria = document.getElementById('eventoCategoria').value;
       const imagenUrl = document.getElementById('eventoImagen').value.trim();
@@ -311,7 +306,6 @@
         `- Horario: ${horaInicio}${horaFin ? ` a ${horaFin}` : ''}`,
         `- Recinto confirmado: ${ubicacion}`,
         `- Capacidad total: ${capacidad}`,
-        `- Mapa/zonas: ${mapaZonas}`,
         '- Zonas y precios (definidos por organizador/promotor):',
         ...zonas.map((z) => `  * ${z.nombre}: cupo ${z.cupo}, precio ${z.precio}`),
         '- Permisos y legalidad:',
