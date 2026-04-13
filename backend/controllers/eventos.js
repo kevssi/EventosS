@@ -229,6 +229,25 @@ const resolveCategoriaColumn = async (connection) => {
   return candidateColumns.find((col) => available.has(col)) || null;
 };
 
+const resolveCategoriaIdForCreate = async (connection, rawCategoriaId) => {
+  const categoriaId = Number.parseInt(rawCategoriaId, 10);
+  if (!Number.isNaN(categoriaId) && categoriaId > 0) {
+    return categoriaId;
+  }
+
+  try {
+    const [rows] = await connection.query('SELECT id_categoria FROM categorias ORDER BY id_categoria ASC LIMIT 1');
+    const fallbackId = Number.parseInt(rows?.[0]?.id_categoria, 10);
+    if (!Number.isNaN(fallbackId) && fallbackId > 0) {
+      return fallbackId;
+    }
+  } catch (_error) {
+    // If categories are unavailable, keep null and let existing flow handle validation.
+  }
+
+  return null;
+};
+
 const crearEventoDirectoFallback = async (connection, payload) => {
   const organizerColumn = await resolveOrganizerColumn(connection);
   if (!organizerColumn) {
@@ -494,6 +513,7 @@ exports.crearEvento = async (req, res) => {
 
   try {
     connection = await pool.getConnection();
+    const categoriaId = await resolveCategoriaIdForCreate(connection, id_categoria);
     let idEvento = 0;
 
     try {
@@ -507,7 +527,7 @@ exports.crearEvento = async (req, res) => {
           fecha_fin || null,
           ubicacion,
           capacidadNum,
-          id_categoria ? parseInt(id_categoria, 10) : null,
+          categoriaId,
           imagen_url || null
         ]
       );
@@ -528,7 +548,7 @@ exports.crearEvento = async (req, res) => {
         fechaFin: fecha_fin || null,
         ubicacion,
         capacidad: capacidadNum,
-        idCategoria: id_categoria ? parseInt(id_categoria, 10) : null,
+        idCategoria: categoriaId,
         imagenUrl: imagen_url || null,
         estado: 'borrador'
       });
