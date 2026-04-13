@@ -6,8 +6,22 @@ const AdminModule = {
   solicitudes: [],
   resumenSolicitudes: null,
   filtroSolicitudes: null,
+  solicitudSeleccionadaId: null,
   solicitudesError: '',
   tab_activo: 'dashboard',
+
+  escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  formatMultiline(value) {
+    return this.escapeHtml(value || 'No especificado').replace(/\n/g, '<br>');
+  },
 
   isAdminRole(rol) {
     const value = (rol ?? '').toString().trim().toLowerCase();
@@ -134,6 +148,19 @@ const AdminModule = {
     try {
       const response = await api.listarSolicitudesOrganizador(estado || null);
       this.solicitudes = response.solicitudes || [];
+      if (!this.solicitudSeleccionadaId && this.solicitudes.length > 0) {
+        this.solicitudSeleccionadaId = Number(this.solicitudes[0].id);
+      }
+
+      if (this.solicitudes.length > 0) {
+        const existeSeleccion = this.solicitudes.some((item) => Number(item.id) === Number(this.solicitudSeleccionadaId));
+        if (!existeSeleccion) {
+          this.solicitudSeleccionadaId = Number(this.solicitudes[0].id);
+        }
+      } else {
+        this.solicitudSeleccionadaId = null;
+      }
+
       this.resumenSolicitudes = response.resumen || null;
       this.filtroSolicitudes = estado || null;
       this.solicitudesError = '';
@@ -141,6 +168,7 @@ const AdminModule = {
     } catch (error) {
       console.error('Error al cargar solicitudes de organizador:', error);
       this.solicitudes = [];
+      this.solicitudSeleccionadaId = null;
       this.resumenSolicitudes = { pendientes: 0, aprobadas: 0, rechazadas: 0, total: 0 };
       this.filtroSolicitudes = estado || null;
       this.solicitudesError = error?.message || 'No se pudieron cargar las solicitudes';
@@ -154,6 +182,11 @@ const AdminModule = {
 
     const resumen = this.resumenSolicitudes || { pendientes: 0, aprobadas: 0, rechazadas: 0, total: 0 };
     const filtroActual = this.filtroSolicitudes || 'todas';
+    const solicitudSeleccionada = this.solicitudes.find((item) => Number(item.id) === Number(this.solicitudSeleccionadaId)) || this.solicitudes[0] || null;
+    const opcionesSolicitudes = this.solicitudes.map((solicitud) => {
+      const selected = Number(solicitud.id) === Number(solicitudSeleccionada?.id) ? 'selected' : '';
+      return `<option value="${solicitud.id}" ${selected}>#${solicitud.id} - ${this.escapeHtml(solicitud.nombre_completo)} (${this.escapeHtml(solicitud.estado)})</option>`;
+    }).join('');
 
     container.innerHTML = `
       <div class="card" style="margin-bottom: 16px;">
@@ -202,46 +235,51 @@ const AdminModule = {
         ${this.solicitudes.length === 0 ? `
           <div class="solicitudes-empty">No hay solicitudes para el filtro seleccionado.</div>
         ` : `
-          <table>
-            <thead>
-              <tr>
-                <th>Solicitante</th>
-                <th>Organizacion</th>
-                <th>Experiencia</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-                <th>Revision</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${this.solicitudes.map((solicitud) => `
-                <tr>
-                  <td>
-                    <strong>${solicitud.nombre_completo}</strong><br>
-                    <small>${solicitud.email}</small>
-                  </td>
-                  <td>${solicitud.organizacion}</td>
-                  <td class="solicitud-experiencia">${solicitud.experiencia}</td>
-                  <td>
-                    <span class="badge badge-${solicitud.estado === 'aprobada' ? 'success' : solicitud.estado === 'rechazada' ? 'danger' : 'pending'}">${solicitud.estado}</span>
-                    ${solicitud.motivo_rechazo ? `<br><small>Motivo: ${solicitud.motivo_rechazo}</small>` : ''}
-                  </td>
-                  <td>${new Date(solicitud.fecha_solicitud).toLocaleString()}</td>
-                  <td>
-                    ${solicitud.admin_revision_nombre || '-'}
-                    ${solicitud.fecha_revision ? `<br><small>${new Date(solicitud.fecha_revision).toLocaleString()}</small>` : ''}
-                  </td>
-                  <td class="acciones">
-                    ${solicitud.estado === 'pendiente' ? `
-                      <button class="btn btn-accion btn-secondary" onclick="AdminModule.aprobarSolicitud(${solicitud.id})">Aprobar</button>
-                      <button class="btn btn-accion btn-danger" onclick="AdminModule.rechazarSolicitud(${solicitud.id})">Rechazar</button>
-                    ` : '<span style="color: var(--text-light);">Sin acciones</span>'}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          <div class="solicitud-selector-wrap">
+            <label for="selectorSolicitud" class="solicitud-selector-label">Selecciona la solicitud que deseas revisar</label>
+            <select id="selectorSolicitud" class="solicitud-selector" onchange="AdminModule.seleccionarSolicitud(this.value)">
+              ${opcionesSolicitudes}
+            </select>
+          </div>
+
+          ${solicitudSeleccionada ? `
+            <div class="solicitud-detalle">
+              <div class="solicitud-detalle-grid">
+                <div><strong>ID solicitud:</strong> #${solicitudSeleccionada.id}</div>
+                <div><strong>Estado:</strong> <span class="badge badge-${solicitudSeleccionada.estado === 'aprobada' ? 'success' : solicitudSeleccionada.estado === 'rechazada' ? 'danger' : 'pending'}">${this.escapeHtml(solicitudSeleccionada.estado)}</span></div>
+                <div><strong>Nombre completo:</strong> ${this.escapeHtml(solicitudSeleccionada.nombre_completo)}</div>
+                <div><strong>Email:</strong> ${this.escapeHtml(solicitudSeleccionada.email)}</div>
+                <div><strong>Organizacion:</strong> ${this.escapeHtml(solicitudSeleccionada.organizacion)}</div>
+                <div><strong>Telefono:</strong> ${this.escapeHtml(solicitudSeleccionada.telefono_contacto || 'No especificado')}</div>
+                <div><strong>Fecha de solicitud:</strong> ${new Date(solicitudSeleccionada.fecha_solicitud).toLocaleString()}</div>
+                <div><strong>Revisado por:</strong> ${this.escapeHtml(solicitudSeleccionada.admin_revision_nombre || 'Sin revision')}</div>
+                <div><strong>Fecha de revision:</strong> ${solicitudSeleccionada.fecha_revision ? new Date(solicitudSeleccionada.fecha_revision).toLocaleString() : 'Sin revision'}</div>
+              </div>
+
+              <div class="solicitud-bloque">
+                <h3>Experiencia declarada</h3>
+                <p>${this.formatMultiline(solicitudSeleccionada.experiencia)}</p>
+              </div>
+
+              <div class="solicitud-bloque">
+                <h3>Comentarios y metadata enviada</h3>
+                <p>${this.formatMultiline(solicitudSeleccionada.comentarios)}</p>
+              </div>
+
+              <div class="solicitud-bloque">
+                <h3>Motivo de rechazo (si existe)</h3>
+                <p>${this.formatMultiline(solicitudSeleccionada.motivo_rechazo)}</p>
+              </div>
+
+              <div class="solicitud-acciones-finales">
+                ${solicitudSeleccionada.estado === 'pendiente' ? `
+                  <button class="btn btn-secondary" onclick="AdminModule.aprobarSolicitud(${solicitudSeleccionada.id})">Aceptar</button>
+                  <button class="btn btn-danger" onclick="AdminModule.rechazarSolicitud(${solicitudSeleccionada.id})">Negar</button>
+                  <button class="btn btn-outline" onclick="AdminModule.solicitarMasInformacion(${solicitudSeleccionada.id})">Solicitar mas informacion</button>
+                ` : '<span style="color: var(--text-light);">Esta solicitud ya fue revisada.</span>'}
+              </div>
+            </div>
+          ` : ''}
         `}
       </div>
     `;
@@ -254,6 +292,11 @@ const AdminModule = {
     if (this.tab_activo !== 'solicitudes') {
       this.cambiarTab('solicitudes');
     }
+  },
+
+  seleccionarSolicitud(id) {
+    this.solicitudSeleccionadaId = Number(id) || null;
+    this.renderSolicitudesOrganizador();
   },
 
   async aprobarSolicitud(id) {
@@ -286,6 +329,30 @@ const AdminModule = {
     } catch (error) {
       alert('Error: ' + error.message);
     }
+  },
+
+  solicitarMasInformacion(id) {
+    const solicitud = this.solicitudes.find((item) => Number(item.id) === Number(id));
+    if (!solicitud) {
+      alert('No se encontro la solicitud.');
+      return;
+    }
+
+    const mensaje = prompt('Escribe que informacion adicional necesitas del solicitante:');
+    if (!mensaje || !mensaje.trim()) {
+      return;
+    }
+
+    const subject = encodeURIComponent(`Solicitud de informacion adicional - Solicitud #${solicitud.id}`);
+    const body = encodeURIComponent(
+      `Hola ${solicitud.nombre_completo},\n\n` +
+      `Para continuar con la revision de tu solicitud de organizador (#${solicitud.id}), necesitamos la siguiente informacion adicional:\n\n` +
+      `${mensaje.trim()}\n\n` +
+      'Por favor responde este correo con los datos solicitados.\n\n' +
+      'Equipo de Administracion Eventos+'
+    );
+
+    window.location.href = `mailto:${solicitud.email}?subject=${subject}&body=${body}`;
   },
 
   async cargarAdministradores() {

@@ -161,6 +161,61 @@
   white-space: normal;
 }
 
+.solicitud-selector-wrap {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.solicitud-selector-label {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.solicitud-selector {
+  width: 100%;
+  max-width: 620px;
+}
+
+.solicitud-detalle {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.solicitud-detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.solicitud-bloque {
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.solicitud-bloque h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.solicitud-bloque p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.solicitud-acciones-finales {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 /* Modales */
 .modal {
   display: none;
