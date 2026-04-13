@@ -2,6 +2,7 @@
 const AdminModule = {
   usuario: null,
   usuarios: [],
+  filtroNombreUsuarios: '',
   administradores: [],
   eventos: [],
   categoriasEvento: [],
@@ -164,11 +165,16 @@ const AdminModule = {
   async cargarUsuarios() {
     try {
       const response = await api.listarUsuarios();
-      this.usuarios = response.usuarios;
+      this.usuarios = response.usuarios || [];
       this.renderUsuarios();
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
     }
+  },
+
+  actualizarFiltroUsuariosNombre(value) {
+    this.filtroNombreUsuarios = String(value || '').trim();
+    this.renderUsuarios();
   },
 
   async cargarCategoriasEvento() {
@@ -929,10 +935,28 @@ const AdminModule = {
       return normalized === '1' || normalized === 'true' || normalized === 'activo';
     };
 
+    const filtro = String(this.filtroNombreUsuarios || '').trim().toLowerCase();
+    const usuariosFiltrados = !filtro
+      ? this.usuarios
+      : this.usuarios.filter((usuario) => String(usuario?.nombre || '').toLowerCase().includes(filtro));
+
     container.innerHTML = `
       <div class="card">
         <div class="card-header">
           <h2>Gestión de Usuarios</h2>
+        </div>
+        <div class="usuarios-buscador-wrap">
+          <label class="usuarios-buscador-label" for="buscarUsuarioNombre">Buscar por nombre</label>
+          <div class="usuarios-buscador-input-wrap">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input
+              id="buscarUsuarioNombre"
+              type="text"
+              placeholder="Escribe un nombre..."
+              value="${this.escapeHtml(this.filtroNombreUsuarios)}"
+              oninput="AdminModule.actualizarFiltroUsuariosNombre(this.value)"
+            >
+          </div>
         </div>
         <table>
           <thead>
@@ -946,7 +970,9 @@ const AdminModule = {
             </tr>
           </thead>
           <tbody>
-            ${this.usuarios.map(usuario => {
+            ${usuariosFiltrados.length === 0
+              ? '<tr><td colspan="6" style="text-align:center; color: var(--text-light);">No se encontraron usuarios con ese nombre.</td></tr>'
+              : usuariosFiltrados.map(usuario => {
               const isActivo = toActivo(usuario.activo);
               const userId = Number(usuario.id || usuario.id_usuario || 0);
 
@@ -1018,6 +1044,8 @@ const AdminModule = {
         </div>
       ` : ''}
     `;
+
+    window.NavbarModule?.renderLucideIcons?.(container);
   },
 
   setupEventListeners() {
