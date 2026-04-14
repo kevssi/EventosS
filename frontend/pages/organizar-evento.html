@@ -246,9 +246,9 @@
       statusBox.textContent = message;
     };
 
-    const toIsoLocalDateTime = (date, time) => {
+    const toMysqlDateTime = (date, time) => {
       if (!date || !time) return null;
-      return new Date(`${date}T${time}:00`).toISOString();
+      return `${date} ${time}:00`;
     };
 
     const parseZone = (nombreId, cupoId, precioId, required = false) => {
@@ -280,15 +280,15 @@
       const seguroPoliza = document.getElementById('seguroPoliza').value.trim();
       const cumplimientoNormativo = document.getElementById('cumplimientoNormativo').value.trim();
 
-      const fechaInicioISO = toIsoLocalDateTime(fecha, horaInicio);
-      const fechaFinISO = horaFin ? toIsoLocalDateTime(fecha, horaFin) : null;
+      const fechaInicio = toMysqlDateTime(fecha, horaInicio);
+      const fechaFin = horaFin ? toMysqlDateTime(fecha, horaFin) : null;
 
-      if (!fechaInicioISO) {
+      if (!fechaInicio) {
         showStatus('error', 'Debes indicar fecha y hora de inicio validas.');
         return;
       }
 
-      if (fechaFinISO && new Date(fechaFinISO) <= new Date(fechaInicioISO)) {
+      if (fechaFin && new Date(fechaFin.replace(' ', 'T')) <= new Date(fechaInicio.replace(' ', 'T'))) {
         showStatus('error', 'La hora de termino debe ser posterior a la hora de inicio.');
         return;
       }
@@ -330,8 +330,8 @@
       const payload = {
         titulo,
         descripcion,
-        fecha_inicio: fechaInicioISO,
-        fecha_fin: fechaFinISO,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
         ubicacion,
         capacidad
       };

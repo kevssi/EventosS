@@ -76,6 +76,24 @@ const normalizeMysqlDateTime = (value) => {
   return formatUtcAsMysqlDateTime(parsed);
 };
 
+const normalizeImageUrl = (value) => {
+  if (value === undefined || value === null) return null;
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) {
+    return raw;
+  }
+
+  if (raw.startsWith('/publi/')) return raw;
+  if (raw.startsWith('publi/')) return `/${raw}`;
+  if (raw.startsWith('/uploads/')) return `/publi${raw}`;
+  if (raw.startsWith('uploads/')) return `/publi/${raw}`;
+
+  return raw;
+};
+
 const matchesTipo = (evento, tipo) => {
   if (!tipo) return true;
 
@@ -544,6 +562,7 @@ exports.crearEvento = async (req, res) => {
   const capacidadNum = parseInt(capacidad, 10);
   const fechaInicioMysql = normalizeMysqlDateTime(fecha_inicio);
   const fechaFinMysql = normalizeMysqlDateTime(fecha_fin);
+  const imagenUrlNormalizada = normalizeImageUrl(imagen_url);
 
   if (!titulo || !fechaInicioMysql || !ubicacion || Number.isNaN(capacidadNum) || capacidadNum <= 0) {
     return res.status(400).json({ error: 'Faltan campos requeridos o capacidad invalida' });
@@ -572,7 +591,7 @@ exports.crearEvento = async (req, res) => {
           ubicacion,
           capacidadNum,
           categoriaId,
-          imagen_url || null
+          imagenUrlNormalizada
         ]
       );
 
@@ -593,7 +612,7 @@ exports.crearEvento = async (req, res) => {
         ubicacion,
         capacidad: capacidadNum,
         idCategoria: categoriaId,
-        imagenUrl: imagen_url || null,
+        imagenUrl: imagenUrlNormalizada,
         estado: 'borrador'
       });
     }
@@ -635,6 +654,7 @@ exports.actualizarEvento = async (req, res) => {
 
   const fechaInicioMysql = normalizeMysqlDateTime(fecha_inicio);
   const fechaFinMysql = normalizeMysqlDateTime(fecha_fin);
+  const imagenUrlNormalizada = normalizeImageUrl(imagen_url);
 
   if (!fechaInicioMysql) {
     return res.status(400).json({ error: 'Fecha de inicio invalida' });
@@ -657,7 +677,7 @@ exports.actualizarEvento = async (req, res) => {
         fechaFinMysql,
         ubicacion,
         parseInt(capacidad),
-        imagen_url || null,
+        imagenUrlNormalizada,
         estado || 'borrador'
       ]
     );

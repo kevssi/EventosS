@@ -173,6 +173,16 @@ const HomeModule = {
       return `/publi/${slug}.jpg`;
     };
 
+    const normalizarImagenUrl = (valor) => {
+      const raw = String(valor || '').trim();
+      if (!raw) return null;
+      if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+      if (raw.startsWith('/')) return raw;
+      if (raw.startsWith('publi/')) return `/${raw}`;
+      if (raw.startsWith('uploads/')) return `/publi/${raw}`;
+      return raw;
+    };
+
     try {
       const response = await api.listarEventos({ tipo: 'musica', limit: 5 });
       const eventos = response.eventos || [];
@@ -194,7 +204,7 @@ const HomeModule = {
       }
 
       container.innerHTML = eventos.map((evento, index) => {
-        const image = evento.imagen_url || this.fallbackImages[index % this.fallbackImages.length];
+        const image = normalizarImagenUrl(evento.imagen_url) || this.fallbackImages[index % this.fallbackImages.length];
         const fecha = evento.fecha_inicio
           ? new Date(evento.fecha_inicio).toLocaleDateString('es-MX', {
               day: '2-digit',
@@ -207,7 +217,7 @@ const HomeModule = {
         const localTitleKey = normalizedTitle || evento.titulo?.toString().toLowerCase();
         const localImage = imagenesLocal[normalizedTitle] || imagenesLocal[localTitleKey] || imagenesLocal[normalizeTitle(evento.titulo?.replace(/-/g, ' '))] || null;
         const generatedImage = imagenPorTitulo(evento.titulo);
-        const imgSrc = localImage || evento.imagen_url || generatedImage || image;
+        const imgSrc = normalizarImagenUrl(evento.imagen_url) || localImage || generatedImage || image;
 
         return `
           <a class="card" href="pages/detalle-evento.html?id=${evento.id}">

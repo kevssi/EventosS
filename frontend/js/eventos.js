@@ -193,10 +193,20 @@ const EventosModule = {
       return '/publi/' + slug + '.jpg';
     };
 
+    const normalizarImagenUrl = (valor) => {
+      const raw = String(valor || '').trim();
+      if (!raw) return null;
+      if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+      if (raw.startsWith('/')) return raw;
+      if (raw.startsWith('publi/')) return `/${raw}`;
+      if (raw.startsWith('uploads/')) return `/publi/${raw}`;
+      return raw;
+    };
+
     return eventos.map((evento) => {
       const artista = this.extraerNombreArtista(evento?.titulo || '');
       const normalizedTitulo = normalizeTitle(evento?.titulo || '');
-      const imagenSubida = String(evento?.imagen_url || '').trim() || null;
+      const imagenSubida = normalizarImagenUrl(evento?.imagen_url);
       const localImage = imagenesPorEvento[normalizedTitulo] || imagenesPorEvento[evento?.titulo] || null;
       const imagenGenerada = imagenPorTitulo(evento?.titulo);
       const tituloNormalizado = (evento?.titulo || '').toLowerCase();

@@ -50,12 +50,23 @@ const BoletosModule = {
   obtenerImagenEvento(evento) {
     if (!evento) return this.fallbackImage;
 
+    const normalizarImagenUrl = (valor) => {
+      const raw = String(valor || '').trim();
+      if (!raw) return null;
+      if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+      if (raw.startsWith('/')) return raw;
+      if (raw.startsWith('publi/')) return `/${raw}`;
+      if (raw.startsWith('uploads/')) return `/publi/${raw}`;
+      return raw;
+    };
+
     const normalizedTitle = this.normalizeTitle ? this.normalizeTitle(evento.titulo) : evento.titulo?.toString().toLowerCase() || '';
     const plainTitle = evento.titulo?.toString().toLowerCase() || '';
     const localImage = this.imagenesLocal[normalizedTitle] || this.imagenesLocal[plainTitle] || this.imagenesLocal[this.normalizeTitle(plainTitle.replace(/-/g, ' '))] || null;
     const generatedImage = this.imagenPorTitulo(evento.titulo);
+    const imagenSubida = normalizarImagenUrl(evento.imagen_url);
 
-    return localImage || evento.imagen_url || generatedImage || this.fallbackImage;
+    return imagenSubida || localImage || generatedImage || this.fallbackImage;
   },
 
   async init() {
