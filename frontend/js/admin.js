@@ -53,6 +53,16 @@ const AdminModule = {
     return Number.isNaN(parsed.getTime()) ? 'No definido' : parsed.toLocaleString();
   },
 
+  normalizarImagenUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+    if (raw.startsWith('/')) return raw;
+    if (raw.startsWith('publi/')) return `/${raw}`;
+    if (raw.startsWith('uploads/')) return `/publi/${raw}`;
+    return raw;
+  },
+
   isAdminRole(rol) {
     const value = (rol ?? '').toString().trim().toLowerCase();
     return value === 'administrador' || value === 'admin' || value === '3';
@@ -315,6 +325,7 @@ const AdminModule = {
 
   mostrarModalEvento(eventoId) {
     const evento = eventoId ? this.eventos.find((item) => Number(item.id) === Number(eventoId)) : null;
+    const imagenActual = this.normalizarImagenUrl(evento?.imagen_url || '');
     const categoryOptions = this.categoriasEvento.map((c) => (
       `<option value="${c.id}" ${Number(evento?.id_categoria) === Number(c.id) ? 'selected' : ''}>${this.escapeHtml(c.nombre)}</option>`
     )).join('');
@@ -359,8 +370,14 @@ const AdminModule = {
             </select>
           </div>
           <div class="form-group">
-            <label for="eventoImagen">Imagen URL</label>
-            <input type="url" id="eventoImagen" value="${this.escapeHtml(evento?.imagen_url || '')}">
+            <label for="eventoImagenFile">Imagen del evento (archivo)</label>
+            <input type="file" id="eventoImagenFile" accept="image/*">
+            <small class="modal-help-text">Si eliges un archivo, reemplazara la URL de imagen actual.</small>
+            <img id="eventoImagenPreview" class="admin-imagen-preview" src="${this.escapeHtml(imagenActual || '')}" alt="Vista previa" style="${imagenActual ? '' : 'display:none;'}">
+          </div>
+          <div class="form-group">
+            <label for="eventoImagen">Imagen URL (opcional)</label>
+            <input type="text" id="eventoImagen" value="${this.escapeHtml(imagenActual || '')}">
           </div>
           <div class="form-group">
             <label for="eventoEstado">Estado</label>
@@ -379,6 +396,40 @@ const AdminModule = {
     `;
 
     document.body.appendChild(overlay);
+    const fileInput = overlay.querySelector('#eventoImagenFile');
+    const imageUrlInput = overlay.querySelector('#eventoImagen');
+
+    const actualizarPreview = () => {
+      const preview = overlay.querySelector('#eventoImagenPreview');
+      if (!preview) return;
+
+      if (preview.dataset.objectUrl) {
+        URL.revokeObjectURL(preview.dataset.objectUrl);
+        delete preview.dataset.objectUrl;
+      }
+
+      const selectedFile = fileInput?.files?.[0];
+      if (selectedFile) {
+        const objectUrl = URL.createObjectURL(selectedFile);
+        preview.dataset.objectUrl = objectUrl;
+        preview.src = objectUrl;
+        preview.style.display = 'block';
+        return;
+      }
+
+      const normalizedUrl = this.normalizarImagenUrl(imageUrlInput?.value || '');
+      if (normalizedUrl) {
+        preview.src = normalizedUrl;
+        preview.style.display = 'block';
+      } else {
+        preview.src = '';
+        preview.style.display = 'none';
+      }
+    };
+
+    fileInput?.addEventListener('change', actualizarPreview);
+    imageUrlInput?.addEventListener('input', actualizarPreview);
+
     overlay.addEventListener('click', (e) => { if (e.target === overlay) this.cerrarModalEvento(); });
     overlay.querySelector('#formGestionEvento').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -387,7 +438,12 @@ const AdminModule = {
   },
 
   cerrarModalEvento() {
-    document.getElementById('modalEventoOverlay')?.remove();
+    const overlay = document.getElementById('modalEventoOverlay');
+    const preview = overlay?.querySelector('#eventoImagenPreview');
+    if (preview?.dataset?.objectUrl) {
+      URL.revokeObjectURL(preview.dataset.objectUrl);
+    }
+    overlay?.remove();
   },
 
   toDateInputValue(value) {
@@ -401,6 +457,21 @@ const AdminModule = {
 
   async guardarEventoDesdeFormulario() {
     const id = Number(document.querySelector('#eventoIdEditar')?.value || 0);
+    const imagenFile = document.querySelector('#eventoImagenFile')?.files?.[0] || null;
+    let imagenUrl = this.normalizarImagenUrl(document.querySelector('#eventoImagen')?.value?.trim() || null);
+
+    if (imagenFile) {
+      try {
+        const fd = new FormData();
+        fd.append('imagen', imagenFile);
+        const uploadRes = await api.subirImagen(fd);
+        imagenUrl = this.normalizarImagenUrl(uploadRes?.imagen_url || null);
+      } catch (error) {
+        alert('No se pudo subir la imagen: ' + error.message);
+        return;
+      }
+    }
+
     const payload = {
       titulo: document.querySelector('#eventoTitulo')?.value?.trim(),
       descripcion: document.querySelector('#eventoDescripcion')?.value?.trim() || null,
@@ -409,7 +480,7 @@ const AdminModule = {
       ubicacion: document.querySelector('#eventoUbicacion')?.value?.trim(),
       capacidad: Number(document.querySelector('#eventoCapacidad')?.value || 0),
       id_categoria: Number(document.querySelector('#eventoCategoria')?.value || 0) || null,
-      imagen_url: document.querySelector('#eventoImagen')?.value?.trim() || null,
+      imagen_url: imagenUrl,
       estado: document.querySelector('#eventoEstado')?.value || 'borrador'
     };
 
