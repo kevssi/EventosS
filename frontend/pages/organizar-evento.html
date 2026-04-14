@@ -298,6 +298,11 @@
         parseZone('zona3Nombre', 'zona3Cupo', 'zona3Precio', false)
       ].filter(Boolean);
 
+      if (zonas.length === 0 || zonas.some((z) => !z.nombre || z.cupo <= 0 || z.precio < 0)) {
+        showStatus('error', 'Configura al menos una zona valida con cupo mayor a 0 y precio valido.');
+        return;
+      }
+
       const sumaCupos = zonas.reduce((acc, zona) => acc + (Number(zona.cupo) || 0), 0);
       if (sumaCupos > capacidad) {
         showStatus('error', 'La suma de cupos por zona no puede superar la capacidad total.');
@@ -332,7 +337,8 @@
         fecha_inicio: fechaInicio,
         fecha_fin: fechaFin,
         ubicacion,
-        capacidad
+        capacidad,
+        zonas
       };
 
       // Subir imagen si se selecciono una

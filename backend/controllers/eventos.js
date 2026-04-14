@@ -304,6 +304,114 @@ const resolveCategoriaIdForCreate = async (connection, rawCategoriaId) => {
   return null;
 };
 
+const normalizeZonasInput = (rawZonas) => {
+  if (!Array.isArray(rawZonas)) return [];
+
+  return rawZonas
+    .map((zona, index) => {
+      const nombre = String(zona?.nombre || '').trim();
+      const cupo = Number(zona?.cupo);
+      const precio = Number(zona?.precio);
+      const activa = zona?.activa !== false;
+
+      if (!activa || !nombre) return null;
+      if (!Number.isFinite(cupo) || cupo <= 0) return null;
+      if (!Number.isFinite(precio) || precio < 0) return null;
+
+      return {
+        nombre,
+        cupo: Math.floor(cupo),
+        precio,
+        descripcion: `Zona ${index + 1}: ${nombre}`
+      };
+    })
+    .filter(Boolean);
+};
+
+const createTiposBoletoDesdeZonas = async (connection, idEvento, zonas = []) => {
+  const eventoId = Number(idEvento);
+  if (!Number.isFinite(eventoId) || eventoId <= 0) return;
+  if (!Array.isArray(zonas) || zonas.length === 0) return;
+
+  const [tableRows] = await connection.query(
+    `
+      SELECT TABLE_NAME
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME IN ('tipos_boleto', 'tipo_boleto')
+      LIMIT 1
+    `
+  );
+
+  const tiposTable = tableRows?.[0]?.TABLE_NAME;
+  if (!tiposTable) return;
+
+  const [columnRows] = await connection.query(
+    `
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+    `,
+    [tiposTable]
+  );
+
+  const available = new Set((columnRows || []).map((row) => row.COLUMN_NAME));
+  const pick = (candidates) => candidates.find((name) => available.has(name)) || null;
+
+  const eventoCol = pick(['id_evento', 'evento_id']);
+  const nombreCol = pick(['nombre', 'tipo_boleto', 'titulo']);
+  const precioCol = pick(['precio', 'precio_unitario']);
+  const cantidadCol = pick(['cantidad', 'cantidad_total', 'cupo']);
+  const disponiblesCol = pick(['cantidad_disponible', 'disponibles', 'stock_disponible']);
+  const descripcionCol = pick(['descripcion', 'detalle']);
+  const estadoCol = pick(['estado', 'status']);
+
+  if (!eventoCol || !nombreCol || !precioCol || (!cantidadCol && !disponiblesCol)) {
+    return;
+  }
+
+  const [existingRows] = await connection.query(
+    `SELECT COUNT(1) AS total FROM ${tiposTable} WHERE ${eventoCol} = ?`,
+    [eventoId]
+  );
+
+  if (Number(existingRows?.[0]?.total || 0) > 0) {
+    return;
+  }
+
+  for (const zona of zonas) {
+    const columns = [eventoCol, nombreCol, precioCol];
+    const values = [eventoId, zona.nombre, zona.precio];
+
+    if (cantidadCol) {
+      columns.push(cantidadCol);
+      values.push(zona.cupo);
+    }
+
+    if (disponiblesCol) {
+      columns.push(disponiblesCol);
+      values.push(zona.cupo);
+    }
+
+    if (descripcionCol) {
+      columns.push(descripcionCol);
+      values.push(zona.descripcion);
+    }
+
+    if (estadoCol) {
+      columns.push(estadoCol);
+      values.push('activo');
+    }
+
+    const placeholders = columns.map(() => '?').join(', ');
+    await connection.query(
+      `INSERT INTO ${tiposTable} (${columns.join(', ')}) VALUES (${placeholders})`,
+      values
+    );
+  }
+};
+
 const crearEventoDirectoFallback = async (connection, payload) => {
   const organizerColumn = await resolveOrganizerColumn(connection);
   if (!organizerColumn) {
@@ -556,13 +664,15 @@ exports.crearEvento = async (req, res) => {
     ubicacion,
     capacidad,
     id_categoria,
-    imagen_url
+    imagen_url,
+    zonas
   } = req.body;
 
   const capacidadNum = parseInt(capacidad, 10);
   const fechaInicioMysql = normalizeMysqlDateTime(fecha_inicio);
   const fechaFinMysql = normalizeMysqlDateTime(fecha_fin);
   const imagenUrlNormalizada = normalizeImageUrl(imagen_url);
+  const zonasNormalizadas = normalizeZonasInput(zonas);
 
   if (!titulo || !fechaInicioMysql || !ubicacion || Number.isNaN(capacidadNum) || capacidadNum <= 0) {
     return res.status(400).json({ error: 'Faltan campos requeridos o capacidad invalida' });
@@ -623,6 +733,12 @@ exports.crearEvento = async (req, res) => {
         await connection.query('UPDATE eventos SET estado = ? WHERE id = ?', ['publicado', idEvento]);
       } catch (_estadoError) {
         // Si el esquema no permite actualizar estado aqui, no bloqueamos la creacion.
+      }
+
+      try {
+        await createTiposBoletoDesdeZonas(connection, idEvento, zonasNormalizadas);
+      } catch (_zonasError) {
+        // Si falla creacion de zonas, no bloqueamos el alta del evento.
       }
     }
 
