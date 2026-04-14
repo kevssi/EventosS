@@ -186,6 +186,25 @@ const BoletosModule = {
     return params.get('id');
   },
 
+  escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  formatearDescripcionPublica(descripcion) {
+    const raw = String(descripcion || '').trim();
+    if (!raw) return 'Sin descripcion disponible';
+
+    // En eventos enviados por formulario operativo, solo mostramos la descripcion principal.
+    const principal = raw.split(/\n\s*---\s*\n/)[0].trim() || raw;
+    const safe = this.escapeHtml(principal);
+    return safe.replace(/\n/g, '<br>');
+  },
+
   async cargarEventoDetalle() {
     try {
       const id = this.obtenerIdEvento();
@@ -242,7 +261,7 @@ const BoletosModule = {
           </div>
 
           <div class="evento-descripcion">
-            ${this.evento.descripcion || 'Sin descripción disponible'}
+            ${this.formatearDescripcionPublica(this.evento.descripcion)}
           </div>
         </div>
       </div>
@@ -269,6 +288,19 @@ const BoletosModule = {
   renderTiposBoletos(tipos) {
     const container = document.querySelector('#tiposBoletos');
     if (!container) return;
+
+    if (!Array.isArray(tipos) || tipos.length === 0) {
+      container.innerHTML = `
+        <div class="tipo-boleto" style="justify-content: center; text-align: center;">
+          <div class="tipo-boleto-info" style="width: 100%;">
+            <h4>Boletos no disponibles por ahora</h4>
+            <p>Este evento aun no tiene zonas o tipos de boleto configurados.</p>
+          </div>
+        </div>
+      `;
+      this.actualizarResumen();
+      return;
+    }
 
     container.innerHTML = tipos.map(tipo => {
       const disponibles = Number(tipo.disponibles ?? tipo.cantidad_disponible ?? tipo.cantidad ?? 0);
