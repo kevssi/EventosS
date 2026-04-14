@@ -517,6 +517,7 @@ const EventosModule = {
 
     const imagenFallback = evento.imagen_fallback || this.obtenerImagenSemilla(evento.titulo || 'evento-popular');
     const imagenResuelta = evento.imagen_resuelta || imagenFallback;
+    const fallbackLocal = this.obtenerPlaceholderSVG(evento.titulo || 'Evento destacado');
 
     titulo.textContent = evento.titulo || 'Evento popular';
     kicker.textContent = (evento.categoria || 'VARIAS FECHAS').toUpperCase();
@@ -525,7 +526,7 @@ const EventosModule = {
     imagen.alt = evento.titulo || 'Evento popular';
     imagen.onerror = function onPopularImageError() {
       this.onerror = null;
-      this.src = imagenFallback || '/publi/fallback.jpg';
+      this.src = imagenFallback || fallbackLocal;
     };
 
     link.href = this.obtenerEventoHref(evento);
