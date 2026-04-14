@@ -196,6 +196,7 @@ const EventosModule = {
     return eventos.map((evento) => {
       const artista = this.extraerNombreArtista(evento?.titulo || '');
       const normalizedTitulo = normalizeTitle(evento?.titulo || '');
+      const imagenSubida = String(evento?.imagen_url || '').trim() || null;
       const localImage = imagenesPorEvento[normalizedTitulo] || imagenesPorEvento[evento?.titulo] || null;
       const imagenGenerada = imagenPorTitulo(evento?.titulo);
       const tituloNormalizado = (evento?.titulo || '').toLowerCase();
@@ -209,8 +210,8 @@ const EventosModule = {
       const fallbackLocal = partidoGlobal ? imagenesPorEvento[partidoGlobal] : null;
       const imagenFallback = this.obtenerImagenCategoria(evento?.categoria || evento?.titulo || 'Evento');
 
-      // Evitamos llamadas externas por cada tarjeta para acelerar carga inicial.
-      const imagenFinal = localImage || fallbackLocal || imagenGenerada || imagenFallback;
+      // Prioriza la imagen cargada por el organizador si existe.
+      const imagenFinal = imagenSubida || localImage || fallbackLocal || imagenGenerada || imagenFallback;
 
       return {
         ...evento,
