@@ -379,8 +379,7 @@ const AdminModule = {
           <div class="form-group">
             <label for="eventoEstado">Estado</label>
             <select id="eventoEstado">
-              <option value="borrador" ${(evento?.estado || 'borrador') === 'borrador' ? 'selected' : ''}>Borrador</option>
-              <option value="publicado" ${evento?.estado === 'publicado' ? 'selected' : ''}>Publicado</option>
+              <option value="publicado" ${(evento?.estado || 'publicado') === 'publicado' ? 'selected' : ''}>Publicado</option>
               <option value="cancelado" ${evento?.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
             </select>
           </div>
@@ -476,7 +475,7 @@ const AdminModule = {
       capacidad: Number(document.querySelector('#eventoCapacidad')?.value || 0),
       id_categoria: Number(document.querySelector('#eventoCategoria')?.value || 0) || null,
       imagen_url: imagenUrl,
-      estado: document.querySelector('#eventoEstado')?.value || 'borrador'
+      estado: document.querySelector('#eventoEstado')?.value || 'publicado'
     };
 
     if (!payload.titulo || !payload.fecha_inicio || !payload.ubicacion || !payload.capacidad) {

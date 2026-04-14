@@ -613,8 +613,17 @@ exports.crearEvento = async (req, res) => {
         capacidad: capacidadNum,
         idCategoria: categoriaId,
         imagenUrl: imagenUrlNormalizada,
-        estado: 'borrador'
+        estado: 'publicado'
       });
+    }
+
+    // Fuerza publicacion al crear, incluso si el SP deja el estado en borrador.
+    if (idEvento > 0) {
+      try {
+        await connection.query('UPDATE eventos SET estado = ? WHERE id = ?', ['publicado', idEvento]);
+      } catch (_estadoError) {
+        // Si el esquema no permite actualizar estado aqui, no bloqueamos la creacion.
+      }
     }
 
     await connection.release();
@@ -678,7 +687,7 @@ exports.actualizarEvento = async (req, res) => {
         ubicacion,
         parseInt(capacidad),
         imagenUrlNormalizada,
-        estado || 'borrador'
+        estado || 'publicado'
       ]
     );
 
