@@ -26,39 +26,27 @@
         </div>
     </nav>
 
-    <!-- Hero -->
-    <div class="hero">
-        <div class="container">
-            <h1>¡Bienvenido a Eventos+!</h1>
-            <p>Descubre y compra boletos para los mejores eventos cerca de ti</p>
-        </div>
-    </div>
+    <section class="hero-spotlight" id="popularesSection" aria-label="Eventos destacados">
+        <button class="hero-nav" id="popularesPrev" type="button" aria-label="Evento anterior">&#10094;</button>
+        <a class="hero-spotlight-link" id="popularesCardLink" href="#" aria-live="polite">
+            <img id="popularesImagen" src="/publi/fallback.jpg" alt="Evento destacado">
+            <div class="hero-spotlight-overlay">
+                <p class="hero-kicker" id="popularesKicker">VARIAS FECHAS</p>
+                <h1 id="popularesTitulo">Cargando eventos destacados...</h1>
+                <p id="popularesMeta">Estamos preparando la cartelera para ti.</p>
+                <span class="hero-cta">COMPRAR BOLETOS</span>
+            </div>
+        </a>
+        <button class="hero-nav" id="popularesNext" type="button" aria-label="Evento siguiente">&#10095;</button>
+    </section>
+
+    <section class="hero-strip-wrap" aria-label="Navegacion rapida de destacados">
+        <div class="hero-strip" id="popularesStrip"></div>
+        <div class="populares-indicadores" id="popularesIndicadores"></div>
+    </section>
 
     <!-- Contenido -->
     <div class="container">
-        <section class="populares" id="popularesSection" aria-label="Eventos populares">
-            <div class="populares-header">
-                <h2>Top eventos populares</h2>
-                <p>Seleccionados automaticamente para mostrarte lo que mas se esta moviendo.</p>
-            </div>
-
-            <div class="populares-visor">
-                <button class="populares-nav" id="popularesPrev" type="button" aria-label="Evento anterior">&#10094;</button>
-                <a class="populares-card" id="popularesCardLink" href="#" aria-live="polite">
-                    <img id="popularesImagen" src="/publi/fallback.jpg" alt="Evento popular">
-                    <div class="populares-overlay">
-                        <span class="populares-badge" id="popularesCategoria">POPULAR</span>
-                        <h3 id="popularesTitulo">Cargando eventos populares...</h3>
-                        <p id="popularesMeta">Estamos preparando la cartelera para ti.</p>
-                        <span class="populares-cta">Ver detalles</span>
-                    </div>
-                </a>
-                <button class="populares-nav" id="popularesNext" type="button" aria-label="Evento siguiente">&#10095;</button>
-            </div>
-
-            <div class="populares-indicadores" id="popularesIndicadores"></div>
-        </section>
-
         <!-- Barra buscadora -->
         <section class="filtros" id="filtrosSection" aria-label="Buscar eventos">
             <div class="filtro-grupo">

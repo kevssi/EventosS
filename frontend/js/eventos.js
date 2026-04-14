@@ -441,14 +441,16 @@ const EventosModule = {
 
   renderCarruselPopulares(eventos = []) {
     const section = document.querySelector('#popularesSection');
+    const stripWrap = document.querySelector('.hero-strip-wrap');
+    const strip = document.querySelector('#popularesStrip');
     const titulo = document.querySelector('#popularesTitulo');
+    const kicker = document.querySelector('#popularesKicker');
     const meta = document.querySelector('#popularesMeta');
-    const categoria = document.querySelector('#popularesCategoria');
     const imagen = document.querySelector('#popularesImagen');
     const link = document.querySelector('#popularesCardLink');
     const indicadores = document.querySelector('#popularesIndicadores');
 
-    if (!section || !titulo || !meta || !categoria || !imagen || !link || !indicadores) return;
+    if (!section || !stripWrap || !strip || !titulo || !kicker || !meta || !imagen || !link || !indicadores) return;
 
     this.detenerCarruselPopulares();
     this.populares = this.seleccionarPopulares(eventos);
@@ -456,10 +458,30 @@ const EventosModule = {
 
     if (this.populares.length === 0) {
       section.hidden = true;
+      stripWrap.hidden = true;
       return;
     }
 
     section.hidden = false;
+    stripWrap.hidden = false;
+
+    strip.innerHTML = this.populares
+      .map((evento, index) => `
+        <button class="hero-strip-item${index === 0 ? ' activo' : ''}" type="button" data-index="${index}" aria-label="Ver ${evento.titulo}">
+          <strong>${evento.titulo || 'Evento destacado'}</strong>
+          <span>${this.formatearFechaEvento(evento.fecha_inicio)}</span>
+        </button>
+      `)
+      .join('');
+
+    strip.querySelectorAll('.hero-strip-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const index = Number(item.dataset.index || 0);
+        this.mostrarPopular(index);
+        this.reiniciarCarruselPopulares();
+      });
+    });
+
     indicadores.innerHTML = this.populares
       .map((_, index) => `<button class="populares-dot${index === 0 ? ' activo' : ''}" type="button" data-index="${index}" aria-label="Ir al evento popular ${index + 1}"></button>`)
       .join('');
@@ -484,19 +506,20 @@ const EventosModule = {
     const evento = this.populares[safeIndex];
 
     const titulo = document.querySelector('#popularesTitulo');
+    const kicker = document.querySelector('#popularesKicker');
     const meta = document.querySelector('#popularesMeta');
-    const categoria = document.querySelector('#popularesCategoria');
     const imagen = document.querySelector('#popularesImagen');
     const link = document.querySelector('#popularesCardLink');
     const indicadores = document.querySelectorAll('.populares-dot');
+    const stripItems = document.querySelectorAll('.hero-strip-item');
 
-    if (!titulo || !meta || !categoria || !imagen || !link) return;
+    if (!titulo || !kicker || !meta || !imagen || !link) return;
 
     const imagenFallback = evento.imagen_fallback || this.obtenerImagenSemilla(evento.titulo || 'evento-popular');
     const imagenResuelta = evento.imagen_resuelta || imagenFallback;
 
     titulo.textContent = evento.titulo || 'Evento popular';
-    categoria.textContent = (evento.categoria || 'POPULAR').toUpperCase();
+    kicker.textContent = (evento.categoria || 'VARIAS FECHAS').toUpperCase();
     meta.textContent = `${this.formatearFechaEvento(evento.fecha_inicio)} · ${evento.ubicacion || 'Ubicacion por confirmar'}`;
     imagen.src = imagenResuelta;
     imagen.alt = evento.titulo || 'Evento popular';
@@ -509,6 +532,10 @@ const EventosModule = {
 
     indicadores.forEach((dot, dotIndex) => {
       dot.classList.toggle('activo', dotIndex === safeIndex);
+    });
+
+    stripItems.forEach((item, itemIndex) => {
+      item.classList.toggle('activo', itemIndex === safeIndex);
     });
   },
 
