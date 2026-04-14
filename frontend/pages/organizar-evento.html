@@ -221,6 +221,9 @@
   <script>
     const form = document.getElementById('organizadorForm');
     const statusBox = document.getElementById('statusMensaje');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const params = new URLSearchParams(window.location.search);
+    const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
 
     // Preview de imagen
     document.getElementById('eventoImagenFile').addEventListener('change', (e) => {
@@ -248,6 +251,141 @@
     const toMysqlDateTime = (date, time) => {
       if (!date || !time) return null;
       return `${date} ${time}:00`;
+    };
+
+    const parseOperationalSections = (descripcion = '') => {
+      const text = String(descripcion || '');
+      const lines = text.split('\n').map((line) => line.trim());
+
+      const result = {
+        tipoEvento: '',
+        horaInicio: '',
+        horaFin: '',
+        zonas: [],
+        permisoFolio: '',
+        permisoAutoridad: '',
+        contratoRecinto: '',
+        derechosArtista: '',
+        seguroPoliza: '',
+        cumplimientoNormativo: ''
+      };
+
+      lines.forEach((line) => {
+        if (line.startsWith('- Tipo de evento:')) {
+          result.tipoEvento = line.replace('- Tipo de evento:', '').trim();
+        }
+
+        if (line.startsWith('- Horario:')) {
+          const horario = line.replace('- Horario:', '').trim();
+          const match = horario.match(/^(\d{2}:\d{2})(?:\s+a\s+(\d{2}:\d{2}))?$/i);
+          if (match) {
+            result.horaInicio = match[1] || '';
+            result.horaFin = match[2] || '';
+          }
+        }
+
+        const zonaMatch = line.match(/^\*\s*(.+?):\s*cupo\s*(\d+)\s*,\s*precio\s*([\d.]+)/i);
+        if (zonaMatch) {
+          result.zonas.push({
+            nombre: zonaMatch[1].trim(),
+            cupo: Number(zonaMatch[2]) || 0,
+            precio: Number(zonaMatch[3]) || 0
+          });
+        }
+
+        const permisoMatch = line.match(/^\*\s*Permiso gobierno\/localidad:\s*(.+)\s*\((.+)\)$/i);
+        if (permisoMatch) {
+          result.permisoFolio = permisoMatch[1].trim();
+          result.permisoAutoridad = permisoMatch[2].trim();
+        }
+
+        if (line.startsWith('* Contrato/autorizacion de recinto:')) {
+          result.contratoRecinto = line.replace('* Contrato/autorizacion de recinto:', '').trim();
+        }
+
+        if (line.startsWith('* Derechos de artista:')) {
+          result.derechosArtista = line.replace('* Derechos de artista:', '').trim();
+        }
+
+        if (line.startsWith('* Seguro/poliza:')) {
+          result.seguroPoliza = line.replace('* Seguro/poliza:', '').trim();
+        }
+
+        if (line.startsWith('* Cumplimiento normativo:')) {
+          result.cumplimientoNormativo = line.replace('* Cumplimiento normativo:', '').trim();
+        }
+      });
+
+      return result;
+    };
+
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = value ?? '';
+    };
+
+    const prefillFormIfEditing = async () => {
+      if (!editingEventId) return;
+
+      try {
+        const response = await api.obtenerEvento(editingEventId);
+        const evento = response?.evento || null;
+        if (!evento) return;
+
+        const fullDescripcion = String(evento.descripcion || '');
+        const descripcionBase = fullDescripcion.split(/\n\s*---\s*\n/)[0] || '';
+        const parsed = parseOperationalSections(fullDescripcion);
+
+        setValue('eventoNombre', evento.titulo || '');
+        setValue('eventoTipo', parsed.tipoEvento || '');
+        setValue('eventoLugar', evento.ubicacion || '');
+        setValue('eventoCapacidad', evento.capacidad || '');
+        setValue('eventoDescripcion', descripcionBase.trim());
+
+        const inicio = evento.fecha_inicio ? new Date(evento.fecha_inicio) : null;
+        if (inicio && !Number.isNaN(inicio.getTime())) {
+          const yyyy = inicio.getFullYear();
+          const mm = String(inicio.getMonth() + 1).padStart(2, '0');
+          const dd = String(inicio.getDate()).padStart(2, '0');
+          const hh = String(inicio.getHours()).padStart(2, '0');
+          const mi = String(inicio.getMinutes()).padStart(2, '0');
+          setValue('eventoFecha', `${yyyy}-${mm}-${dd}`);
+          setValue('eventoHoraInicio', parsed.horaInicio || `${hh}:${mi}`);
+        }
+
+        const fin = evento.fecha_fin ? new Date(evento.fecha_fin) : null;
+        if (fin && !Number.isNaN(fin.getTime())) {
+          const hh = String(fin.getHours()).padStart(2, '0');
+          const mi = String(fin.getMinutes()).padStart(2, '0');
+          setValue('eventoHoraFin', parsed.horaFin || `${hh}:${mi}`);
+        }
+
+        [0, 1, 2].forEach((index) => {
+          const zona = parsed.zonas[index] || null;
+          if (!zona) return;
+          setValue(`zona${index + 1}Nombre`, zona.nombre || '');
+          setValue(`zona${index + 1}Cupo`, zona.cupo || '');
+          setValue(`zona${index + 1}Precio`, zona.precio || '');
+        });
+
+        setValue('permisoFolio', parsed.permisoFolio || '');
+        setValue('permisoAutoridad', parsed.permisoAutoridad || '');
+        setValue('contratoRecinto', parsed.contratoRecinto || '');
+        setValue('derechosArtista', parsed.derechosArtista || '');
+        setValue('seguroPoliza', parsed.seguroPoliza || '');
+        setValue('cumplimientoNormativo', parsed.cumplimientoNormativo || '');
+
+        document.getElementById('aceptoContrato').checked = true;
+        document.getElementById('aceptoCondiciones').checked = true;
+        document.getElementById('aceptoResponsabilidades').checked = true;
+
+        if (submitBtn) {
+          submitBtn.textContent = 'Guardar cambios del evento';
+        }
+      } catch (_error) {
+        // Si falla la precarga, dejamos el formulario en modo creacion.
+      }
     };
 
     const parseZone = (nombreId, cupoId, precioId, required = false) => {
@@ -360,18 +498,26 @@
       if (imagenUrl) payload.imagen_url = imagenUrl;
 
       try {
-        const response = await api.crearEvento(payload);
+        const response = editingEventId
+          ? await api.actualizarEvento(editingEventId, payload)
+          : await api.crearEvento(payload);
         if (!response?.success) {
-          showStatus('error', response?.message || 'No se pudo enviar el evento a revision.');
+          showStatus('error', response?.message || 'No se pudo guardar el evento.');
           return;
         }
 
-        showStatus('ok', `Evento enviado correctamente (ID: ${response.id_evento}).`);
-        form.reset();
+        if (editingEventId) {
+          showStatus('ok', 'Evento actualizado correctamente.');
+        } else {
+          showStatus('ok', `Evento enviado correctamente (ID: ${response.id_evento}).`);
+          form.reset();
+        }
       } catch (error) {
         showStatus('error', error.message || 'Ocurrio un error al enviar el evento.');
       }
     });
+
+    prefillFormIfEditing();
   </script>
 </body>
 </html>
