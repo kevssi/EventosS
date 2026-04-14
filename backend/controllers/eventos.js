@@ -38,6 +38,44 @@ const normalizeText = (value) =>
     .toLowerCase()
     .trim();
 
+const padDatePart = (value) => value.toString().padStart(2, '0');
+
+const formatUtcAsMysqlDateTime = (date) => (
+  `${date.getUTCFullYear()}-${padDatePart(date.getUTCMonth() + 1)}-${padDatePart(date.getUTCDate())}`
+  + ` ${padDatePart(date.getUTCHours())}:${padDatePart(date.getUTCMinutes())}:${padDatePart(date.getUTCSeconds())}`
+);
+
+const normalizeMysqlDateTime = (value) => {
+  if (value === undefined || value === null) return null;
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  // Keep local date-time values as entered by the user when no timezone is provided.
+  const localIsoMatch = raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::(\d{2}))?(?:\.\d+)?$/);
+  if (localIsoMatch) {
+    const seconds = localIsoMatch[3] || '00';
+    return `${localIsoMatch[1]} ${localIsoMatch[2]}:${seconds}`;
+  }
+
+  const mysqlMatch = raw.match(/^(\d{4}-\d{2}-\d{2})\s(\d{2}:\d{2})(?::(\d{2}))?$/);
+  if (mysqlMatch) {
+    const seconds = mysqlMatch[3] || '00';
+    return `${mysqlMatch[1]} ${mysqlMatch[2]}:${seconds}`;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return `${raw} 00:00:00`;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return formatUtcAsMysqlDateTime(parsed);
+};
+
 const matchesTipo = (evento, tipo) => {
   if (!tipo) return true;
 
@@ -504,9 +542,15 @@ exports.crearEvento = async (req, res) => {
   } = req.body;
 
   const capacidadNum = parseInt(capacidad, 10);
+  const fechaInicioMysql = normalizeMysqlDateTime(fecha_inicio);
+  const fechaFinMysql = normalizeMysqlDateTime(fecha_fin);
 
-  if (!titulo || !fecha_inicio || !ubicacion || Number.isNaN(capacidadNum) || capacidadNum <= 0) {
+  if (!titulo || !fechaInicioMysql || !ubicacion || Number.isNaN(capacidadNum) || capacidadNum <= 0) {
     return res.status(400).json({ error: 'Faltan campos requeridos o capacidad invalida' });
+  }
+
+  if (fecha_fin && !fechaFinMysql) {
+    return res.status(400).json({ error: 'Fecha de fin invalida' });
   }
 
   let connection;
@@ -523,8 +567,8 @@ exports.crearEvento = async (req, res) => {
           req.user.id,
           titulo,
           descripcion || null,
-          fecha_inicio,
-          fecha_fin || null,
+          fechaInicioMysql,
+          fechaFinMysql,
           ubicacion,
           capacidadNum,
           categoriaId,
@@ -544,8 +588,8 @@ exports.crearEvento = async (req, res) => {
         idUsuario: req.user.id,
         titulo,
         descripcion: descripcion || null,
-        fechaInicio: fecha_inicio,
-        fechaFin: fecha_fin || null,
+        fechaInicio: fechaInicioMysql,
+        fechaFin: fechaFinMysql,
         ubicacion,
         capacidad: capacidadNum,
         idCategoria: categoriaId,
@@ -589,6 +633,17 @@ exports.actualizarEvento = async (req, res) => {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
   }
 
+  const fechaInicioMysql = normalizeMysqlDateTime(fecha_inicio);
+  const fechaFinMysql = normalizeMysqlDateTime(fecha_fin);
+
+  if (!fechaInicioMysql) {
+    return res.status(400).json({ error: 'Fecha de inicio invalida' });
+  }
+
+  if (fecha_fin && !fechaFinMysql) {
+    return res.status(400).json({ error: 'Fecha de fin invalida' });
+  }
+
   try {
     const connection = await pool.getConnection();
     const [resultado] = await connection.query(
@@ -598,8 +653,8 @@ exports.actualizarEvento = async (req, res) => {
         req.user.id,
         titulo,
         descripcion || null,
-        fecha_inicio,
-        fecha_fin || null,
+        fechaInicioMysql,
+        fechaFinMysql,
         ubicacion,
         parseInt(capacidad),
         imagen_url || null,
