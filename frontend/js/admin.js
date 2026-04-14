@@ -63,6 +63,33 @@ const AdminModule = {
     return raw;
   },
 
+  parseZonasDesdeDescripcion(descripcion) {
+    const text = String(descripcion || '');
+    if (!text) return [];
+
+    const lines = text.split('\n').map((line) => line.trim());
+    const zonas = [];
+
+    lines.forEach((line) => {
+      const match = line.match(/^\*\s*(.+?):\s*cupo\s*(\d+)\s*,\s*precio\s*([\d.]+)/i);
+      if (!match) return;
+
+      zonas.push({
+        activa: true,
+        nombre: match[1].trim(),
+        cupo: Number(match[2]) || '',
+        precio: Number(match[3]) || ''
+      });
+    });
+
+    return zonas;
+  },
+
+  normalizarEstadoEvento(estado) {
+    const value = String(estado || '').toLowerCase().trim();
+    return value === 'cancelado' ? 'cancelado' : 'publicado';
+  },
+
   isAdminRole(rol) {
     const value = (rol ?? '').toString().trim().toLowerCase();
     return value === 'administrador' || value === 'admin' || value === '3';
@@ -264,9 +291,8 @@ const AdminModule = {
     if (!container) return;
 
     const total = this.eventos.length;
-    const publicados = this.eventos.filter((evento) => String(evento.estado || '').toLowerCase() === 'publicado').length;
-    const borrador = this.eventos.filter((evento) => String(evento.estado || '').toLowerCase() === 'borrador').length;
-    const cancelados = this.eventos.filter((evento) => String(evento.estado || '').toLowerCase() === 'cancelado').length;
+    const publicados = this.eventos.filter((evento) => this.normalizarEstadoEvento(evento.estado) === 'publicado').length;
+    const cancelados = this.eventos.filter((evento) => this.normalizarEstadoEvento(evento.estado) === 'cancelado').length;
 
     const categoryOptions = this.categoriasEvento.map((categoria) => (
       `<option value="${categoria.id}">${this.escapeHtml(categoria.nombre)}</option>`
@@ -276,7 +302,6 @@ const AdminModule = {
       <div class="resumen-cards">
         <div class="resumen-card"><h3>Total Eventos</h3><div class="valor">${total}</div></div>
         <div class="resumen-card success"><h3>Publicados</h3><div class="valor">${publicados}</div></div>
-        <div class="resumen-card warning"><h3>Borrador</h3><div class="valor">${borrador}</div></div>
         <div class="resumen-card danger"><h3>Cancelados</h3><div class="valor">${cancelados}</div></div>
       </div>
 
@@ -298,7 +323,10 @@ const AdminModule = {
             </tr>
           </thead>
           <tbody>
-            ${this.eventos.length === 0 ? '<tr><td colspan="8" style="text-align:center; color: var(--text-light);">No hay eventos registrados.</td></tr>' : this.eventos.map((evento) => `
+            ${this.eventos.length === 0 ? '<tr><td colspan="8" style="text-align:center; color: var(--text-light);">No hay eventos registrados.</td></tr>' : this.eventos.map((evento) => {
+              const estadoNormalizado = this.normalizarEstadoEvento(evento.estado);
+              const estadoBadge = estadoNormalizado === 'cancelado' ? 'danger' : 'success';
+              return `
               <tr>
                 <td>${this.escapeHtml(evento.titulo)}</td>
                 <td>${this.formatDate(evento.fecha_inicio)}</td>
@@ -306,7 +334,7 @@ const AdminModule = {
                 <td>${this.escapeHtml(evento.categoria || '-')}</td>
                 <td>${this.formatCurrency(evento.precio_desde)}</td>
                 <td>${Number(evento.boletos_disponibles || 0)}</td>
-                <td><span class="badge badge-${String(evento.estado || '').toLowerCase() === 'publicado' ? 'success' : String(evento.estado || '').toLowerCase() === 'cancelado' ? 'danger' : 'pending'}">${this.escapeHtml(evento.estado || 'borrador')}</span></td>
+                <td><span class="badge badge-${estadoBadge}">${this.escapeHtml(estadoNormalizado)}</span></td>
                 <td>
                   <div class="acciones-evento">
                     <button class="btn btn-accion btn-outline" onclick="AdminModule.mostrarModalEvento(${Number(evento.id)})">Editar</button>
@@ -314,7 +342,8 @@ const AdminModule = {
                   </div>
                 </td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -323,11 +352,49 @@ const AdminModule = {
     window.NavbarModule?.renderLucideIcons?.(container);
   },
 
-  mostrarModalEvento(eventoId) {
-    const evento = eventoId ? this.eventos.find((item) => Number(item.id) === Number(eventoId)) : null;
+  async mostrarModalEvento(eventoId) {
+    const eventoResumen = eventoId ? this.eventos.find((item) => Number(item.id) === Number(eventoId)) : null;
+    let evento = eventoResumen;
+    let tiposBoleto = [];
+
+    if (eventoId) {
+      try {
+        const detalle = await api.obtenerEvento(eventoId);
+        if (detalle?.evento && typeof detalle.evento === 'object') {
+          evento = {
+            ...(eventoResumen || {}),
+            ...detalle.evento
+          };
+        }
+        tiposBoleto = Array.isArray(detalle?.tipos_boleto) ? detalle.tipos_boleto : [];
+      } catch (_error) {
+        tiposBoleto = [];
+      }
+    }
+
     const imagenActual = this.normalizarImagenUrl(evento?.imagen_url || '');
+
+    const zonasDesdeTipos = [0, 1, 2].map((index) => {
+      const tipo = tiposBoleto[index] || {};
+      return {
+        activa: Boolean(tipo?.nombre),
+        nombre: String(tipo?.nombre || ''),
+        cupo: Number(tipo?.cantidad ?? tipo?.cantidad_total ?? tipo?.cantidad_disponible ?? tipo?.disponibles ?? 0) || '',
+        precio: Number(tipo?.precio ?? 0) || ''
+      };
+    });
+
+    const zonasDesdeDescripcion = this.parseZonasDesdeDescripcion(evento?.descripcion || '');
+    const zonasFuente = zonasDesdeTipos.some((z) => z.nombre)
+      ? zonasDesdeTipos
+      : [0, 1, 2].map((index) => zonasDesdeDescripcion[index] || { activa: false, nombre: '', cupo: '', precio: '' });
+
+    const zonas = zonasFuente;
+
+    if (!zonas[0].nombre) zonas[0].activa = true;
+    if (!zonas[1].nombre) zonas[1].activa = true;
     const categoryOptions = this.categoriasEvento.map((c) => (
-      `<option value="${c.id}" ${Number(evento?.id_categoria) === Number(c.id) ? 'selected' : ''}>${this.escapeHtml(c.nombre)}</option>`
+      `<option value="${c.id}" ${Number(evento?.id_categoria || evento?.categoria_id) === Number(c.id) ? 'selected' : ''}>${this.escapeHtml(c.nombre)}</option>`
     )).join('');
 
     const overlay = document.createElement('div');
@@ -371,6 +438,29 @@ const AdminModule = {
             </select>
           </div>
           <div class="form-group">
+            <label>Zonas y precios</label>
+            <div class="modal-zonas-grid">
+              <div class="modal-zona-item">
+                <label class="check-item"><input type="checkbox" id="zona1Activa" ${zonas[0].activa ? 'checked' : ''}> <span>Zona 1</span></label>
+                <input type="text" id="zona1Nombre" placeholder="Nombre" value="${this.escapeHtml(zonas[0].nombre)}">
+                <input type="number" id="zona1Cupo" min="0" step="1" placeholder="Cupo" value="${zonas[0].cupo}">
+                <input type="number" id="zona1Precio" min="0" step="0.01" placeholder="Precio" value="${zonas[0].precio}">
+              </div>
+              <div class="modal-zona-item">
+                <label class="check-item"><input type="checkbox" id="zona2Activa" ${zonas[1].activa ? 'checked' : ''}> <span>Zona 2</span></label>
+                <input type="text" id="zona2Nombre" placeholder="Nombre" value="${this.escapeHtml(zonas[1].nombre)}">
+                <input type="number" id="zona2Cupo" min="0" step="1" placeholder="Cupo" value="${zonas[1].cupo}">
+                <input type="number" id="zona2Precio" min="0" step="0.01" placeholder="Precio" value="${zonas[1].precio}">
+              </div>
+              <div class="modal-zona-item">
+                <label class="check-item"><input type="checkbox" id="zona3Activa" ${zonas[2].activa ? 'checked' : ''}> <span>Zona 3</span></label>
+                <input type="text" id="zona3Nombre" placeholder="Nombre" value="${this.escapeHtml(zonas[2].nombre)}">
+                <input type="number" id="zona3Cupo" min="0" step="1" placeholder="Cupo" value="${zonas[2].cupo}">
+                <input type="number" id="zona3Precio" min="0" step="0.01" placeholder="Precio" value="${zonas[2].precio}">
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
             <label for="eventoImagenFile">Imagen del evento (archivo)</label>
             <input type="file" id="eventoImagenFile" accept="image/*">
             <small class="modal-help-text">Si eliges un archivo, reemplazara la URL de imagen actual.</small>
@@ -393,6 +483,15 @@ const AdminModule = {
 
     document.body.appendChild(overlay);
     const fileInput = overlay.querySelector('#eventoImagenFile');
+
+    const actualizarEstadoZona = (idx) => {
+      const isActive = overlay.querySelector(`#zona${idx}Activa`)?.checked;
+      ['Nombre', 'Cupo', 'Precio'].forEach((suffix) => {
+        const input = overlay.querySelector(`#zona${idx}${suffix}`);
+        if (!input) return;
+        input.disabled = !isActive;
+      });
+    };
 
     const actualizarPreview = () => {
       const preview = overlay.querySelector('#eventoImagenPreview');
@@ -423,6 +522,10 @@ const AdminModule = {
     };
 
     fileInput?.addEventListener('change', actualizarPreview);
+    [1, 2, 3].forEach((idx) => {
+      overlay.querySelector(`#zona${idx}Activa`)?.addEventListener('change', () => actualizarEstadoZona(idx));
+      actualizarEstadoZona(idx);
+    });
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) this.cerrarModalEvento(); });
     overlay.querySelector('#formGestionEvento').addEventListener('submit', async (e) => {
@@ -477,6 +580,26 @@ const AdminModule = {
       imagen_url: imagenUrl,
       estado: document.querySelector('#eventoEstado')?.value || 'publicado'
     };
+
+    const parseZona = (idx) => {
+      const activa = Boolean(document.querySelector(`#zona${idx}Activa`)?.checked);
+      if (!activa) return null;
+
+      const nombre = document.querySelector(`#zona${idx}Nombre`)?.value?.trim() || '';
+      const cupo = Number(document.querySelector(`#zona${idx}Cupo`)?.value || 0);
+      const precio = Number(document.querySelector(`#zona${idx}Precio`)?.value || 0);
+
+      if (!nombre) return null;
+      if (!Number.isFinite(cupo) || cupo <= 0) return null;
+      if (!Number.isFinite(precio) || precio < 0) return null;
+
+      return { nombre, cupo, precio, activa: true };
+    };
+
+    const zonas = [parseZona(1), parseZona(2), parseZona(3)].filter(Boolean);
+    if (zonas.length > 0) {
+      payload.zonas = zonas;
+    }
 
     if (!payload.titulo || !payload.fecha_inicio || !payload.ubicacion || !payload.capacidad) {
       alert('Completa titulo, fecha de inicio, ubicacion y capacidad.');

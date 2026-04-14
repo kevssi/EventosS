@@ -412,6 +412,42 @@ const createTiposBoletoDesdeZonas = async (connection, idEvento, zonas = []) => 
   }
 };
 
+const replaceTiposBoletoDesdeZonas = async (connection, idEvento, zonas = []) => {
+  const eventoId = Number(idEvento);
+  if (!Number.isFinite(eventoId) || eventoId <= 0) return;
+  if (!Array.isArray(zonas) || zonas.length === 0) return;
+
+  const [tableRows] = await connection.query(
+    `
+      SELECT TABLE_NAME
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME IN ('tipos_boleto', 'tipo_boleto')
+      LIMIT 1
+    `
+  );
+
+  const tiposTable = tableRows?.[0]?.TABLE_NAME;
+  if (!tiposTable) return;
+
+  const [columnRows] = await connection.query(
+    `
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+    `,
+    [tiposTable]
+  );
+
+  const available = new Set((columnRows || []).map((row) => row.COLUMN_NAME));
+  const eventoCol = available.has('id_evento') ? 'id_evento' : (available.has('evento_id') ? 'evento_id' : null);
+  if (!eventoCol) return;
+
+  await connection.query(`DELETE FROM ${tiposTable} WHERE ${eventoCol} = ?`, [eventoId]);
+  await createTiposBoletoDesdeZonas(connection, eventoId, zonas);
+};
+
 const crearEventoDirectoFallback = async (connection, payload) => {
   const organizerColumn = await resolveOrganizerColumn(connection);
   if (!organizerColumn) {
@@ -770,7 +806,8 @@ exports.actualizarEvento = async (req, res) => {
     ubicacion,
     capacidad,
     imagen_url,
-    estado
+    estado,
+    zonas
   } = req.body;
 
   if (!titulo || !fecha_inicio || !ubicacion || !capacidad) {
@@ -780,6 +817,7 @@ exports.actualizarEvento = async (req, res) => {
   const fechaInicioMysql = normalizeMysqlDateTime(fecha_inicio);
   const fechaFinMysql = normalizeMysqlDateTime(fecha_fin);
   const imagenUrlNormalizada = normalizeImageUrl(imagen_url);
+  const zonasNormalizadas = normalizeZonasInput(zonas);
 
   if (!fechaInicioMysql) {
     return res.status(400).json({ error: 'Fecha de inicio invalida' });
@@ -806,6 +844,14 @@ exports.actualizarEvento = async (req, res) => {
         estado || 'publicado'
       ]
     );
+
+    if (zonasNormalizadas.length > 0) {
+      try {
+        await replaceTiposBoletoDesdeZonas(connection, parseInt(id, 10), zonasNormalizadas);
+      } catch (_zonasError) {
+        // Si falla sincronizacion de zonas, no bloqueamos la actualizacion general del evento.
+      }
+    }
 
     await connection.release();
 

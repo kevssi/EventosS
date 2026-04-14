@@ -251,6 +251,33 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.modal-zonas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modal-zona-item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+}
+
+.modal-zona-item .check-item {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+@media (max-width: 860px) {
+  .modal-zonas-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .modal-footer {
   display: flex;
   gap: 8px;
