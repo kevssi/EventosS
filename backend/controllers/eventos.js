@@ -587,7 +587,11 @@ exports.listarEventos = async (req, res) => {
       eventos = await fetchEventosFallback(connection, parsedCategoria);
     }
 
-    eventos = await recalcularDisponibilidadEventos(connection, eventos);
+    // Recálculo detallado solo cuando se solicita explícitamente (?realtime=1)
+    // para evitar timeouts en Vercel por exceso de consultas.
+    if (useRealtime) {
+      eventos = await recalcularDisponibilidadEventos(connection, eventos);
+    }
 
     await connection.release();
 
@@ -717,7 +721,7 @@ exports.listarMisEventos = async (req, res) => {
       [req.user.id]
     );
 
-    const eventos = await recalcularDisponibilidadEventos(connection, rows || []);
+    const eventos = rows || [];
     await connection.release();
 
     return res.json({ success: true, eventos });
