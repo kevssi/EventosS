@@ -328,6 +328,28 @@ const normalizeZonasInput = (rawZonas) => {
     .filter(Boolean);
 };
 
+const extractZonasFromDescripcion = (descripcion) => {
+  const text = String(descripcion || '');
+  if (!text) return [];
+
+  const zonas = [];
+  const lines = text.split('\n').map((line) => line.trim());
+
+  for (const line of lines) {
+    const match = line.match(/^\*\s*(.+?):\s*cupo\s*(\d+)\s*,\s*precio\s*([\d.]+)/i);
+    if (!match) continue;
+
+    zonas.push({
+      nombre: match[1].trim(),
+      cupo: Number(match[2]) || 0,
+      precio: Number(match[3]) || 0,
+      activa: true
+    });
+  }
+
+  return zonas;
+};
+
 const createTiposBoletoDesdeZonas = async (connection, idEvento, zonas = []) => {
   const eventoId = Number(idEvento);
   if (!Number.isFinite(eventoId) || eventoId <= 0) return;
@@ -565,9 +587,7 @@ exports.listarEventos = async (req, res) => {
       eventos = await fetchEventosFallback(connection, parsedCategoria);
     }
 
-    if (useRealtime) {
-      eventos = await recalcularDisponibilidadEventos(connection, eventos);
-    }
+    eventos = await recalcularDisponibilidadEventos(connection, eventos);
 
     await connection.release();
 
@@ -617,15 +637,32 @@ exports.obtenerEvento = async (req, res) => {
       [parsedId]
     );
 
-    await connection.release();
-
     if (resultado[0].length > 0) {
+      const evento = resultado[0][0];
+      let tiposBoleto = resultado[1] || [];
+
+      if (!Array.isArray(tiposBoleto) || tiposBoleto.length === 0) {
+        const zonasDesdeDescripcion = normalizeZonasInput(extractZonasFromDescripcion(evento?.descripcion || ''));
+
+        if (zonasDesdeDescripcion.length > 0) {
+          try {
+            await createTiposBoletoDesdeZonas(connection, parsedId, zonasDesdeDescripcion);
+            const [tiposResult] = await connection.query('CALL sp_listar_tipos_boleto(?)', [parsedId]);
+            tiposBoleto = tiposResult?.[0] || [];
+          } catch (_errorZonas) {
+            // Si falla el backfill, devolvemos el evento sin bloquear la respuesta.
+          }
+        }
+      }
+
+      await connection.release();
       res.json({
         success: true,
-        evento: resultado[0][0],
-        tipos_boleto: resultado[1]
+        evento,
+        tipos_boleto: tiposBoleto
       });
     } else {
+      await connection.release();
       res.status(404).json({ error: 'Evento no encontrado' });
     }
   } catch (error) {
