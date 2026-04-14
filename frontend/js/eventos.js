@@ -203,6 +203,13 @@ const EventosModule = {
       return raw;
     };
 
+    const esUploadLocal = (url) => String(url || '').startsWith('/publi/uploads/');
+
+    const esPlaceholderExterno = (url) => {
+      const parsed = String(url || '').toLowerCase();
+      return parsed.includes('ejemplo.com') || parsed.includes('example.com');
+    };
+
     return eventos.map((evento) => {
       const artista = this.extraerNombreArtista(evento?.titulo || '');
       const normalizedTitulo = normalizeTitle(evento?.titulo || '');
@@ -220,8 +227,10 @@ const EventosModule = {
       const fallbackLocal = partidoGlobal ? imagenesPorEvento[partidoGlobal] : null;
       const imagenFallback = this.obtenerImagenCategoria(evento?.categoria || evento?.titulo || 'Evento');
 
-      // Prioriza la imagen cargada por el organizador si existe.
-      const imagenFinal = imagenSubida || localImage || fallbackLocal || imagenGenerada || imagenFallback;
+      // Prioriza uploads locales; para URLs externas, primero intentamos catálogo local.
+      const imagenFinal = esUploadLocal(imagenSubida)
+        ? imagenSubida
+        : (localImage || fallbackLocal || (esPlaceholderExterno(imagenSubida) ? null : imagenSubida) || imagenGenerada || imagenFallback);
 
       return {
         ...evento,

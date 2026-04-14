@@ -60,13 +60,24 @@ const BoletosModule = {
       return raw;
     };
 
+    const esUploadLocal = (url) => String(url || '').startsWith('/publi/uploads/');
+
+    const esPlaceholderExterno = (url) => {
+      const parsed = String(url || '').toLowerCase();
+      return parsed.includes('ejemplo.com') || parsed.includes('example.com');
+    };
+
     const normalizedTitle = this.normalizeTitle ? this.normalizeTitle(evento.titulo) : evento.titulo?.toString().toLowerCase() || '';
     const plainTitle = evento.titulo?.toString().toLowerCase() || '';
     const localImage = this.imagenesLocal[normalizedTitle] || this.imagenesLocal[plainTitle] || this.imagenesLocal[this.normalizeTitle(plainTitle.replace(/-/g, ' '))] || null;
     const generatedImage = this.imagenPorTitulo(evento.titulo);
     const imagenSubida = normalizarImagenUrl(evento.imagen_url);
 
-    return imagenSubida || localImage || generatedImage || this.fallbackImage;
+    if (esUploadLocal(imagenSubida)) {
+      return imagenSubida;
+    }
+
+    return localImage || (esPlaceholderExterno(imagenSubida) ? null : imagenSubida) || generatedImage || this.fallbackImage;
   },
 
   async init() {

@@ -183,6 +183,13 @@ const HomeModule = {
       return raw;
     };
 
+    const esUploadLocal = (url) => String(url || '').startsWith('/publi/uploads/');
+
+    const esPlaceholderExterno = (url) => {
+      const parsed = String(url || '').toLowerCase();
+      return parsed.includes('ejemplo.com') || parsed.includes('example.com');
+    };
+
     try {
       const response = await api.listarEventos({ tipo: 'musica', limit: 5 });
       const eventos = response.eventos || [];
@@ -217,7 +224,10 @@ const HomeModule = {
         const localTitleKey = normalizedTitle || evento.titulo?.toString().toLowerCase();
         const localImage = imagenesLocal[normalizedTitle] || imagenesLocal[localTitleKey] || imagenesLocal[normalizeTitle(evento.titulo?.replace(/-/g, ' '))] || null;
         const generatedImage = imagenPorTitulo(evento.titulo);
-        const imgSrc = normalizarImagenUrl(evento.imagen_url) || localImage || generatedImage || image;
+        const imagenApi = normalizarImagenUrl(evento.imagen_url);
+        const imgSrc = esUploadLocal(imagenApi)
+          ? imagenApi
+          : (localImage || (esPlaceholderExterno(imagenApi) ? null : imagenApi) || generatedImage || image);
 
         return `
           <a class="card" href="pages/detalle-evento.html?id=${evento.id}">
