@@ -338,6 +338,7 @@ const AdminModule = {
         <h2>${evento ? 'Editar evento' : 'Nuevo evento'}</h2>
         <form id="formGestionEvento">
           <input type="hidden" id="eventoIdEditar" value="${evento ? evento.id : ''}">
+          <input type="hidden" id="eventoImagenActual" value="${this.escapeHtml(imagenActual || '')}">
           <div class="form-group">
             <label for="eventoTitulo">Titulo</label>
             <input type="text" id="eventoTitulo" value="${this.escapeHtml(evento?.titulo || '')}" required>
@@ -376,10 +377,6 @@ const AdminModule = {
             <img id="eventoImagenPreview" class="admin-imagen-preview" src="${this.escapeHtml(imagenActual || '')}" alt="Vista previa" style="${imagenActual ? '' : 'display:none;'}">
           </div>
           <div class="form-group">
-            <label for="eventoImagen">Imagen URL (opcional)</label>
-            <input type="text" id="eventoImagen" value="${this.escapeHtml(imagenActual || '')}">
-          </div>
-          <div class="form-group">
             <label for="eventoEstado">Estado</label>
             <select id="eventoEstado">
               <option value="borrador" ${(evento?.estado || 'borrador') === 'borrador' ? 'selected' : ''}>Borrador</option>
@@ -397,7 +394,6 @@ const AdminModule = {
 
     document.body.appendChild(overlay);
     const fileInput = overlay.querySelector('#eventoImagenFile');
-    const imageUrlInput = overlay.querySelector('#eventoImagen');
 
     const actualizarPreview = () => {
       const preview = overlay.querySelector('#eventoImagenPreview');
@@ -417,7 +413,7 @@ const AdminModule = {
         return;
       }
 
-      const normalizedUrl = this.normalizarImagenUrl(imageUrlInput?.value || '');
+      const normalizedUrl = this.normalizarImagenUrl(overlay.querySelector('#eventoImagenActual')?.value || '');
       if (normalizedUrl) {
         preview.src = normalizedUrl;
         preview.style.display = 'block';
@@ -428,7 +424,6 @@ const AdminModule = {
     };
 
     fileInput?.addEventListener('change', actualizarPreview);
-    imageUrlInput?.addEventListener('input', actualizarPreview);
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) this.cerrarModalEvento(); });
     overlay.querySelector('#formGestionEvento').addEventListener('submit', async (e) => {
@@ -458,7 +453,7 @@ const AdminModule = {
   async guardarEventoDesdeFormulario() {
     const id = Number(document.querySelector('#eventoIdEditar')?.value || 0);
     const imagenFile = document.querySelector('#eventoImagenFile')?.files?.[0] || null;
-    let imagenUrl = this.normalizarImagenUrl(document.querySelector('#eventoImagen')?.value?.trim() || null);
+    let imagenUrl = this.normalizarImagenUrl(document.querySelector('#eventoImagenActual')?.value?.trim() || null);
 
     if (imagenFile) {
       try {
