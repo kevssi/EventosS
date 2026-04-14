@@ -8,6 +8,10 @@ const EventosModule = {
   cacheImagenesArtista: new Map(),
   refreshTimer: null,
   currentLoadId: 0,
+  populares: [],
+  popularIndexActual: 0,
+  popularTimer: null,
+  popularControlsBound: false,
 
   async init() {
     this.inicializarDesdeURL();
@@ -100,6 +104,22 @@ const EventosModule = {
     if (btnBuscar) {
       btnBuscar.addEventListener('click', () => this.handleFiltro());
     }
+
+    this.configurarControlesPopulares();
+  },
+
+  configurarControlesPopulares() {
+    if (this.popularControlsBound) return;
+
+    const prevBtn = document.querySelector('#popularesPrev');
+    const nextBtn = document.querySelector('#popularesNext');
+
+    if (!prevBtn || !nextBtn) return;
+
+    prevBtn.addEventListener('click', () => this.moverPopular(-1));
+    nextBtn.addEventListener('click', () => this.moverPopular(1));
+
+    this.popularControlsBound = true;
   },
 
   async cargarCategorias() {
@@ -327,6 +347,7 @@ const EventosModule = {
       const linkAplicar = this.obtenerLinkAplicarOrganizador();
 
       this.actualizarResumenExplora(0);
+      this.renderCarruselPopulares([]);
       container.innerHTML = `
         <div class="sin-resultados">
           <p class="sin-resultados-titulo">NO HAY NINGUN EVENTO EN LA CATEGORIA "${nombreCategoria}"</p>
@@ -368,9 +389,152 @@ const EventosModule = {
     `).join('');
 
     this.actualizarResumenExplora(eventosAMostrar.length);
+    this.renderCarruselPopulares(eventosAMostrar);
     window.NavbarModule?.renderLucideIcons?.(container);
 
     this.configurarFallbackImagenes();
+  },
+
+  obtenerPuntajePopularidad(evento = {}) {
+    const vendidos = Number(evento.boletos_vendidos || evento.ventas || evento.vendidos || 0);
+    const asistentes = Number(evento.asistentes || evento.asistentes_confirmados || 0);
+    const capacidad = Number(evento.capacidad || evento.aforo || 0);
+    const disponibles = Number(evento.boletos_disponibles || 0);
+
+    let derivados = 0;
+    if (capacidad > 0 && disponibles >= 0) {
+      derivados = Math.max(capacidad - disponibles, 0);
+    }
+
+    return vendidos || asistentes || derivados || 0;
+  },
+
+  obtenerEventoHref(evento = {}) {
+    const isInPages = window.location.pathname.includes('/pages/');
+    const detalleBase = isInPages ? 'detalle-evento.html' : 'pages/detalle-evento.html';
+    return `${detalleBase}?id=${evento.id}`;
+  },
+
+  formatearFechaEvento(value) {
+    const fecha = value ? new Date(value) : null;
+    if (!fecha || Number.isNaN(fecha.getTime())) return 'Fecha por confirmar';
+
+    return fecha.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  },
+
+  seleccionarPopulares(eventos = []) {
+    const lista = Array.isArray(eventos) ? [...eventos] : [];
+
+    lista.sort((a, b) => {
+      const scoreA = this.obtenerPuntajePopularidad(a);
+      const scoreB = this.obtenerPuntajePopularidad(b);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return new Date(a.fecha_inicio || 0) - new Date(b.fecha_inicio || 0);
+    });
+
+    return lista.slice(0, 3);
+  },
+
+  renderCarruselPopulares(eventos = []) {
+    const section = document.querySelector('#popularesSection');
+    const titulo = document.querySelector('#popularesTitulo');
+    const meta = document.querySelector('#popularesMeta');
+    const categoria = document.querySelector('#popularesCategoria');
+    const imagen = document.querySelector('#popularesImagen');
+    const link = document.querySelector('#popularesCardLink');
+    const indicadores = document.querySelector('#popularesIndicadores');
+
+    if (!section || !titulo || !meta || !categoria || !imagen || !link || !indicadores) return;
+
+    this.detenerCarruselPopulares();
+    this.populares = this.seleccionarPopulares(eventos);
+    this.popularIndexActual = 0;
+
+    if (this.populares.length === 0) {
+      section.hidden = true;
+      return;
+    }
+
+    section.hidden = false;
+    indicadores.innerHTML = this.populares
+      .map((_, index) => `<button class="populares-dot${index === 0 ? ' activo' : ''}" type="button" data-index="${index}" aria-label="Ir al evento popular ${index + 1}"></button>`)
+      .join('');
+
+    indicadores.querySelectorAll('.populares-dot').forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const index = Number(dot.dataset.index || 0);
+        this.mostrarPopular(index);
+        this.reiniciarCarruselPopulares();
+      });
+    });
+
+    this.mostrarPopular(0);
+    this.iniciarCarruselPopulares();
+  },
+
+  mostrarPopular(index = 0) {
+    if (!Array.isArray(this.populares) || this.populares.length === 0) return;
+
+    const safeIndex = ((index % this.populares.length) + this.populares.length) % this.populares.length;
+    this.popularIndexActual = safeIndex;
+    const evento = this.populares[safeIndex];
+
+    const titulo = document.querySelector('#popularesTitulo');
+    const meta = document.querySelector('#popularesMeta');
+    const categoria = document.querySelector('#popularesCategoria');
+    const imagen = document.querySelector('#popularesImagen');
+    const link = document.querySelector('#popularesCardLink');
+    const indicadores = document.querySelectorAll('.populares-dot');
+
+    if (!titulo || !meta || !categoria || !imagen || !link) return;
+
+    const imagenFallback = evento.imagen_fallback || this.obtenerImagenSemilla(evento.titulo || 'evento-popular');
+    const imagenResuelta = evento.imagen_resuelta || imagenFallback;
+
+    titulo.textContent = evento.titulo || 'Evento popular';
+    categoria.textContent = (evento.categoria || 'POPULAR').toUpperCase();
+    meta.textContent = `${this.formatearFechaEvento(evento.fecha_inicio)} · ${evento.ubicacion || 'Ubicacion por confirmar'}`;
+    imagen.src = imagenResuelta;
+    imagen.alt = evento.titulo || 'Evento popular';
+    imagen.onerror = function onPopularImageError() {
+      this.onerror = null;
+      this.src = imagenFallback || '/publi/fallback.jpg';
+    };
+
+    link.href = this.obtenerEventoHref(evento);
+
+    indicadores.forEach((dot, dotIndex) => {
+      dot.classList.toggle('activo', dotIndex === safeIndex);
+    });
+  },
+
+  moverPopular(delta = 1) {
+    if (!this.populares.length) return;
+    this.mostrarPopular(this.popularIndexActual + delta);
+    this.reiniciarCarruselPopulares();
+  },
+
+  iniciarCarruselPopulares() {
+    if (this.popularTimer || this.populares.length <= 1) return;
+
+    this.popularTimer = setInterval(() => {
+      this.mostrarPopular(this.popularIndexActual + 1);
+    }, 5500);
+  },
+
+  detenerCarruselPopulares() {
+    if (!this.popularTimer) return;
+    clearInterval(this.popularTimer);
+    this.popularTimer = null;
+  },
+
+  reiniciarCarruselPopulares() {
+    this.detenerCarruselPopulares();
+    this.iniciarCarruselPopulares();
   },
 
   actualizarResumenExplora(cantidadEventos) {

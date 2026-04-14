@@ -20,6 +20,136 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+.populares {
+  margin-bottom: 28px;
+  background: linear-gradient(145deg, rgba(10, 24, 48, 0.94), rgba(12, 36, 69, 0.94));
+  border: 1px solid rgba(141, 213, 255, 0.28);
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.populares-header {
+  margin-bottom: 14px;
+}
+
+.populares-header h2 {
+  margin: 0 0 4px;
+  color: #f2f8ff;
+  font-size: 1.45rem;
+}
+
+.populares-header p {
+  margin: 0;
+  color: #b9d4ef;
+}
+
+.populares-visor {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.populares-nav {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(171, 226, 255, 0.38);
+  color: #ecf5ff;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.populares-nav:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.populares-card {
+  min-height: 360px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(171, 226, 255, 0.22);
+  text-decoration: none;
+  display: block;
+  position: relative;
+  isolation: isolate;
+}
+
+.populares-card img {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+
+.populares-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(2, 10, 20, 0.02) 0%, rgba(2, 10, 20, 0.84) 58%, rgba(2, 10, 20, 0.97) 100%);
+  color: #eff7ff;
+}
+
+.populares-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(34, 196, 255, 0.23);
+  border: 1px solid rgba(118, 219, 255, 0.42);
+}
+
+.populares-overlay h3 {
+  margin: 10px 0 6px;
+  font-size: 1.8rem;
+  line-height: 1.15;
+}
+
+.populares-overlay p {
+  margin: 0 0 12px;
+  color: #c0d8ee;
+}
+
+.populares-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.populares-indicadores {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.populares-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  background: rgba(220, 238, 255, 0.45);
+  cursor: pointer;
+}
+
+.populares-dot.activo {
+  background: #7bdfff;
+  transform: scale(1.12);
+}
+
 /* Filtros */
 .filtros {
   background: var(--surface);
@@ -147,7 +277,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 12%;
+  object-position: center center;
   display: block;
   position: absolute;
   top: 0;
@@ -310,6 +440,31 @@
     margin-bottom: 20px;
   }
 
+  .populares {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .populares-visor {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .populares-nav {
+    width: 38px;
+    height: 38px;
+    justify-self: center;
+  }
+
+  .populares-card,
+  .populares-card img {
+    min-height: 260px;
+  }
+
+  .populares-overlay h3 {
+    font-size: 1.25rem;
+  }
+
   .explora-banner h2 {
     font-size: 1rem;
   }
@@ -354,8 +509,8 @@
   }
 
   .evento-imagen img {
-    object-fit: contain;
-    object-position: center top;
+    object-fit: cover;
+    object-position: center center;
   }
 
   .evento-contenido {
