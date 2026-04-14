@@ -312,6 +312,19 @@ const NavbarModule = {
     return this.isInPages() ? fileName : `pages/${fileName}`;
   },
 
+  resolveInicioSectionPath(sectionId) {
+    const inicioPath = this.isInPages() ? '../index.html' : 'index.html';
+    const currentPath = window.location.pathname.toLowerCase();
+    const isInicioRoot = currentPath.endsWith('/index.html') || currentPath === '/';
+    const isInicioPages = currentPath.endsWith('/pages/inicio.html');
+
+    if (isInicioRoot || isInicioPages) {
+      return `#${sectionId}`;
+    }
+
+    return `${inicioPath}#${sectionId}`;
+  },
+
   ensurePreAuthUtilityBar() {
     const navbar = document.querySelector('.navbar');
     const navbarContent = document.querySelector('.navbar-content');
@@ -485,8 +498,15 @@ const NavbarModule = {
             <li><a href="${adminPath}">Panel Admin</a></li>
           `;
         } else {
+          const popularesPath = this.resolveInicioSectionPath('popularesSection');
+          const buscarPath = this.resolveInicioSectionPath('filtrosSection');
+          const carteleraPath = this.resolveInicioSectionPath('eventosContainer');
+
           navbarMenu.innerHTML = `
             <li><a href="${inicioPath}">Inicio</a></li>
+            <li><a href="${popularesPath}">Populares</a></li>
+            <li><a href="${buscarPath}">Buscar</a></li>
+            <li><a href="${carteleraPath}">Cartelera</a></li>
           `;
           this.actualizarMenu(navbarMenu, token, usuario);
         }
