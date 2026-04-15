@@ -1,5 +1,6 @@
 // Módulo de boletos y compras
 const BoletosModule = {
+  MAX_BOLETOS_POR_EVENTO: 10,
   evento: null,
   carrito: {},
   total: 0,
@@ -350,10 +351,30 @@ const BoletosModule = {
     const min = Number(input.min || 0);
     const max = Number(input.max || 0);
     const actual = Number(input.value || 0);
-    const siguiente = Math.min(max, Math.max(min, actual + delta));
+    const limiteEvento = this.MAX_BOLETOS_POR_EVENTO;
+    const totalSinActual = this.obtenerTotalBoletosSeleccionados(tipoId);
+    const maxPermitidoEnInput = Math.max(min, Math.min(max, limiteEvento - totalSinActual));
+    const siguiente = Math.min(maxPermitidoEnInput, Math.max(min, actual + delta));
+
+    if (delta > 0 && actual >= maxPermitidoEnInput && totalSinActual + actual >= limiteEvento) {
+      alert(`Máximo ${limiteEvento} boletos por evento en total (sumando todos los tipos de asiento).`);
+    }
 
     input.value = String(siguiente);
     this.actualizarResumen();
+  },
+
+  obtenerTotalBoletosSeleccionados(excluirTipoId = null) {
+    const tipoInputs = document.querySelectorAll('.cantidad-input');
+    let total = 0;
+
+    tipoInputs.forEach((input) => {
+      const tipoId = String(input.dataset.tipoId || '');
+      if (excluirTipoId !== null && tipoId === String(excluirTipoId)) return;
+      total += parseInt(input.value, 10) || 0;
+    });
+
+    return total;
   },
 
   validarCantidadInput(tipoId) {
@@ -368,6 +389,16 @@ const BoletosModule = {
       input.value = String(min);
     } else if (value > max) {
       input.value = String(max);
+    }
+
+    const limiteEvento = this.MAX_BOLETOS_POR_EVENTO;
+    const totalSinActual = this.obtenerTotalBoletosSeleccionados(tipoId);
+    const maxPorLimiteGlobal = Math.max(min, limiteEvento - totalSinActual);
+    const valorActual = Number(input.value || 0);
+
+    if (valorActual > maxPorLimiteGlobal) {
+      input.value = String(Math.min(max, maxPorLimiteGlobal));
+      alert(`Máximo ${limiteEvento} boletos por evento en total (sumando todos los tipos de asiento).`);
     }
 
     this.actualizarResumen();

@@ -1,4 +1,150 @@
 const pool = require('../config/database');
+const MAX_BOLETOS_POR_EVENTO_Y_USUARIO = 10;
+
+const escapeIdentifier = (identifier) => `\`${String(identifier || '').replace(/`/g, '``')}\``;
+const schemaCache = {
+  tableExists: new Map(),
+  columnExists: new Map()
+};
+
+const findExistingTable = async (connection, candidates = []) => {
+  for (const tableName of candidates) {
+    if (schemaCache.tableExists.has(tableName)) {
+      const exists = schemaCache.tableExists.get(tableName);
+      if (exists) return tableName;
+      continue;
+    }
+
+    const [rows] = await connection.query(
+      `
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+        LIMIT 1
+      `,
+      [tableName]
+    );
+
+    const exists = rows.length > 0;
+    schemaCache.tableExists.set(tableName, exists);
+    if (exists) {
+      return tableName;
+    }
+  }
+
+  return null;
+};
+
+const findExistingColumn = async (connection, tableName, candidates = []) => {
+  if (!tableName) return null;
+
+  for (const columnName of candidates) {
+    const cacheKey = `${tableName}.${columnName}`;
+    if (schemaCache.columnExists.has(cacheKey)) {
+      const exists = schemaCache.columnExists.get(cacheKey);
+      if (exists) return columnName;
+      continue;
+    }
+
+    const [rows] = await connection.query(
+      `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+          AND column_name = ?
+        LIMIT 1
+      `,
+      [tableName, columnName]
+    );
+
+    const exists = rows.length > 0;
+    schemaCache.columnExists.set(cacheKey, exists);
+    if (exists) {
+      return columnName;
+    }
+  }
+
+  return null;
+};
+
+const obtenerEventoIdDesdeTipoBoleto = async (connection, tipoId) => {
+  const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
+  if (!ticketTypesTable) return null;
+
+  const ticketTypeIdCol = await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']);
+  const ticketEventIdCol = await findExistingColumn(connection, ticketTypesTable, ['id_evento', 'evento_id']);
+
+  if (!ticketTypeIdCol || !ticketEventIdCol) return null;
+
+  const [rows] = await connection.query(
+    `
+      SELECT ${escapeIdentifier(ticketEventIdCol)} AS id_evento
+      FROM ${escapeIdentifier(ticketTypesTable)}
+      WHERE ${escapeIdentifier(ticketTypeIdCol)} = ?
+      LIMIT 1
+    `,
+    [tipoId]
+  );
+
+  const eventId = Number(rows?.[0]?.id_evento);
+  if (Number.isNaN(eventId) || eventId <= 0) return null;
+  return eventId;
+};
+
+const contarBoletosCompradosPorUsuarioEnEvento = async (connection, userId, eventId) => {
+  const ordersTable = await findExistingTable(connection, ['ordenes']);
+  const detailsTable = await findExistingTable(connection, ['detalle_orden', 'detalles_orden', 'orden_detalle', 'ordenes_detalle']);
+  const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
+
+  if (!ordersTable || !detailsTable || !ticketTypesTable) {
+    return null;
+  }
+
+  const orderIdCol = await findExistingColumn(connection, ordersTable, ['id', 'id_orden', 'orden_id']);
+  const orderUserCol = await findExistingColumn(connection, ordersTable, ['id_usuario', 'usuario_id', 'user_id']);
+  const orderStatusCol = await findExistingColumn(connection, ordersTable, ['estado_pago', 'estado', 'status']);
+
+  const detailOrderIdCol = await findExistingColumn(connection, detailsTable, ['id_orden', 'orden_id']);
+  const detailTicketTypeCol = await findExistingColumn(connection, detailsTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const detailQtyCol = await findExistingColumn(connection, detailsTable, ['cantidad', 'cantidad_boletos', 'boletos', 'qty']);
+
+  const ticketTypeIdCol = await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']);
+  const ticketEventIdCol = await findExistingColumn(connection, ticketTypesTable, ['id_evento', 'evento_id']);
+
+  if (!orderIdCol || !orderUserCol || !detailOrderIdCol || !detailTicketTypeCol || !ticketTypeIdCol || !ticketEventIdCol) {
+    return null;
+  }
+
+  const qtyExpr = detailQtyCol ? `COALESCE(d.${escapeIdentifier(detailQtyCol)}, 0)` : '1';
+  const statusFilter = orderStatusCol
+    ? `
+      AND (
+        o.${escapeIdentifier(orderStatusCol)} IS NULL
+        OR LOWER(TRIM(o.${escapeIdentifier(orderStatusCol)})) NOT IN ('cancelado', 'cancelada', 'rechazado', 'rechazada', 'reembolsado', 'refund', 'refunded')
+      )
+    `
+    : '';
+
+  const [rows] = await connection.query(
+    `
+      SELECT COALESCE(SUM(${qtyExpr}), 0) AS total
+      FROM ${escapeIdentifier(ordersTable)} o
+      INNER JOIN ${escapeIdentifier(detailsTable)} d
+        ON d.${escapeIdentifier(detailOrderIdCol)} = o.${escapeIdentifier(orderIdCol)}
+      INNER JOIN ${escapeIdentifier(ticketTypesTable)} tb
+        ON tb.${escapeIdentifier(ticketTypeIdCol)} = d.${escapeIdentifier(detailTicketTypeCol)}
+      WHERE o.${escapeIdentifier(orderUserCol)} = ?
+        AND tb.${escapeIdentifier(ticketEventIdCol)} = ?
+      ${statusFilter}
+    `,
+    [userId, eventId]
+  );
+
+  const total = Number(rows?.[0]?.total || 0);
+  return Number.isNaN(total) ? 0 : total;
+};
 
 const obtenerDisponiblesDesdeResultado = (row = {}) => {
   const candidates = [
@@ -221,6 +367,27 @@ exports.comprarBoletos = async (req, res) => {
     const connection = await pool.getConnection();
     const tipoId = parseInt(id_tipo_boleto, 10);
     const qty = parseInt(cantidad, 10);
+
+    if (Number.isNaN(tipoId) || tipoId <= 0 || Number.isNaN(qty) || qty <= 0) {
+      await connection.release();
+      return res.status(400).json({
+        success: false,
+        message: 'Parámetros inválidos para la compra'
+      });
+    }
+
+    const eventId = await obtenerEventoIdDesdeTipoBoleto(connection, tipoId);
+    const totalActualEvento = eventId
+      ? await contarBoletosCompradosPorUsuarioEnEvento(connection, req.user.id, eventId)
+      : null;
+
+    if (typeof totalActualEvento === 'number' && totalActualEvento + qty > MAX_BOLETOS_POR_EVENTO_Y_USUARIO) {
+      await connection.release();
+      return res.status(400).json({
+        success: false,
+        message: `Límite alcanzado: máximo ${MAX_BOLETOS_POR_EVENTO_Y_USUARIO} boletos por evento y perfil (sumando todos los tipos de asiento).`
+      });
+    }
 
     const [resultado] = await connection.query(
       'CALL sp_comprar_boletos(?, ?, ?)',
