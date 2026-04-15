@@ -142,7 +142,7 @@ body.help-modal-open {
 
 .navbar-content {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(460px, 640px) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(560px, 760px) auto;
   grid-template-areas: 'brand menu search user';
   align-items: center;
   gap: 16px;
@@ -273,7 +273,7 @@ body.help-modal-open {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(171, 226, 255, 0.35);
   border-radius: 12px;
-  min-width: 520px;
+  min-width: 620px;
   overflow: hidden;
 }
 
@@ -281,8 +281,8 @@ body.help-modal-open {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
   margin: 0;
-  padding: 9px 16px 0;
-  font-size: 13px;
+  padding: 7px 14px 0;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
   color: rgba(220, 238, 255, 0.82);
@@ -292,13 +292,12 @@ body.help-modal-open {
 .navbar-search input {
   grid-column: 1 / 2;
   grid-row: 1 / 3;
-  padding: 30px 16px 12px;
+  padding: 25px 14px 10px;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #ffffff;
-  font-size: 24px;
-  font-size: clamp(18px, 1.5vw, 24px);
+  font-size: 17px;
   min-width: 0;
 }
 
@@ -316,14 +315,14 @@ body.help-modal-open {
   border: 0;
   background: transparent;
   color: #d6f5ff;
-  font-size: 26px;
-  padding: 0 18px;
+  font-size: 22px;
+  padding: 0 16px;
   cursor: pointer;
 }
 
 .navbar-search button .lucide-icon {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
 }
 
 .navbar-search button:hover {
