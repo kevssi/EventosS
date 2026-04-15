@@ -156,6 +156,32 @@ const parseBooleanLike = (value) => {
   return ['1', 'true', 'si', 'sí', 'yes', 'y', 'usado', 'validado', 'canjeado', 'consumido'].includes(normalized);
 };
 
+const normalizarEntradaQR = (rawValue) => {
+  const base = String(rawValue || '').trim();
+  if (!base) return '';
+
+  try {
+    const url = new URL(base);
+    const fromParams = [
+      url.searchParams.get('qr'),
+      url.searchParams.get('codigo_qr'),
+      url.searchParams.get('code'),
+      url.searchParams.get('ticket'),
+      url.searchParams.get('boleto')
+    ]
+      .map((value) => String(value || '').trim())
+      .find(Boolean);
+
+    if (fromParams) {
+      return fromParams;
+    }
+  } catch (_error) {
+    // Si no es URL valida, seguimos usando el valor tal cual.
+  }
+
+  return base;
+};
+
 const obtenerEstadoUsoBoletoPorQR = async (connection, codigoQR) => {
   const boletosTable = await findExistingTable(connection, ['boletos', 'boleto']);
   if (!boletosTable) return null;
@@ -838,7 +864,7 @@ exports.detalleBoleto = async (req, res) => {
 exports.usarBoleto = async (req, res) => {
   const { codigo_qr } = req.body;
 
-  const qrCode = String(codigo_qr || '').trim();
+  const qrCode = normalizarEntradaQR(codigo_qr);
 
   if (!qrCode) {
     return res.status(400).json({ error: 'Código QR requerido' });

@@ -47,6 +47,19 @@
     return blobToDataUrl(blob);
   }
 
+  function buildQrPayload(boleto) {
+    const codigo = String(boleto?.codigo_qr || '').trim();
+    const id = encodeURIComponent(String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || ''));
+    const qr = encodeURIComponent(codigo);
+
+    if (!codigo) return '';
+
+    const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
+    const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
+    const detalleUrl = `${window.location.origin}${appBasePath}/pages/detalle-boleto.html`;
+    return `${detalleUrl}?id=${id}&qr=${qr}`;
+  }
+
   function formatDateTime(value) {
     if (!value) return 'No disponible';
     const date = new Date(value);
@@ -156,6 +169,7 @@
 
     const referencia = boleto.referencia_externa || boleto.id_orden || boleto.orden_id || 'No disponible';
     const codigo = boleto.codigo_qr || 'SIN-CODIGO';
+    const qrPayload = buildQrPayload(boleto) || codigo;
     const precio = Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2);
 
     doc.setTextColor(149, 203, 255);
@@ -178,7 +192,7 @@
     const stubEventLines = doc.splitTextToSize(titulo, stubW - 12);
     doc.text(stubEventLines.slice(0, 2), splitX + 6, outerY + 21.3);
 
-    const qrData = await qrToDataUrl(codigo);
+    const qrData = await qrToDataUrl(qrPayload);
     if (qrData) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(splitX + 7, outerY + 31, stubW - 14, 30, 2.5, 2.5, 'F');
