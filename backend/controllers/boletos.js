@@ -146,6 +146,191 @@ const contarBoletosCompradosPorUsuarioEnEvento = async (connection, userId, even
   return Number.isNaN(total) ? 0 : total;
 };
 
+const parseBooleanLike = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return false;
+
+  return ['1', 'true', 'si', 'sí', 'yes', 'y', 'usado', 'validado', 'canjeado', 'consumido'].includes(normalized);
+};
+
+const obtenerEstadoUsoBoletoPorQR = async (connection, codigoQR) => {
+  const boletosTable = await findExistingTable(connection, ['boletos', 'boleto']);
+  if (!boletosTable) return null;
+
+  const boletoIdCol = await findExistingColumn(connection, boletosTable, ['id', 'id_boleto', 'boleto_id']);
+  const qrCol = await findExistingColumn(connection, boletosTable, ['codigo_qr', 'qr_code', 'codigo']);
+  const usadoCol = await findExistingColumn(connection, boletosTable, ['usado', 'is_used', 'utilizado']);
+  const estadoCol = await findExistingColumn(connection, boletosTable, ['estado', 'estatus', 'status']);
+  const fechaUsoCol = await findExistingColumn(connection, boletosTable, ['fecha_uso', 'usado_en', 'used_at', 'fecha_validacion']);
+
+  if (!boletoIdCol || !qrCol) {
+    return null;
+  }
+
+  const selectedColumns = [
+    `${escapeIdentifier(boletoIdCol)} AS boleto_id`,
+    `${escapeIdentifier(qrCol)} AS codigo_qr`,
+    usadoCol ? `${escapeIdentifier(usadoCol)} AS usado` : 'NULL AS usado',
+    estadoCol ? `${escapeIdentifier(estadoCol)} AS estado` : 'NULL AS estado',
+    fechaUsoCol ? `${escapeIdentifier(fechaUsoCol)} AS fecha_uso` : 'NULL AS fecha_uso'
+  ];
+
+  const [rows] = await connection.query(
+    `
+      SELECT ${selectedColumns.join(', ')}
+      FROM ${escapeIdentifier(boletosTable)}
+      WHERE ${escapeIdentifier(qrCol)} = ?
+      LIMIT 1
+    `,
+    [codigoQR]
+  );
+
+  if (!rows.length) {
+    return null;
+  }
+
+  const row = rows[0] || {};
+  const estado = String(row.estado || '').trim().toLowerCase();
+  const yaUsado = parseBooleanLike(row.usado)
+    || Boolean(row.fecha_uso)
+    || /usad|validad|canjead|consumid/.test(estado);
+
+  return {
+    boleto_id: Number(row.boleto_id || 0) || null,
+    codigo_qr: row.codigo_qr || codigoQR,
+    ya_usado: yaUsado,
+    estado,
+    fecha_uso: row.fecha_uso || null
+  };
+};
+
+const obtenerDetalleBoletoParaValidacion = async (connection, { boletoId = null, codigoQR = '' } = {}) => {
+  const boletosTable = await findExistingTable(connection, ['boletos', 'boleto']);
+  if (!boletosTable) return null;
+
+  const boletoIdCol = await findExistingColumn(connection, boletosTable, ['id', 'id_boleto', 'boleto_id']);
+  const qrCol = await findExistingColumn(connection, boletosTable, ['codigo_qr', 'qr_code', 'codigo']);
+  const boletoTipoCol = await findExistingColumn(connection, boletosTable, ['id_tipo_boleto', 'tipo_boleto_id', 'id_boleto_tipo']);
+  const boletoEventoCol = await findExistingColumn(connection, boletosTable, ['id_evento', 'evento_id']);
+  const boletoUsuarioCol = await findExistingColumn(connection, boletosTable, ['id_usuario', 'usuario_id', 'user_id']);
+  const boletoEstadoCol = await findExistingColumn(connection, boletosTable, ['estado', 'estatus', 'status']);
+  const boletoFechaUsoCol = await findExistingColumn(connection, boletosTable, ['fecha_uso', 'usado_en', 'used_at', 'fecha_validacion']);
+  const boletoFechaCompraCol = await findExistingColumn(connection, boletosTable, ['fecha_compra', 'fecha_emision', 'created_at', 'fecha']);
+
+  if (!boletoIdCol || !qrCol) {
+    return null;
+  }
+
+  const ticketTypesTable = await findExistingTable(connection, ['tipos_boleto', 'tipo_boleto']);
+  const eventsTable = await findExistingTable(connection, ['eventos', 'evento']);
+  const usersTable = await findExistingTable(connection, ['usuarios', 'usuario']);
+
+  const ticketTypeIdCol = ticketTypesTable ? await findExistingColumn(connection, ticketTypesTable, ['id', 'id_tipo_boleto']) : null;
+  const ticketTypeNameCol = ticketTypesTable ? await findExistingColumn(connection, ticketTypesTable, ['nombre', 'tipo_boleto', 'descripcion', 'titulo']) : null;
+  const ticketTypeEventIdCol = ticketTypesTable ? await findExistingColumn(connection, ticketTypesTable, ['id_evento', 'evento_id']) : null;
+
+  const eventIdCol = eventsTable ? await findExistingColumn(connection, eventsTable, ['id', 'id_evento']) : null;
+  const eventTitleCol = eventsTable ? await findExistingColumn(connection, eventsTable, ['titulo', 'nombre', 'evento']) : null;
+  const eventDateCol = eventsTable ? await findExistingColumn(connection, eventsTable, ['fecha_inicio', 'fecha_evento', 'fecha']) : null;
+  const eventVenueCol = eventsTable ? await findExistingColumn(connection, eventsTable, ['ubicacion', 'lugar', 'sede']) : null;
+
+  const userIdCol = usersTable ? await findExistingColumn(connection, usersTable, ['id', 'id_usuario', 'usuario_id']) : null;
+  const userNameCol = usersTable ? await findExistingColumn(connection, usersTable, ['nombre', 'name', 'usuario']) : null;
+  const userEmailCol = usersTable ? await findExistingColumn(connection, usersTable, ['email', 'correo', 'correo_electronico']) : null;
+
+  let ticketJoin = '';
+  let eventJoin = '';
+  let userJoin = '';
+
+  let eventTitleExpr = "'-'";
+  let eventDateExpr = 'NULL';
+  let eventVenueExpr = "'-'";
+  let ticketTypeExpr = "'-'";
+  let userNameExpr = "'-'";
+  let userEmailExpr = "'-'";
+
+  if (ticketTypesTable && ticketTypeIdCol && boletoTipoCol) {
+    ticketJoin = `\n      LEFT JOIN ${escapeIdentifier(ticketTypesTable)} tb ON tb.${escapeIdentifier(ticketTypeIdCol)} = b.${escapeIdentifier(boletoTipoCol)}`;
+
+    if (ticketTypeNameCol) {
+      ticketTypeExpr = `COALESCE(tb.${escapeIdentifier(ticketTypeNameCol)}, '-')`;
+    }
+  }
+
+  const canJoinEventsFromTicketType = ticketTypesTable && ticketTypeEventIdCol && eventIdCol;
+  const canJoinEventsFromBoleto = boletoEventoCol && eventIdCol;
+
+  if (eventsTable && eventIdCol) {
+    if (canJoinEventsFromTicketType) {
+      eventJoin = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = tb.${escapeIdentifier(ticketTypeEventIdCol)}`;
+    } else if (canJoinEventsFromBoleto) {
+      eventJoin = `\n      LEFT JOIN ${escapeIdentifier(eventsTable)} e ON e.${escapeIdentifier(eventIdCol)} = b.${escapeIdentifier(boletoEventoCol)}`;
+    }
+
+    if (eventTitleCol) {
+      eventTitleExpr = `COALESCE(e.${escapeIdentifier(eventTitleCol)}, '-')`;
+    }
+
+    if (eventDateCol) {
+      eventDateExpr = `e.${escapeIdentifier(eventDateCol)}`;
+    }
+
+    if (eventVenueCol) {
+      eventVenueExpr = `COALESCE(e.${escapeIdentifier(eventVenueCol)}, '-')`;
+    }
+  }
+
+  if (usersTable && userIdCol && boletoUsuarioCol) {
+    userJoin = `\n      LEFT JOIN ${escapeIdentifier(usersTable)} u ON u.${escapeIdentifier(userIdCol)} = b.${escapeIdentifier(boletoUsuarioCol)}`;
+
+    if (userNameCol) {
+      userNameExpr = `COALESCE(u.${escapeIdentifier(userNameCol)}, '-')`;
+    }
+
+    if (userEmailCol) {
+      userEmailExpr = `COALESCE(u.${escapeIdentifier(userEmailCol)}, '-')`;
+    }
+  }
+
+  const estadoExpr = boletoEstadoCol ? `COALESCE(b.${escapeIdentifier(boletoEstadoCol)}, '-')` : "'-'";
+  const fechaUsoExpr = boletoFechaUsoCol ? `b.${escapeIdentifier(boletoFechaUsoCol)}` : 'NULL';
+  const fechaCompraExpr = boletoFechaCompraCol ? `b.${escapeIdentifier(boletoFechaCompraCol)}` : 'NULL';
+
+  const whereById = Number.isFinite(Number(boletoId)) && Number(boletoId) > 0;
+  const whereClause = whereById
+    ? `b.${escapeIdentifier(boletoIdCol)} = ?`
+    : `b.${escapeIdentifier(qrCol)} = ?`;
+  const whereValue = whereById ? Number(boletoId) : String(codigoQR || '').trim();
+
+  const [rows] = await connection.query(
+    `
+      SELECT
+        b.${escapeIdentifier(boletoIdCol)} AS boleto_id,
+        b.${escapeIdentifier(qrCol)} AS codigo_qr,
+        ${estadoExpr} AS estado_boleto,
+        ${fechaUsoExpr} AS fecha_uso,
+        ${fechaCompraExpr} AS fecha_compra,
+        ${eventTitleExpr} AS evento,
+        ${eventDateExpr} AS fecha_evento,
+        ${eventVenueExpr} AS ubicacion,
+        ${ticketTypeExpr} AS tipo_boleto,
+        ${userNameExpr} AS usuario_nombre,
+        ${userEmailExpr} AS usuario_email
+      FROM ${escapeIdentifier(boletosTable)} b${ticketJoin}${eventJoin}${userJoin}
+      WHERE ${whereClause}
+      LIMIT 1
+    `,
+    [whereValue]
+  );
+
+  if (!rows.length) return null;
+
+  return rows[0] || null;
+};
+
 const obtenerDisponiblesDesdeResultado = (row = {}) => {
   const candidates = [
     row.disponibles,
@@ -652,23 +837,77 @@ exports.detalleBoleto = async (req, res) => {
 exports.usarBoleto = async (req, res) => {
   const { codigo_qr } = req.body;
 
-  if (!codigo_qr) {
+  const qrCode = String(codigo_qr || '').trim();
+
+  if (!qrCode) {
     return res.status(400).json({ error: 'Código QR requerido' });
   }
 
   try {
     const connection = await pool.getConnection();
+    const estadoPrevio = await obtenerEstadoUsoBoletoPorQR(connection, qrCode);
+
+    if (!estadoPrevio) {
+      await connection.release();
+      return res.status(404).json({
+        success: false,
+        message: 'El código QR no corresponde a un boleto registrado'
+      });
+    }
+
+    if (estadoPrevio.ya_usado) {
+      const detalleBoletoUsado = await obtenerDetalleBoletoParaValidacion(connection, {
+        boletoId: estadoPrevio.boleto_id,
+        codigoQR: qrCode
+      });
+
+      await connection.release();
+
+      return res.status(400).json({
+        success: false,
+        message: 'Este boleto ya fue utilizado y es de un solo uso.',
+        boleto_id: estadoPrevio.boleto_id,
+        boleto: detalleBoletoUsado || {
+          boleto_id: estadoPrevio.boleto_id,
+          codigo_qr: estadoPrevio.codigo_qr,
+          estado_boleto: estadoPrevio.estado || 'usado',
+          fecha_uso: estadoPrevio.fecha_uso || null
+        }
+      });
+    }
+
     const [resultado] = await connection.query(
       'CALL sp_usar_boleto(?)',
-      [codigo_qr]
+      [qrCode]
     );
+
+    const resultadoRow = resultado?.[0]?.[0] || {};
+    const success = resultadoRow.resultado === 'ok';
+    const boletoId = Number(resultadoRow.boleto_id || estadoPrevio.boleto_id || 0) || null;
+    const detalleBoleto = await obtenerDetalleBoletoParaValidacion(connection, {
+      boletoId,
+      codigoQR: qrCode
+    });
 
     await connection.release();
 
+    if (!success) {
+      return res.status(400).json({
+        success: false,
+        message: resultadoRow.mensaje || 'No se pudo validar el boleto',
+        boleto_id: boletoId,
+        boleto: detalleBoleto
+      });
+    }
+
     res.json({
-      success: resultado[0][0].resultado === 'ok',
-      message: resultado[0][0].mensaje,
-      boleto_id: resultado[0][0].boleto_id
+      success: true,
+      message: resultadoRow.mensaje || 'Boleto validado correctamente (uso único)',
+      boleto_id: boletoId,
+      boleto: detalleBoleto,
+      validacion: {
+        uso_unico: true
+      }
     });
   } catch (error) {
     console.error('Error en usarBoleto:', error);

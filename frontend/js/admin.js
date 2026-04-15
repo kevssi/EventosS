@@ -10,6 +10,9 @@ const AdminModule = {
   historialComprasUsuarioActual: null,
   historialCompras: [],
   reporteEventoSeleccionado: null,
+  resultadoValidacionQR: null,
+  ultimoQRIngresado: '',
+  validandoQR: false,
   solicitudes: [],
   resumenSolicitudes: null,
   filtroSolicitudes: null,
@@ -51,6 +54,17 @@ const AdminModule = {
     if (!value) return 'No definido';
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? 'No definido' : parsed.toLocaleString();
+  },
+
+  getFirstValue(source, keys, fallback = '') {
+    if (!source || typeof source !== 'object') return fallback;
+    for (const key of keys) {
+      const value = source[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        return value;
+      }
+    }
+    return fallback;
   },
 
   normalizarImagenUrl(value) {
@@ -666,6 +680,99 @@ const AdminModule = {
     }
   },
 
+  renderResultadoValidacionQR() {
+    const estado = this.resultadoValidacionQR;
+    if (!estado) {
+      return '<p class="qr-validacion-empty">Escanea o pega un código QR para validar el acceso y mostrar los datos del boleto.</p>';
+    }
+
+    const boleto = estado.boleto || {};
+    const evento = this.getFirstValue(boleto, ['evento', 'titulo_evento', 'nombre_evento'], 'Evento no identificado');
+    const tipoBoleto = this.getFirstValue(boleto, ['tipo_boleto', 'tipo', 'zona'], 'Tipo no disponible');
+    const ubicacion = this.getFirstValue(boleto, ['ubicacion', 'lugar', 'sede'], 'Ubicación no disponible');
+    const fechaEventoRaw = this.getFirstValue(boleto, ['fecha_evento', 'fecha_inicio', 'fecha'], null);
+    const usuarioNombre = this.getFirstValue(boleto, ['usuario_nombre', 'nombre_usuario', 'usuario'], 'Sin nombre');
+    const usuarioEmail = this.getFirstValue(boleto, ['usuario_email', 'email', 'correo'], 'Sin email');
+    const codigoQR = this.getFirstValue(boleto, ['codigo_qr'], this.ultimoQRIngresado || 'N/A');
+    const boletoId = this.getFirstValue(boleto, ['boleto_id', 'id', 'id_boleto'], estado.boleto_id || 'N/A');
+    const estadoBoleto = String(this.getFirstValue(boleto, ['estado_boleto', 'estado', 'status'], estado.success ? 'usado' : 'error')).toLowerCase();
+    const fechaUsoRaw = this.getFirstValue(boleto, ['fecha_uso', 'used_at', 'fecha_validacion'], null);
+
+    const isUsedState = /usad|validad|canjead|consumid/.test(estadoBoleto);
+    const badgeClass = estado.success
+      ? 'badge-success'
+      : (isUsedState ? 'badge-warning' : 'badge-danger');
+    const badgeLabel = estado.success
+      ? 'ACCESO PERMITIDO'
+      : (isUsedState ? 'YA UTILIZADO' : 'NO VÁLIDO');
+
+    return `
+      <div class="qr-validacion-ticket ${estado.success ? 'ok' : 'error'}">
+        <div class="qr-ticket-header">
+          <div class="qr-brand">eventos+</div>
+          <span class="badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <h3>${this.escapeHtml(evento)}</h3>
+        <p class="qr-ticket-message">${this.escapeHtml(estado.message || 'Resultado de validación disponible')}</p>
+        <div class="qr-ticket-grid">
+          <div><strong>ID boleto</strong><span>${this.escapeHtml(String(boletoId))}</span></div>
+          <div><strong>Tipo</strong><span>${this.escapeHtml(String(tipoBoleto))}</span></div>
+          <div><strong>Fecha evento</strong><span>${this.escapeHtml(this.formatDate(fechaEventoRaw))}</span></div>
+          <div><strong>Ubicación</strong><span>${this.escapeHtml(String(ubicacion))}</span></div>
+          <div><strong>Asistente</strong><span>${this.escapeHtml(String(usuarioNombre))}</span></div>
+          <div><strong>Email</strong><span>${this.escapeHtml(String(usuarioEmail))}</span></div>
+        </div>
+        <div class="qr-ticket-code">
+          <strong>Código QR</strong>
+          <code>${this.escapeHtml(String(codigoQR))}</code>
+        </div>
+        ${fechaUsoRaw ? `<p class="qr-ticket-foot">Usado/validado en: ${this.escapeHtml(this.formatDate(fechaUsoRaw))}</p>` : ''}
+      </div>
+    `;
+  },
+
+  handleQRValidatorKeydown(event) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    this.validarBoletoQR();
+  },
+
+  async validarBoletoQR() {
+    if (this.validandoQR) return;
+
+    const input = document.querySelector('#qrValidatorInput');
+    const qrCode = String(input?.value || '').trim();
+
+    if (!qrCode) {
+      alert('Ingresa o escanea un código QR para validar.');
+      return;
+    }
+
+    this.validandoQR = true;
+    this.ultimoQRIngresado = qrCode;
+
+    try {
+      const response = await api.usarBoleto(qrCode);
+      this.resultadoValidacionQR = {
+        success: true,
+        message: response?.message || 'Boleto validado correctamente',
+        boleto_id: response?.boleto_id || null,
+        boleto: response?.boleto || null
+      };
+    } catch (error) {
+      const payload = error?.payload || {};
+      this.resultadoValidacionQR = {
+        success: false,
+        message: payload?.message || error?.message || 'No se pudo validar el boleto',
+        boleto_id: payload?.boleto_id || null,
+        boleto: payload?.boleto || null
+      };
+    } finally {
+      this.validandoQR = false;
+      this.renderVentas();
+    }
+  },
+
   renderVentas() {
     const container = document.querySelector('#tabVentas');
     if (!container) return;
@@ -713,6 +820,27 @@ const AdminModule = {
           </select>
           <button class="btn btn-primary" onclick="AdminModule.cargarReporteEventoDesdeSelect()">Ver reporte evento</button>
           <button class="btn btn-outline" onclick="AdminModule.cargarReportesAdmin()">Actualizar panel</button>
+        </div>
+      </div>
+
+      <div class="card qr-validacion-card-wrap" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <h2>Validador QR de acceso</h2>
+        </div>
+        <p style="margin: 0 0 12px; color: var(--text-light);">Cada boleto es de uso único. Si se intenta escanear de nuevo, se marcará como ya utilizado.</p>
+        <div class="qr-validacion-controls">
+          <input
+            id="qrValidatorInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Escanea o pega aquí el código QR"
+            value="${this.escapeHtml(this.ultimoQRIngresado || '')}"
+            onkeydown="AdminModule.handleQRValidatorKeydown(event)"
+          >
+          <button class="btn btn-primary" onclick="AdminModule.validarBoletoQR()" ${this.validandoQR ? 'disabled' : ''}>${this.validandoQR ? 'Validando...' : 'Validar boleto'}</button>
+        </div>
+        <div class="qr-validacion-result">
+          ${this.renderResultadoValidacionQR()}
         </div>
       </div>
 

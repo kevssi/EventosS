@@ -420,6 +420,133 @@
   gap: 10px;
 }
 
+.qr-validacion-card-wrap {
+  border: 1px solid rgba(124, 213, 255, 0.28);
+  background: linear-gradient(160deg, rgba(7, 20, 43, 0.92) 0%, rgba(8, 26, 54, 0.92) 100%);
+}
+
+.qr-validacion-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.qr-validacion-controls input {
+  width: 100%;
+}
+
+.qr-validacion-empty {
+  margin: 0;
+  color: var(--text-light);
+}
+
+.qr-validacion-result {
+  border-top: 1px solid rgba(129, 208, 255, 0.18);
+  padding-top: 14px;
+}
+
+.qr-validacion-ticket {
+  border: 1px solid rgba(152, 221, 255, 0.34);
+  border-radius: 14px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(66, 190, 255, 0.2), transparent 45%),
+    linear-gradient(140deg, rgba(9, 29, 58, 0.9) 0%, rgba(4, 14, 29, 0.9) 100%);
+}
+
+.qr-validacion-ticket.ok {
+  border-color: rgba(101, 238, 166, 0.5);
+}
+
+.qr-validacion-ticket.error {
+  border-color: rgba(255, 163, 179, 0.55);
+}
+
+.qr-ticket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.qr-brand {
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #e6f7ff;
+  text-transform: lowercase;
+}
+
+.qr-validacion-ticket h3 {
+  margin: 10px 0 6px;
+  color: #f6fbff;
+}
+
+.qr-ticket-message {
+  margin: 0 0 12px;
+  color: rgba(221, 239, 255, 0.92);
+}
+
+.qr-ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.qr-ticket-grid div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(167, 223, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.qr-ticket-grid strong {
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: rgba(185, 228, 255, 0.88);
+}
+
+.qr-ticket-grid span {
+  color: #f3faff;
+  font-weight: 600;
+}
+
+.qr-ticket-code {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed rgba(170, 227, 255, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.qr-ticket-code strong {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: rgba(185, 228, 255, 0.88);
+  margin-bottom: 5px;
+}
+
+.qr-ticket-code code {
+  display: block;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.qr-ticket-foot {
+  margin: 12px 0 0;
+  color: rgba(223, 239, 255, 0.88);
+  font-size: 13px;
+}
+
 /* Modales */
 .modal {
   display: none;
@@ -560,5 +687,9 @@
   th,
   td {
     padding: 10px;
+  }
+
+  .qr-validacion-controls {
+    grid-template-columns: 1fr;
   }
 }
