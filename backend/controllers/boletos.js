@@ -410,20 +410,24 @@ const esBoletoConPagoConfirmado = (boleto = {}) => {
     .map((item) => String(item || '').trim().toLowerCase())
     .filter(Boolean);
 
+  // Sin informacion de estado: no mostrar el boleto (pago no confirmado)
   if (!values.length) {
-    return true;
+    return false;
   }
 
   const hasRejected = values.some((value) => /cancelad|rechazad|fallid|expired|vencid/.test(value));
   if (hasRejected) return false;
 
-  const hasPending = values.some((value) => /pendient|in_process|inprocess|processing|waiting/.test(value));
-  const hasApproved = values.some((value) => /pagad|aprobad|approved|accredited|active|activ|usad|validad|canjead|consumid/.test(value));
+  // 'reservado' = orden creada pero pago pendiente; 'pendiente' = orden pendiente de cobro
+  const hasPending = values.some((value) => /pendient|reservad|in_process|inprocess|processing|waiting/.test(value));
+  // Solo consideramos pagado/aprobado/usado como estados que confirman el pago
+  const hasApproved = values.some((value) => /pagad|aprobad|approved|accredited|usad|validad|canjead|consumid/.test(value));
 
   if (hasApproved) return true;
   if (hasPending) return false;
 
-  return true;
+  // Estado desconocido: no mostrar para evitar boletos sin pago
+  return false;
 };
 
 const obtenerOrdenesDelUsuario = async (connection, userId, orderIds = []) => {
@@ -882,10 +886,16 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       });
     }
 
+    // Para tokens de prueba (TEST-...) usar sandbox_init_point para que el checkout funcione correctamente
+    const isTestToken = String(accessToken || '').startsWith('TEST-');
+    const checkoutUrl = isTestToken
+      ? (data.sandbox_init_point || data.init_point)
+      : (data.init_point || data.sandbox_init_point);
+
     res.json({
       success: true,
       preference_id: data.id,
-      init_point: data.init_point,
+      init_point: checkoutUrl,
       sandbox_init_point: data.sandbox_init_point
     });
   } catch (error) {

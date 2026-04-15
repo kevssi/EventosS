@@ -498,14 +498,31 @@ const BoletosModule = {
         evento_titulo: this.evento?.titulo || 'Compra de boletos'
       });
 
-      if (!preferencia?.success || !(preferencia.init_point || preferencia.sandbox_init_point)) {
+      const checkoutUrl = preferencia?.init_point || preferencia?.sandbox_init_point;
+      if (!preferencia?.success || !checkoutUrl) {
         throw new Error('No se pudo iniciar el checkout de Mercado Pago');
       }
 
       this.limpiarTodosLosCarritosEvento();
       this.resetearSeleccionBoletos();
 
-      window.location.href = preferencia.init_point || preferencia.sandbox_init_point;
+      // Mostrar botón de pago por si la redirección automática es bloqueada (iOS Safari, popup blocker, etc.)
+      const btnComprar = document.querySelector('#btnComprar');
+      if (btnComprar) {
+        btnComprar.disabled = true;
+        btnComprar.textContent = 'Redirigiendo a Mercado Pago...';
+      }
+      const resumen = document.querySelector('#resumenDetalle');
+      if (resumen) {
+        resumen.innerHTML = `
+          <div style="text-align:center; padding:16px 0;">
+            <p style="margin-bottom:12px; color:var(--text-light);">Si no eres redirigido automáticamente, haz clic aquí:</p>
+            <a href="${checkoutUrl}" class="btn btn-primary" style="font-size:16px; padding:12px 28px;">
+              Ir a pagar con Mercado Pago →
+            </a>
+          </div>`;
+      }
+      window.location.href = checkoutUrl;
     } catch (error) {
       console.error('Error al procesar compra con Mercado Pago:', error);
 
