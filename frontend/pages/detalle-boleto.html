@@ -36,10 +36,10 @@
         </div>
     </div>
 
-    <script src="../js/api.js?v=20260414b"></script>
-    <script src="../js/navbar.js?v=20260414b"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="../js/boleto-pdf.js?v=20260414b"></script>
+    <script src="../js/boleto-pdf.js"></script>
     <script>
         const DetalleBoletoModule = {
             abiertoDesdeQR: false,
@@ -118,6 +118,11 @@
                 return params.get('qr') || params.get('codigo_qr') || '';
             },
 
+            getOrigenQR() {
+                const params = new URLSearchParams(window.location.search);
+                return String(params.get('src') || '').toLowerCase() === 'qr';
+            },
+
             formatDate(value) {
                 if (!value) return 'No disponible';
                 const date = new Date(value);
@@ -143,10 +148,17 @@
             init() {
                 const id = this.getBoletoId();
                 const qr = this.getBoletoQR();
+                const vieneDeQR = this.getOrigenQR();
 
                 if (qr) {
                     this.abiertoDesdeQR = true;
                     this.cargarDetallePorQR(qr);
+                    return;
+                }
+
+                if (vieneDeQR && id) {
+                    this.abiertoDesdeQR = true;
+                    this.cargarDetallePublicoPorId(id);
                     return;
                 }
 
@@ -170,26 +182,21 @@
 
             async cargarDetallePorQR(qr) {
                 try {
-                    let response;
-
-                    if (typeof api?.detalleBoletoPorQR === 'function') {
-                        response = await api.detalleBoletoPorQR(qr);
-                    } else {
-                        const endpoint = `/api/boletos/detalle-qr?qr=${encodeURIComponent(String(qr || ''))}`;
-                        const http = await fetch(endpoint);
-                        const data = await http.json().catch(() => ({}));
-
-                        if (!http.ok) {
-                          throw new Error(data.error || 'No se pudo cargar el detalle por QR');
-                        }
-
-                        response = data;
-                    }
-
+                    const response = await api.detalleBoletoPorQR(qr);
                     this.render(response.boleto || {});
                 } catch (error) {
                     console.error('Error cargando detalle del boleto por QR:', error);
                     this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto por QR.');
+                }
+            },
+
+            async cargarDetallePublicoPorId(id) {
+                try {
+                    const response = await api.detalleBoletoPublico(id);
+                    this.render(response.boleto || {});
+                } catch (error) {
+                    console.error('Error cargando detalle publico del boleto:', error);
+                    this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto.');
                 }
             },
 

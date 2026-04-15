@@ -184,6 +184,10 @@ class APIClient {
     return this.request(`/boletos/detalle-qr?qr=${query}`);
   }
 
+  detalleBoletoPublico(id) {
+    return this.request(`/boletos/detalle-publico/${id}`);
+  }
+
   usarBoleto(codigo_qr) {
     return this.request('/boletos/usar', {
       method: 'POST',

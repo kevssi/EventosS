@@ -900,6 +900,45 @@ exports.detalleBoletoPorQR = async (req, res) => {
   }
 };
 
+// Obtener detalle de boleto por id (uso publico controlado para enlaces QR)
+exports.detalleBoletoPublico = async (req, res) => {
+  const id = Number.parseInt(req.params?.id, 10);
+
+  if (!Number.isFinite(id) || id <= 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'ID de boleto invalido'
+    });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+    const detalle = await obtenerDetalleBoletoParaValidacion(connection, {
+      boletoId: id
+    });
+
+    await connection.release();
+
+    if (!detalle) {
+      return res.status(404).json({
+        success: false,
+        error: 'Boleto no encontrado'
+      });
+    }
+
+    return res.json({
+      success: true,
+      boleto: detalle
+    });
+  } catch (error) {
+    console.error('Error en detalleBoletoPublico:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error al obtener detalle publico del boleto'
+    });
+  }
+};
+
 // Usar boleto (escanear QR)
 exports.usarBoleto = async (req, res) => {
   const { codigo_qr } = req.body;

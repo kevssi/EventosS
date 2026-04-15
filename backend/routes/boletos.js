@@ -6,6 +6,7 @@ const { authMiddleware } = require('../middleware/auth');
 // Rutas públicas
 router.get('/tipos/:id_evento', boletosController.listarTiposBoleto);
 router.get('/detalle-qr', boletosController.detalleBoletoPorQR);
+router.get('/detalle-publico/:id', boletosController.detalleBoletoPublico);
 router.post('/verificar-disponibilidad', boletosController.verificarDisponibilidad);
 
 // Rutas protegidas

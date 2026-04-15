@@ -48,16 +48,28 @@
   }
 
   function buildQrPayload(boleto) {
-    const codigo = String(boleto?.codigo_qr || '').trim();
+    const codigo = String(
+      boleto?.codigo_qr
+      || boleto?.codigo
+      || boleto?.qr
+      || boleto?.qr_code
+      || ''
+    ).trim();
     const id = encodeURIComponent(String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || ''));
-    const qr = encodeURIComponent(codigo);
-
-    if (!codigo) return '';
+    if (!id) return '';
 
     const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
     const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
     const detalleUrl = `${window.location.origin}${appBasePath}/pages/detalle-boleto.html`;
-    return `${detalleUrl}?id=${id}&qr=${qr}`;
+
+    const params = new URLSearchParams();
+    params.set('id', id);
+    params.set('src', 'qr');
+    if (codigo) {
+      params.set('qr', codigo);
+    }
+
+    return `${detalleUrl}?${params.toString()}`;
   }
 
   function formatDateTime(value) {
