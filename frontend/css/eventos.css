@@ -54,7 +54,7 @@
   object-fit: cover;
   object-position: center center;
   display: block;
-  background: linear-gradient(135deg, #0e2748 0%, #123767 58%, #11607d 100%);
+  background: linear-gradient(135deg, #0e3d95 0%, #1a5dff 56%, #23a6ff 100%);
   filter: brightness(0.86);
   transition: opacity 0.24s ease;
 }
@@ -152,7 +152,7 @@
 }
 
 .hero-strip-item.activo {
-  background: #2d3fdf;
+  background: linear-gradient(120deg, #1a5dff 0%, #2d92ff 100%);
 }
 
 .hero-strip-item strong {
