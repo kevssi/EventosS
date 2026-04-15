@@ -695,26 +695,38 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       pending: `${appBaseUrl}/pages/mis-ordenes.html?pago=pending`
     };
 
+    let autoReturnEnabled = false;
+    try {
+      const successUrl = new URL(backUrls.success);
+      const host = String(successUrl.hostname || '').toLowerCase();
+      const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+      autoReturnEnabled = successUrl.protocol === 'https:' && !isLocalHost;
+    } catch (_error) {
+      autoReturnEnabled = false;
+    }
+
+    const preferencePayload = {
+      items,
+      payer: {
+        email: req.user.email || undefined,
+        name: req.user.nombre || undefined
+      },
+      back_urls: backUrls,
+      ...(autoReturnEnabled ? { auto_return: 'approved' } : {}),
+      external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
+      metadata: {
+        usuario_id: req.user.id,
+        orden_ids: ordenes.map((orden) => orden.id_orden).filter(Boolean)
+      }
+    };
+
     let response = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        items,
-        payer: {
-          email: req.user.email || undefined,
-          name: req.user.nombre || undefined
-        },
-        back_urls: backUrls,
-        auto_return: 'approved',
-        external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
-        metadata: {
-          usuario_id: req.user.id,
-          orden_ids: ordenes.map((orden) => orden.id_orden).filter(Boolean)
-        }
-      })
+      body: JSON.stringify(preferencePayload)
     });
 
     let data = await response.json();
@@ -744,20 +756,7 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
           Authorization: `Bearer ${envAccessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          items,
-          payer: {
-            email: req.user.email || undefined,
-            name: req.user.nombre || undefined
-          },
-          back_urls: backUrls,
-          auto_return: 'approved',
-          external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
-          metadata: {
-            usuario_id: req.user.id,
-            orden_ids: ordenes.map((orden) => orden.id_orden).filter(Boolean)
-          }
-        })
+        body: JSON.stringify(preferencePayload)
       });
 
       data = await response.json();
