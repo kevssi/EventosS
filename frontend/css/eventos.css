@@ -28,7 +28,7 @@
 .hero-spotlight {
   position: relative;
   height: clamp(320px, 58vh, 500px);
-  margin: 0;
+  margin: 0 0 26px;
   display: grid;
   grid-template-columns: 64px 1fr 64px;
   align-items: stretch;
@@ -124,6 +124,7 @@
 }
 
 .hero-strip-wrap {
+  display: none;
   background: linear-gradient(120deg, #10294f 0%, #123c78 45%, #114989 100%);
   border-bottom: 1px solid rgba(152, 218, 255, 0.45);
   margin-bottom: 26px;
