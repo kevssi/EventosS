@@ -17,7 +17,8 @@ if (databaseUrl) {
 } else {
   const missing = ['DB_HOST', 'DB_USER', 'DB_NAME'].filter((name) => !process.env[name]);
   if (missing.length > 0) {
-    throw new Error(`Faltan variables de entorno de BD: ${missing.join(', ')}. Configura backend/.env`);
+    // Warn in console but do NOT throw — let the server start and fail gracefully per-request
+    console.warn(`[database] Advertencia: Faltan variables de entorno: ${missing.join(', ')}. Las consultas a BD fallarán.`);
   }
 
   poolConfig = {

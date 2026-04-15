@@ -8,8 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Servir archivos estáticos del frontend
-app.use(express.static('../frontend'));
+// Servir archivos estáticos del frontend solo en desarrollo local
+if (!process.env.VERCEL) {
+  app.use(express.static('../frontend'));
+}
 
 // Rutas
 const authRoutes = require('./routes/auth');
@@ -48,9 +50,11 @@ app.use((req, res) => {
 
 module.exports = app;
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`✓ Servidor ejecutándose en puerto ${PORT}`);
-  console.log(`✓ URL: http://localhost:${PORT}`);
-});
+// Only start HTTP server when run directly (not when loaded as a serverless function)
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`✓ Servidor ejecutándose en puerto ${PORT}`);
+    console.log(`✓ URL: http://localhost:${PORT}`);
+  });
+}
