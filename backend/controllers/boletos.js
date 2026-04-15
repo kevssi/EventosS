@@ -708,6 +708,7 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
           name: req.user.nombre || undefined
         },
         back_urls: backUrls,
+        auto_return: 'approved',
         external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
         metadata: {
           usuario_id: req.user.id,
@@ -750,6 +751,7 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
             name: req.user.nombre || undefined
           },
           back_urls: backUrls,
+          auto_return: 'approved',
           external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
           metadata: {
             usuario_id: req.user.id,
