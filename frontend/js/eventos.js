@@ -206,13 +206,6 @@ const EventosModule = {
         .trim();
     };
 
-    const imagenPorTitulo = (titulo) => {
-      if (!titulo) return null;
-      const normalized = normalizeTitle(titulo);
-      const slug = normalized.replace(/\s+/g, '-');
-      return '/publi/' + slug + '.jpg';
-    };
-
     const normalizarImagenUrl = (valor) => {
       const raw = String(valor || '').trim();
       if (!raw) return null;
@@ -235,7 +228,6 @@ const EventosModule = {
       const normalizedTitulo = normalizeTitle(evento?.titulo || '');
       const imagenSubida = normalizarImagenUrl(evento?.imagen_url);
       const localImage = imagenesPorEvento[normalizedTitulo] || imagenesPorEvento[evento?.titulo] || null;
-      const imagenGenerada = imagenPorTitulo(evento?.titulo);
       const tituloNormalizado = (evento?.titulo || '').toLowerCase();
 
       // Soporte de coincidencia parcial por artista para eventos con nombre ligeramente diferente
@@ -250,7 +242,7 @@ const EventosModule = {
       // Prioriza uploads locales; para URLs externas, primero intentamos catálogo local.
       const imagenFinal = esUploadLocal(imagenSubida)
         ? imagenSubida
-        : (localImage || fallbackLocal || (esPlaceholderExterno(imagenSubida) ? null : imagenSubida) || imagenGenerada || imagenFallback);
+        : (localImage || fallbackLocal || (esPlaceholderExterno(imagenSubida) ? null : imagenSubida) || imagenFallback);
 
       return {
         ...evento,
@@ -299,13 +291,11 @@ const EventosModule = {
   },
 
   obtenerImagenSemilla(termino = 'evento') {
-    const semilla = encodeURIComponent(String(termino).toLowerCase().replace(/\s+/g, '-'));
-    return `https://picsum.photos/seed/${semilla}/1200/700`;
+    return this.obtenerPlaceholderSVG(termino || 'evento');
   },
 
   obtenerImagenCategoria(categoria = 'Evento') {
-    const texto = encodeURIComponent(String(categoria).trim().slice(0, 32) || 'Evento');
-    return `https://dummyimage.com/1200x700/123767/ffffff.png&text=${texto}`;
+    return this.obtenerPlaceholderSVG(categoria || 'Evento');
   },
 
   async obtenerImagenArtista(termino = 'evento') {
@@ -522,12 +512,31 @@ const EventosModule = {
     titulo.textContent = evento.titulo || 'Evento popular';
     kicker.textContent = (evento.categoria || 'VARIAS FECHAS').toUpperCase();
     meta.textContent = `${this.formatearFechaEvento(evento.fecha_inicio)} · ${evento.ubicacion || 'Ubicacion por confirmar'}`;
-    imagen.src = imagenResuelta;
-    imagen.alt = evento.titulo || 'Evento popular';
+    const candidatosImagen = [imagenResuelta, imagenFallback, fallbackLocal]
+      .map((valor) => String(valor || '').trim())
+      .filter(Boolean);
+
+    const vistos = new Set();
+    let intento = 0;
+
     imagen.onerror = function onPopularImageError() {
-      this.onerror = null;
-      this.src = imagenFallback || fallbackLocal;
+      while (intento < candidatosImagen.length && vistos.has(candidatosImagen[intento])) {
+        intento += 1;
+      }
+
+      if (intento >= candidatosImagen.length) {
+        this.onerror = null;
+        this.src = fallbackLocal;
+        return;
+      }
+
+      const siguiente = candidatosImagen[intento++];
+      vistos.add(siguiente);
+      this.src = siguiente;
     };
+
+    imagen.onerror();
+    imagen.alt = evento.titulo || 'Evento popular';
 
     link.href = this.obtenerEventoHref(evento);
 
