@@ -607,8 +607,8 @@ const NavbarModule = {
         navbarMenu.innerHTML = `
           <li><a href="${inicioPath}">Inicio</a></li>
           <li><a href="${conciertosPath}">Populares</a></li>
-          ${categoriasNavbarHtml}
-        
+        `;
+      }
 
       navbarUser.innerHTML = `
         <div class="navbar-mobile-controls">
