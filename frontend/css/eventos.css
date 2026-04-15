@@ -95,16 +95,22 @@
   font-size: 18px;
 }
 
+.hero-kicker,
+.hero-spotlight-overlay h1,
+.hero-spotlight-overlay #popularesMeta {
+  display: none;
+}
+
 .hero-cta {
   border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 10px;
-  min-width: 290px;
-  padding: 14px 24px;
-  font-size: 16px;
+  border-radius: 14px;
+  min-width: 420px;
+  padding: 20px 36px;
+  font-size: 24px;
   letter-spacing: 0.24em;
-  font-weight: 700;
+  font-weight: 800;
   color: #ffffff;
-  background: rgba(6, 11, 21, 0.36);
+  background: rgba(6, 11, 21, 0.56);
 }
 
 .hero-nav {
@@ -306,8 +312,9 @@
   }
 
   .hero-cta {
-    min-width: 260px;
-    font-size: 15px;
+    min-width: 360px;
+    padding: 16px 30px;
+    font-size: 20px;
   }
 
   .explora-banner {
@@ -566,9 +573,9 @@
   }
 
   .hero-cta {
-    min-width: 210px;
-    padding: 10px 16px;
-    font-size: 13px;
+    min-width: 290px;
+    padding: 14px 22px;
+    font-size: 16px;
     letter-spacing: 0.16em;
   }
 
