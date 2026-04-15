@@ -142,7 +142,7 @@ body.help-modal-open {
 
 .navbar-content {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(260px, 360px) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(360px, 520px) auto;
   grid-template-areas: 'brand menu search user';
   align-items: center;
   gap: 16px;
@@ -244,7 +244,7 @@ body.help-modal-open {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(171, 226, 255, 0.35);
   border-radius: 10px;
-  min-width: 280px;
+  min-width: 420px;
   overflow: hidden;
 }
 
@@ -252,8 +252,8 @@ body.help-modal-open {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
   margin: 0;
-  padding: 6px 12px 0;
-  font-size: 11px;
+  padding: 7px 14px 0;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
   color: rgba(220, 238, 255, 0.82);
@@ -263,11 +263,12 @@ body.help-modal-open {
 .navbar-search input {
   grid-column: 1 / 2;
   grid-row: 1 / 3;
-  padding: 20px 12px 8px;
+  padding: 25px 14px 10px;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #ffffff;
+  font-size: 17px;
   min-width: 0;
 }
 
@@ -285,14 +286,14 @@ body.help-modal-open {
   border: 0;
   background: transparent;
   color: #d6f5ff;
-  font-size: 20px;
-  padding: 0 14px;
+  font-size: 22px;
+  padding: 0 16px;
   cursor: pointer;
 }
 
 .navbar-search button .lucide-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 
 .navbar-search button:hover {
@@ -497,7 +498,7 @@ body.navbar-mobile-open {
   }
 
   .navbar-search {
-    min-width: 200px;
+    min-width: 300px;
   }
 
   .navbar-user,
