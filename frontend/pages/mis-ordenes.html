@@ -215,11 +215,11 @@
                             </span>
                         </td>
                         <td data-label="Pago">${orden.estado_pago ? orden.estado_pago : '-'}</td>
-                        <td data-label="Acciones" style="text-align: center;">
+                        <td data-label="Acciones">
                             ${orden.estado === 'pendiente' ? `
-                                <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
-                                    <button class="btn btn-accion btn-primary" onclick="MisOrdenesModule.continuarPago(${orden.orden_id}, ${parseFloat(orden.total)}, '${String(orden.evento || '').replace(/'/g, "\\'")}')">Continuar pago</button>
-                                    <button class="btn btn-accion btn-danger" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>
+                                <div style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
+                                    <button class="btn btn-primary" style="padding:8px 18px; font-size:14px; font-weight:700;" onclick="MisOrdenesModule.continuarPago(${orden.orden_id}, ${parseFloat(orden.total)}, '${String(orden.evento || '').replace(/'/g, "\\'")}')">Continuar pago</button>
+                                    <button class="btn btn-danger btn-accion" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>
                                 </div>
                             ` : '<span style="color: var(--text-light);">-</span>'}
                         </td>
