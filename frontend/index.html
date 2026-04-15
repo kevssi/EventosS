@@ -22,6 +22,17 @@
                     <li><a href="#eventosContainer">Cartelera</a></li>
                 </ul>
                 <div class="navbar-user"></div>
+                <form class="navbar-search" aria-label="Buscar eventos" onsubmit="return false;">
+                    <label for="filtroBusqueda">Busca tu evento</label>
+                    <input
+                        type="text"
+                        id="filtroBusqueda"
+                        placeholder="Artista, evento o ubicacion"
+                    >
+                    <button id="btnBuscar" type="button" aria-label="Buscar">
+                        <i data-lucide="search"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </nav>
@@ -50,19 +61,10 @@
         <!-- Barra buscadora -->
         <section class="filtros" id="filtrosSection" aria-label="Buscar eventos">
             <div class="filtro-grupo">
-                <label for="filtroBusqueda">Busca tu evento</label>
-                <input
-                    type="text"
-                    id="filtroBusqueda"
-                    placeholder="Artista, evento o ubicación"
-                >
-            </div>
-            <div class="filtro-grupo">
                 <label for="filtroCategoria">Categoría</label>
                 <select id="filtroCategoria">
                     <option value="">Todas las categorías</option>
                 </select>
-                <button class="btn btn-primary" id="btnBuscar" type="button">Buscar</button>
             </div>
         </section>
 

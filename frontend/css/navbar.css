@@ -132,8 +132,8 @@ body.help-modal-open {
 
 .navbar-content {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: 'brand menu user';
+  grid-template-columns: auto minmax(0, 1fr) minmax(260px, 360px) auto;
+  grid-template-areas: 'brand menu search user';
   align-items: center;
   gap: 16px;
   padding: 12px 0;
@@ -227,6 +227,7 @@ body.help-modal-open {
 }
 
 .navbar-search {
+  grid-area: search;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -457,7 +458,8 @@ body.navbar-mobile-open {
     grid-template-columns: auto 1fr;
     grid-template-areas:
       'brand user'
-      'menu menu';
+      'menu menu'
+      'search search';
     gap: 16px 20px;
   }
 
@@ -519,6 +521,7 @@ body.navbar-mobile-open {
     grid-template-areas:
       'brand'
       'user'
+      'search'
       'menu';
     align-items: stretch;
     gap: 12px;
