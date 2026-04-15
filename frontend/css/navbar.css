@@ -142,7 +142,7 @@ body.help-modal-open {
 
 .navbar-content {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(360px, 520px) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(460px, 640px) auto;
   grid-template-areas: 'brand menu search user';
   align-items: center;
   gap: 16px;
@@ -272,8 +272,8 @@ body.help-modal-open {
   align-items: center;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(171, 226, 255, 0.35);
-  border-radius: 10px;
-  min-width: 420px;
+  border-radius: 12px;
+  min-width: 520px;
   overflow: hidden;
 }
 
@@ -281,8 +281,8 @@ body.help-modal-open {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
   margin: 0;
-  padding: 7px 14px 0;
-  font-size: 12px;
+  padding: 9px 16px 0;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.3px;
   color: rgba(220, 238, 255, 0.82);
@@ -292,12 +292,13 @@ body.help-modal-open {
 .navbar-search input {
   grid-column: 1 / 2;
   grid-row: 1 / 3;
-  padding: 25px 14px 10px;
+  padding: 30px 16px 12px;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #ffffff;
-  font-size: 17px;
+  font-size: 24px;
+  font-size: clamp(18px, 1.5vw, 24px);
   min-width: 0;
 }
 
@@ -315,14 +316,14 @@ body.help-modal-open {
   border: 0;
   background: transparent;
   color: #d6f5ff;
-  font-size: 22px;
-  padding: 0 16px;
+  font-size: 26px;
+  padding: 0 18px;
   cursor: pointer;
 }
 
 .navbar-search button .lucide-icon {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
 }
 
 .navbar-search button:hover {
@@ -527,7 +528,7 @@ body.navbar-mobile-open {
   }
 
   .navbar-search {
-    min-width: 300px;
+    min-width: 420px;
   }
 
   .navbar-user,
@@ -645,6 +646,21 @@ body.navbar-mobile-open {
   .navbar-search {
     width: 100%;
     min-width: 0;
+  }
+
+  .navbar-search label {
+    font-size: 12px;
+    padding: 7px 14px 0;
+  }
+
+  .navbar-search input {
+    font-size: 20px;
+    padding: 26px 14px 10px;
+  }
+
+  .navbar-search button .lucide-icon {
+    width: 26px;
+    height: 26px;
   }
 
   .navbar-auth-cta {
