@@ -224,6 +224,35 @@ body.help-modal-open {
   width: 100%;
 }
 
+.navbar-category-item {
+  display: inline-flex;
+}
+
+.navbar-menu .navbar-category-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(167, 223, 255, 0.38);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(233, 244, 255, 0.95);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.navbar-menu .navbar-category-btn::after {
+  display: none;
+}
+
+.navbar-menu .navbar-category-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(186, 233, 255, 0.62);
+  color: #ffffff;
+}
+
 .navbar-user {
   display: flex;
   align-items: center;

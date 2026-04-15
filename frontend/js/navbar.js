@@ -2,6 +2,50 @@
 const NavbarModule = {
   lucideScriptPromise: null,
 
+  escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  async obtenerCategoriasNavbar(max = 3) {
+    try {
+      const response = await api.listarCategorias();
+      const categorias = Array.isArray(response?.categorias) ? response.categorias : [];
+      const seen = new Set();
+
+      return categorias
+        .filter((cat) => cat?.id && cat?.nombre)
+        .filter((cat) => {
+          const key = String(cat.nombre).trim().toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, max)
+        .map((cat) => ({
+          id: String(cat.id).trim(),
+          nombre: String(cat.nombre).trim()
+        }));
+    } catch (_error) {
+      return [];
+    }
+  },
+
+  renderCategoriasNavbarHtml(categorias, inicioPath) {
+    if (!Array.isArray(categorias) || categorias.length === 0) return '';
+
+    return categorias
+      .map((cat) => {
+        const href = `${inicioPath}?id_categoria=${encodeURIComponent(cat.id)}`;
+        return `<li class="navbar-category-item"><a class="navbar-category-btn" href="${href}">${this.escapeHtml(cat.nombre)}</a></li>`;
+      })
+      .join('');
+  },
+
   resolveLocalLucideUrl() {
     const script = document.querySelector('script[src*="/js/navbar.js"], script[src$="js/navbar.js"]');
     if (!script?.src) return null;
@@ -475,6 +519,9 @@ const NavbarModule = {
     let usuario = JSON.parse(localStorage.getItem('usuario'));
     const navbarUser = document.querySelector('.navbar-user');
     const navbarMenu = document.querySelector('.navbar-menu');
+    const inicioPath = this.isInPages() ? '../index.html' : 'index.html';
+    const categoriasNavbar = await this.obtenerCategoriasNavbar(3);
+    const categoriasNavbarHtml = this.renderCategoriasNavbarHtml(categoriasNavbar, inicioPath);
 
     if (!navbarUser) return;
 
@@ -487,7 +534,6 @@ const NavbarModule = {
       this.removePreAuthUtilityBar();
       this.teardownMobileMenuBehavior();
 
-      const inicioPath = this.isInPages() ? '../index.html' : 'index.html';
       const isAdmin = this.isAdminRole(roleValue);
       const isOrganizador = this.isOrganizadorRole(roleValue);
 
@@ -503,6 +549,7 @@ const NavbarModule = {
           navbarMenu.innerHTML = `
             <li><a href="${inicioPath}">Inicio</a></li>
             <li><a href="${popularesPath}">Populares</a></li>
+            ${categoriasNavbarHtml}
           `;
           this.actualizarMenu(navbarMenu, token, usuario);
         }
@@ -547,7 +594,6 @@ const NavbarModule = {
       this.teardownDropdownBehavior();
       this.ensurePreAuthUtilityBar();
 
-      const inicioPath = this.isInPages() ? '../index.html' : 'index.html';
       const loginPath = this.resolvePath('login.html');
       const conciertosPath = `${inicioPath}?tipo=musica`;
       const teatroPath = `${inicioPath}?q=teatro`;
@@ -562,10 +608,9 @@ const NavbarModule = {
 
       if (navbarMenu) {
         navbarMenu.innerHTML = `
-          <li><a href="${conciertosPath}">Conciertos y Festivales</a></li>
-          <li><a href="${teatroPath}">Teatro y Cultura</a></li>
-          <li><a href="${deportesPath}">Deportes</a></li>
-          <li><a href="${familiaresPath}">Familiares</a></li>
+          <li><a href="${inicioPath}">Inicio</a></li>
+          <li><a href="${conciertosPath}">Populares</a></li>
+          ${categoriasNavbarHtml}
         `;
       }
 
