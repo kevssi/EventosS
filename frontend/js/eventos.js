@@ -130,11 +130,59 @@ const EventosModule = {
   async cargarCategorias() {
     try {
       const response = await api.listarCategorias();
-      this.categorias = response.categorias;
+      this.categorias = Array.isArray(response?.categorias) ? response.categorias : [];
       this.renderCategorias();
+      this.renderCategoriasDebajoCarrusel();
     } catch (error) {
       console.error('Error al cargar categorías:', error);
     }
+  },
+
+  renderCategoriasDebajoCarrusel() {
+    const wrap = document.querySelector('#carruselCategoriasWrap');
+    const container = document.querySelector('#carruselCategorias');
+    if (!wrap || !container) return;
+
+    const categorias = Array.isArray(this.categorias) ? this.categorias : [];
+    if (categorias.length === 0) {
+      wrap.hidden = true;
+      container.innerHTML = '';
+      return;
+    }
+
+    wrap.hidden = false;
+    container.innerHTML = '';
+
+    const crearBoton = (label, categoriaId = '') => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `hero-categoria-btn${String(this.filtroActual || '') === String(categoriaId || '') ? ' activo' : ''}`;
+      btn.textContent = label;
+      btn.addEventListener('click', async () => {
+        this.filtroActual = String(categoriaId || '');
+        this.busquedaActual = '';
+        this.tipoActual = '';
+
+        const params = new URLSearchParams();
+        if (this.filtroActual) params.set('id_categoria', this.filtroActual);
+        const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+
+        await this.cargarEventos(this.filtroActual || null, '', '');
+        this.renderCategoriasDebajoCarrusel();
+      });
+
+      return btn;
+    };
+
+    container.appendChild(crearBoton('Todas', ''));
+
+    categorias
+      .filter((cat) => cat?.id && cat?.nombre)
+      .slice(0, 8)
+      .forEach((cat) => {
+        container.appendChild(crearBoton(String(cat.nombre), String(cat.id)));
+      });
   },
 
   renderCategorias() {

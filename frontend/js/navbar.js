@@ -520,8 +520,6 @@ const NavbarModule = {
     const navbarUser = document.querySelector('.navbar-user');
     const navbarMenu = document.querySelector('.navbar-menu');
     const inicioPath = this.isInPages() ? '../index.html' : 'index.html';
-    const categoriasNavbar = await this.obtenerCategoriasNavbar(3);
-    const categoriasNavbarHtml = this.renderCategoriasNavbarHtml(categoriasNavbar, inicioPath);
 
     if (!navbarUser) return;
 
@@ -549,7 +547,6 @@ const NavbarModule = {
           navbarMenu.innerHTML = `
             <li><a href="${inicioPath}">Inicio</a></li>
             <li><a href="${popularesPath}">Populares</a></li>
-            ${categoriasNavbarHtml}
           `;
           this.actualizarMenu(navbarMenu, token, usuario);
         }
@@ -611,8 +608,7 @@ const NavbarModule = {
           <li><a href="${inicioPath}">Inicio</a></li>
           <li><a href="${conciertosPath}">Populares</a></li>
           ${categoriasNavbarHtml}
-        `;
-      }
+        
 
       navbarUser.innerHTML = `
         <div class="navbar-mobile-controls">
