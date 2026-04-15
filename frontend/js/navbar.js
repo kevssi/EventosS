@@ -499,14 +499,10 @@ const NavbarModule = {
           `;
         } else {
           const popularesPath = this.resolveInicioSectionPath('popularesSection');
-          const buscarPath = this.resolveInicioSectionPath('filtrosSection');
-          const carteleraPath = this.resolveInicioSectionPath('eventosContainer');
 
           navbarMenu.innerHTML = `
             <li><a href="${inicioPath}">Inicio</a></li>
             <li><a href="${popularesPath}">Populares</a></li>
-            <li><a href="${buscarPath}">Buscar</a></li>
-            <li><a href="${carteleraPath}">Cartelera</a></li>
           `;
           this.actualizarMenu(navbarMenu, token, usuario);
         }
