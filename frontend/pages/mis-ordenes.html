@@ -216,15 +216,51 @@
                         </td>
                         <td data-label="Pago">${orden.estado_pago ? orden.estado_pago : '-'}</td>
                         <td data-label="Acciones" style="text-align: center;">
-                            ${orden.estado === 'pendiente' ? 
-                                `<button class="btn btn-accion btn-danger" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>` :
-                                '<span style="color: var(--text-light);">-</span>'
-                            }
+                            ${orden.estado === 'pendiente' ? `
+                                <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
+                                    <button class="btn btn-accion btn-primary" onclick="MisOrdenesModule.continuarPago(${orden.orden_id}, ${parseFloat(orden.total)}, '${String(orden.evento || '').replace(/'/g, "\\'")}')">Continuar pago</button>
+                                    <button class="btn btn-accion btn-danger" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>
+                                </div>
+                            ` : '<span style="color: var(--text-light);">-</span>'}
                         </td>
                     </tr>
                 `).join('');
 
                 window.NavbarModule?.renderLucideIcons?.(tbody);
+            },
+
+            async continuarPago(idOrden, total, eventoTitulo) {
+                const btn = event?.target;
+                if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+
+                try {
+                    const preferencia = await api.crearPreferenciaMercadoPago({
+                        ordenes: [{ id_orden: idOrden, total }],
+                        evento_titulo: eventoTitulo || 'Compra de boletos'
+                    });
+
+                    const checkoutUrl = preferencia?.init_point || preferencia?.sandbox_init_point;
+                    if (!preferencia?.success || !checkoutUrl) {
+                        throw new Error('No se pudo crear la preferencia de pago');
+                    }
+
+                    window.location.href = checkoutUrl;
+                } catch (error) {
+                    if (btn) { btn.disabled = false; btn.textContent = 'Continuar pago'; }
+
+                    const msg = error.message || 'Error al iniciar el pago';
+                    if (msg.toLowerCase().includes('token de mercado pago') || msg.toLowerCase().includes('mercadopago')) {
+                        if (confirm('No tienes Mercado Pago vinculado. ¿Quieres vincularlo ahora?')) {
+                            const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
+                            const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
+                            const redirectUri = `${window.location.origin}${appBasePath}/pages/mercadopago-callback.html`;
+                            window.location.href = `/api/auth/mercadopago/oauth/iniciar?redirect_uri=${encodeURIComponent(redirectUri)}`;
+                        }
+                        return;
+                    }
+
+                    alert(msg);
+                }
             },
 
             async cancelar(idOrden) {
