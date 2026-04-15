@@ -13,9 +13,9 @@ const EventosModule = {
   popularTimer: null,
   popularControlsBound: false,
   imagenesCarruselFijas: [
-    '/publi/carrusel1.png',
-    '/publi/carrusel2.png',
-    '/publi/carrusel3.png'
+    { src: '/publi/carrusel1karolg.png', artista: 'Karol G' },
+    { src: '/publi/carrusel2keniaos.png', artista: 'Kenia OS' },
+    { src: '/publi/carrusel3pesopluma.png', artista: 'Peso Pluma' }
   ],
 
   async init() {
@@ -427,7 +427,14 @@ const EventosModule = {
     }
 
     const safeIndex = ((Number(index) || 0) % this.imagenesCarruselFijas.length + this.imagenesCarruselFijas.length) % this.imagenesCarruselFijas.length;
-    return this.imagenesCarruselFijas[safeIndex];
+    const item = this.imagenesCarruselFijas[safeIndex];
+    if (typeof item === 'string') {
+      return { src: item, artista: '' };
+    }
+    return {
+      src: String(item?.src || '').trim(),
+      artista: String(item?.artista || '').trim()
+    };
   },
 
   seleccionarPopulares(eventos = []) {
@@ -520,14 +527,16 @@ const EventosModule = {
     if (!titulo || !kicker || !meta || !imagen || !link) return;
 
     const imagenCarruselFija = this.obtenerImagenCarrusel(safeIndex);
+    const imagenCarruselSrc = String(imagenCarruselFija?.src || '').trim();
+    const artistaCarrusel = String(imagenCarruselFija?.artista || '').trim();
     const imagenFallback = evento.imagen_fallback || this.obtenerImagenSemilla(evento.titulo || 'evento-popular');
     const imagenResuelta = evento.imagen_resuelta || imagenFallback;
     const fallbackLocal = this.obtenerPlaceholderSVG(evento.titulo || 'Evento destacado');
 
     titulo.textContent = evento.titulo || 'Evento popular';
-    kicker.textContent = (evento.categoria || 'VARIAS FECHAS').toUpperCase();
+    kicker.textContent = (artistaCarrusel || evento.categoria || 'VARIAS FECHAS').toUpperCase();
     meta.textContent = `${this.formatearFechaEvento(evento.fecha_inicio)} · ${evento.ubicacion || 'Ubicacion por confirmar'}`;
-    const candidatosImagen = [imagenCarruselFija, imagenResuelta, imagenFallback, fallbackLocal]
+    const candidatosImagen = [imagenCarruselSrc, imagenResuelta, imagenFallback, fallbackLocal]
       .map((valor) => String(valor || '').trim())
       .filter(Boolean);
 
@@ -551,7 +560,7 @@ const EventosModule = {
     };
 
     imagen.onerror();
-    imagen.alt = evento.titulo || 'Evento popular';
+    imagen.alt = artistaCarrusel || evento.titulo || 'Evento popular';
 
     link.href = this.obtenerEventoHref(evento);
 
