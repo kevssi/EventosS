@@ -38,11 +38,12 @@
 
     <script src="../js/api.js"></script>
     <script src="../js/navbar.js"></script>
-    <script src="../js/auth-guard.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="../js/boleto-pdf.js"></script>
     <script>
         const DetalleBoletoModule = {
+            abiertoDesdeQR: false,
+
             construirPayloadQR(boleto) {
                 const codigo = String(boleto?.codigo_qr || '').trim();
                 const id = encodeURIComponent(String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || ''));
@@ -112,6 +113,11 @@
                 return params.get('id');
             },
 
+            getBoletoQR() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('qr') || params.get('codigo_qr') || '';
+            },
+
             formatDate(value) {
                 if (!value) return 'No disponible';
                 const date = new Date(value);
@@ -136,6 +142,14 @@
 
             init() {
                 const id = this.getBoletoId();
+                const qr = this.getBoletoQR();
+
+                if (qr) {
+                    this.abiertoDesdeQR = true;
+                    this.cargarDetallePorQR(qr);
+                    return;
+                }
+
                 if (!id) {
                     this.mostrarError('No se recibió el ID del boleto.');
                     return;
@@ -154,6 +168,16 @@
                 }
             },
 
+            async cargarDetallePorQR(qr) {
+                try {
+                    const response = await api.detalleBoletoPorQR(qr);
+                    this.render(response.boleto || {});
+                } catch (error) {
+                    console.error('Error cargando detalle del boleto por QR:', error);
+                    this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto por QR.');
+                }
+            },
+
             render(boleto) {
                 const container = document.querySelector('#detalleBoletoContainer');
                 if (!container) return;
@@ -166,6 +190,13 @@
                 const referencia = boleto.referencia_externa || boleto.id_orden || boleto.orden_id || 'No disponible';
 
                 container.innerHTML = `
+                    ${this.abiertoDesdeQR ? `
+                    <div style="margin: 20px 20px 0; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(108, 213, 255, 0.34); background: linear-gradient(140deg, rgba(8, 29, 61, 0.88), rgba(6, 22, 48, 0.88));">
+                        <h1 style="margin: 0 0 6px; font-size: 26px; color: #f4fbff;">Gracias por comprar en eventos+</h1>
+                        <p style="margin: 0; color: rgba(221, 240, 255, 0.9);">Aquí tienes la información de tu boleto.</p>
+                    </div>
+                    ` : ''}
+
                     <div class="card-header">
                         <h2 style="margin-bottom: 8px;">${boleto.evento || 'Boleto'}</h2>
                         <p style="color: var(--text-light); margin: 0;">Detalle completo de tu compra</p>

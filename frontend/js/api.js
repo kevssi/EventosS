@@ -179,6 +179,11 @@ class APIClient {
     return this.request(`/boletos/detalle/${id}`);
   }
 
+  detalleBoletoPorQR(qr) {
+    const query = encodeURIComponent(String(qr || ''));
+    return this.request(`/boletos/detalle-qr?qr=${query}`);
+  }
+
   usarBoleto(codigo_qr) {
     return this.request('/boletos/usar', {
       method: 'POST',
