@@ -27,15 +27,15 @@
 
 .hero-spotlight {
   position: relative;
-  height: clamp(280px, 54vh, 420px);
+  height: clamp(320px, 58vh, 500px);
   margin: 0;
   display: grid;
   grid-template-columns: 64px 1fr 64px;
   align-items: stretch;
-  border-top: 1px solid rgba(160, 196, 255, 0.17);
-  border-bottom: 1px solid rgba(160, 196, 255, 0.17);
+  border-top: 1px solid rgba(172, 228, 255, 0.45);
+  border-bottom: 1px solid rgba(172, 228, 255, 0.45);
   overflow: hidden;
-  background: #04070d;
+  background: linear-gradient(130deg, #0f3f9a 0%, #1765ff 52%, #15b6ff 100%);
 }
 
 .hero-spotlight-link {
@@ -54,8 +54,8 @@
   object-fit: cover;
   object-position: center center;
   display: block;
-  background: linear-gradient(135deg, #0e3d95 0%, #1a5dff 56%, #23a6ff 100%);
-  filter: brightness(0.86);
+  background: linear-gradient(135deg, #1252c1 0%, #1f74ff 56%, #20c2ff 100%);
+  filter: brightness(0.96) saturate(1.15);
   transition: opacity 0.24s ease;
 }
 
@@ -69,8 +69,8 @@
   text-align: center;
   padding: 28px;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.65) 100%),
-    linear-gradient(180deg, rgba(1, 4, 12, 0.08) 0%, rgba(1, 4, 12, 0.56) 100%);
+    linear-gradient(90deg, rgba(2, 11, 32, 0.46) 0%, rgba(2, 11, 32, 0.18) 45%, rgba(2, 11, 32, 0.52) 100%),
+    linear-gradient(180deg, rgba(1, 7, 22, 0.06) 0%, rgba(1, 7, 22, 0.36) 100%);
 }
 
 .hero-kicker {
@@ -110,8 +110,8 @@
 
 .hero-nav {
   border: 0;
-  color: #dce7ff;
-  background: rgba(0, 0, 0, 0.24);
+  color: #eef8ff;
+  background: rgba(7, 35, 88, 0.5);
   cursor: pointer;
   font-size: 44px;
   line-height: 1;
@@ -120,12 +120,12 @@
 }
 
 .hero-nav:hover {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(16, 76, 179, 0.82);
 }
 
 .hero-strip-wrap {
-  background: #151c26;
-  border-bottom: 1px solid rgba(141, 177, 219, 0.32);
+  background: linear-gradient(120deg, #10294f 0%, #123c78 45%, #114989 100%);
+  border-bottom: 1px solid rgba(152, 218, 255, 0.45);
   margin-bottom: 26px;
 }
 
@@ -138,8 +138,8 @@
 
 .hero-strip-item {
   border: 0;
-  border-right: 1px solid rgba(98, 126, 167, 0.3);
-  background: #1b2532;
+  border-right: 1px solid rgba(139, 194, 255, 0.34);
+  background: rgba(14, 37, 74, 0.84);
   color: #edf4ff;
   padding: 14px 14px 16px;
   text-align: left;
@@ -148,11 +148,11 @@
 }
 
 .hero-strip-item:hover {
-  background: #243042;
+  background: rgba(24, 68, 131, 0.92);
 }
 
 .hero-strip-item.activo {
-  background: linear-gradient(120deg, #1a5dff 0%, #2d92ff 100%);
+  background: linear-gradient(120deg, #1f74ff 0%, #1ab9ff 100%);
 }
 
 .hero-strip-item strong {
