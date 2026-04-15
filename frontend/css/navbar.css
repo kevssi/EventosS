@@ -1,12 +1,12 @@
 /* Navbar */
 .navbar {
-  background: linear-gradient(92deg, #0f3ea3 0%, #1a5dff 52%, #1895ff 100%);
-  border-bottom: 1px solid rgba(154, 227, 255, 0.55);
-  box-shadow: 0 14px 34px rgba(2, 10, 24, 0.45);
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
   position: sticky;
   top: 0;
   z-index: 1200;
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
 }
 
 .navbar-utility {

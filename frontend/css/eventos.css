@@ -111,7 +111,7 @@
 .hero-nav {
   border: 0;
   color: #eef8ff;
-  background: rgba(7, 35, 88, 0.5);
+  background: transparent;
   cursor: pointer;
   font-size: 44px;
   line-height: 1;
@@ -120,7 +120,7 @@
 }
 
 .hero-nav:hover {
-  background: rgba(16, 76, 179, 0.82);
+  background: transparent;
 }
 
 .hero-strip-wrap {
