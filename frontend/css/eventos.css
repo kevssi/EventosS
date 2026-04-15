@@ -98,9 +98,9 @@
 .hero-cta {
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 10px;
-  min-width: 260px;
-  padding: 12px 20px;
-  font-size: 15px;
+  min-width: 290px;
+  padding: 14px 24px;
+  font-size: 16px;
   letter-spacing: 0.24em;
   font-weight: 700;
   color: #ffffff;
@@ -271,8 +271,8 @@
   }
 
   .hero-cta {
-    min-width: 240px;
-    font-size: 14px;
+    min-width: 260px;
+    font-size: 15px;
   }
 
   .explora-banner {
@@ -521,9 +521,9 @@
   }
 
   .hero-cta {
-    min-width: 190px;
-    padding: 8px 14px;
-    font-size: 12px;
+    min-width: 210px;
+    padding: 10px 16px;
+    font-size: 13px;
     letter-spacing: 0.16em;
   }
 
