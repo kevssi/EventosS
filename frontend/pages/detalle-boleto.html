@@ -45,16 +45,9 @@
             abiertoDesdeQR: false,
 
             construirPayloadQR(boleto) {
-                const codigo = String(boleto?.codigo_qr || '').trim();
-                const id = encodeURIComponent(String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || ''));
-                const qr = encodeURIComponent(codigo);
-
-                if (!codigo) return '';
-
-                const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
-                const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
-                const detalleUrl = `${window.location.origin}${appBasePath}/pages/detalle-boleto.html`;
-                return `${detalleUrl}?id=${id}&qr=${qr}`;
+                const id = String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || '').trim();
+                if (!id) return '';
+                return `https://eventos-s.vercel.app/confirmacion-compra.html?boleto=${encodeURIComponent(id)}`;
             },
 
             esMovil() {

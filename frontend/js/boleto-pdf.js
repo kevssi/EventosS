@@ -48,28 +48,9 @@
   }
 
   function buildQrPayload(boleto) {
-    const codigo = String(
-      boleto?.codigo_qr
-      || boleto?.codigo
-      || boleto?.qr
-      || boleto?.qr_code
-      || ''
-    ).trim();
-    const id = encodeURIComponent(String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || ''));
+    const id = String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || '').trim();
     if (!id) return '';
-
-    const pagesIndex = window.location.pathname.lastIndexOf('/pages/');
-    const appBasePath = pagesIndex >= 0 ? window.location.pathname.slice(0, pagesIndex) : '';
-    const detalleUrl = `${window.location.origin}${appBasePath}/pages/detalle-boleto.html`;
-
-    const params = new URLSearchParams();
-    params.set('id', id);
-    params.set('src', 'qr');
-    if (codigo) {
-      params.set('qr', codigo);
-    }
-
-    return `${detalleUrl}?${params.toString()}`;
+    return `https://eventos-s.vercel.app/confirmacion-compra.html?boleto=${encodeURIComponent(id)}`;
   }
 
   function formatDateTime(value) {
