@@ -36,10 +36,10 @@
         </div>
     </div>
 
-    <script src="../js/api.js"></script>
-    <script src="../js/navbar.js"></script>
+    <script src="../js/api.js?v=20260414b"></script>
+    <script src="../js/navbar.js?v=20260414b"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="../js/boleto-pdf.js"></script>
+    <script src="../js/boleto-pdf.js?v=20260414b"></script>
     <script>
         const DetalleBoletoModule = {
             abiertoDesdeQR: false,
@@ -170,7 +170,22 @@
 
             async cargarDetallePorQR(qr) {
                 try {
-                    const response = await api.detalleBoletoPorQR(qr);
+                    let response;
+
+                    if (typeof api?.detalleBoletoPorQR === 'function') {
+                        response = await api.detalleBoletoPorQR(qr);
+                    } else {
+                        const endpoint = `/api/boletos/detalle-qr?qr=${encodeURIComponent(String(qr || ''))}`;
+                        const http = await fetch(endpoint);
+                        const data = await http.json().catch(() => ({}));
+
+                        if (!http.ok) {
+                          throw new Error(data.error || 'No se pudo cargar el detalle por QR');
+                        }
+
+                        response = data;
+                    }
+
                     this.render(response.boleto || {});
                 } catch (error) {
                     console.error('Error cargando detalle del boleto por QR:', error);
