@@ -109,8 +109,13 @@ const AdminModule = {
     return value === 'administrador' || value === 'admin' || value === '3';
   },
 
+  resolveUserRoleValue(usuario) {
+    if (!usuario || typeof usuario !== 'object') return '';
+    return usuario.rol ?? usuario.role ?? usuario.rol_id ?? usuario.id_rol ?? usuario.idRol ?? '';
+  },
+
   async init() {
-    this.usuario = JSON.parse(localStorage.getItem('usuario'));
+    this.usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
     this.verificarPermiso();
     this.renderCrearAdmin();
     this.renderPasswordAdmin();
@@ -121,7 +126,7 @@ const AdminModule = {
   },
 
   verificarPermiso() {
-    if (!this.isAdminRole(this.usuario?.rol)) {
+    if (!this.isAdminRole(this.resolveUserRoleValue(this.usuario))) {
       window.location.href = 'inicio.html';
     }
   },

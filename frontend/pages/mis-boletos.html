@@ -115,41 +115,72 @@
             boletosPorId: {},
 
             construirPayloadQR(boleto) {
+                const qrCode = String(boleto?.codigo_qr || '').trim();
                 const id = String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || '').trim();
+                const baseUrl = window.location.origin || 'https://eventos-s.vercel.app';
+
+                if (qrCode) {
+                    return `${baseUrl}/pages/detalle-boleto.html?qr=${encodeURIComponent(qrCode)}&src=qr`;
+                }
+
                 if (!id) return '';
-                return `https://eventos-s.vercel.app/confirmacion-compra.html?boleto=${encodeURIComponent(id)}`;
+                return `${baseUrl}/pages/detalle-boleto.html?id=${encodeURIComponent(id)}&src=qr`;
             },
 
-            mostrarMensajePagoPruebaSiAplica() {
+            async procesarRetornoMercadoPagoSiAplica() {
                 const params = new URLSearchParams(window.location.search);
                 const pago = (params.get('pago') || '').toLowerCase();
                 const status = (params.get('status') || '').toLowerCase();
                 const collectionStatus = (params.get('collection_status') || '').toLowerCase();
                 const paymentId = params.get('payment_id') || params.get('collection_id');
-                const checkoutFlag = sessionStorage.getItem('mp_demo_checkout_started') === '1';
+                const externalReference = params.get('external_reference') || '';
                 const box = document.getElementById('mensajePagoPrueba');
                 if (!box) return;
 
-                const retornoExitoso = pago === 'success'
-                    || status === 'approved'
-                    || collectionStatus === 'approved'
-                    || (checkoutFlag && (pago === 'success' || Boolean(paymentId)));
+                const vieneDeMercadoPago = Boolean(pago || status || collectionStatus || paymentId || externalReference);
+                if (!vieneDeMercadoPago) return;
 
-                if (retornoExitoso) {
+                try {
+                    const response = await api.validarRetornoMercadoPago({
+                        payment_id: paymentId || '',
+                        status,
+                        collection_status: collectionStatus,
+                        external_reference: externalReference
+                    });
+
+                    const statusFinal = String(response?.status_final || '').toLowerCase();
+                    const fueAprobado = statusFinal === 'aprobado';
+                    const tipoAlerta = fueAprobado ? 'info' : 'warning';
+                    const icon = fueAprobado ? 'circle-check' : 'triangle-alert';
+                    const titulo = fueAprobado ? 'Pago confirmado' : 'Pago en proceso';
+                    const mensaje = fueAprobado
+                        ? 'Tu pago fue validado correctamente. Tus boletos pagados ya aparecen en esta sección.'
+                        : 'Recibimos el retorno de Mercado Pago, pero el pago aún no está aprobado. Revisa el estado en Mis Órdenes.';
+
                     box.style.display = 'block';
                     box.innerHTML = `
-                        <div class="alert alert-info" style="font-size: 15px;">
-                            <span><i data-lucide="circle-check"></i></span>
+                        <div class="alert alert-${tipoAlerta}" style="font-size: 15px;">
+                            <span><i data-lucide="${icon}"></i></span>
                             <span>
-                                <strong>Pago de prueba detectado:</strong> Regresaste desde Mercado Pago y, para fines de demostración del programa, esta operación se tomará como si el pago se hubiera efectuado correctamente.
+                                <strong>${titulo}:</strong> ${mensaje}
                             </span>
                         </div>
                     `;
 
                     window.NavbarModule?.renderLucideIcons?.(box);
-                    sessionStorage.removeItem('mp_demo_checkout_started');
+                } catch (error) {
+                    box.style.display = 'block';
+                    box.innerHTML = `
+                        <div class="alert alert-error" style="font-size: 15px;">
+                            <span><i data-lucide="triangle-alert"></i></span>
+                            <span>
+                                <strong>No se pudo validar el pago:</strong> ${error.message || 'Intenta recargar en unos segundos.'}
+                            </span>
+                        </div>
+                    `;
 
-                    // Limpiamos el parametro para evitar mostrar el mensaje en cada recarga.
+                    window.NavbarModule?.renderLucideIcons?.(box);
+                } finally {
                     const cleanUrl = `${window.location.pathname}`;
                     window.history.replaceState({}, '', cleanUrl);
                 }
@@ -304,13 +335,15 @@
 
         // Inicializar
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                MisBoletosModule.mostrarMensajePagoPruebaSiAplica();
-                MisBoletosModule.cargarBoletos();
+            document.addEventListener('DOMContentLoaded', async () => {
+                await MisBoletosModule.procesarRetornoMercadoPagoSiAplica();
+                await MisBoletosModule.cargarBoletos();
             });
         } else {
-            MisBoletosModule.mostrarMensajePagoPruebaSiAplica();
-            MisBoletosModule.cargarBoletos();
+            (async () => {
+                await MisBoletosModule.procesarRetornoMercadoPagoSiAplica();
+                await MisBoletosModule.cargarBoletos();
+            })();
         }
     </script>
 

@@ -12,6 +12,7 @@ router.post('/verificar-disponibilidad', boletosController.verificarDisponibilid
 // Rutas protegidas
 router.post('/comprar', authMiddleware, boletosController.comprarBoletos);
 router.post('/pago/mercadopago/preferencia', authMiddleware, boletosController.crearPreferenciaMercadoPago);
+router.get('/pago/mercadopago/retorno', authMiddleware, boletosController.validarRetornoMercadoPago);
 router.post('/pago/confirmar', authMiddleware, boletosController.confirmarPago);
 router.get('/mis-boletos', authMiddleware, boletosController.misBoletos);
 router.get('/detalle/:id', authMiddleware, boletosController.detalleBoleto);

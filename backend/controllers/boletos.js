@@ -374,6 +374,91 @@ const obtenerDisponiblesDesdeResultado = (row = {}) => {
   return null;
 };
 
+const parseOrderIdsFromReference = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => Number.parseInt(item, 10))
+      .filter((item) => Number.isFinite(item) && item > 0);
+  }
+
+  return String(value || '')
+    .split(',')
+    .map((item) => Number.parseInt(item.trim(), 10))
+    .filter((item) => Number.isFinite(item) && item > 0);
+};
+
+const normalizeMercadoPagoStatus = (value) => {
+  const status = String(value || '').trim().toLowerCase();
+
+  if (['approved', 'accredited', 'paid', 'success'].includes(status)) return 'aprobado';
+  if (['pending', 'in_process', 'inprocess', 'authorized', 'waiting_payment', 'pending_contingency'].includes(status)) return 'pendiente';
+  if (['rejected', 'cancelled', 'canceled', 'refunded', 'charged_back', 'failure', 'failed'].includes(status)) return 'rechazado';
+
+  return status || 'pendiente';
+};
+
+const esBoletoConPagoConfirmado = (boleto = {}) => {
+  const values = [
+    boleto.estado_boleto,
+    boleto.estado,
+    boleto.estado_pago,
+    boleto.pago_estado,
+    boleto.payment_status,
+    boleto.order_status,
+    boleto.orden_estado
+  ]
+    .map((item) => String(item || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!values.length) {
+    return true;
+  }
+
+  const hasRejected = values.some((value) => /cancelad|rechazad|fallid|expired|vencid/.test(value));
+  if (hasRejected) return false;
+
+  const hasPending = values.some((value) => /pendient|in_process|inprocess|processing|waiting/.test(value));
+  const hasApproved = values.some((value) => /pagad|aprobad|approved|accredited|active|activ|usad|validad|canjead|consumid/.test(value));
+
+  if (hasApproved) return true;
+  if (hasPending) return false;
+
+  return true;
+};
+
+const obtenerOrdenesDelUsuario = async (connection, userId, orderIds = []) => {
+  if (!Array.isArray(orderIds) || orderIds.length === 0) return [];
+
+  const ordenesTable = await findExistingTable(connection, ['ordenes']);
+  if (!ordenesTable) return [];
+
+  const orderIdCol = await findExistingColumn(connection, ordenesTable, ['id', 'id_orden', 'orden_id']);
+  const orderUserCol = await findExistingColumn(connection, ordenesTable, ['id_usuario', 'usuario_id', 'user_id']);
+
+  if (!orderIdCol || !orderUserCol) return [];
+
+  const normalizedOrderIds = [...new Set(orderIds
+    .map((item) => Number.parseInt(item, 10))
+    .filter((item) => Number.isFinite(item) && item > 0))];
+
+  if (!normalizedOrderIds.length) return [];
+
+  const placeholders = normalizedOrderIds.map(() => '?').join(', ');
+  const [rows] = await connection.query(
+    `
+      SELECT ${escapeIdentifier(orderIdCol)} AS orden_id
+      FROM ${escapeIdentifier(ordenesTable)}
+      WHERE ${escapeIdentifier(orderUserCol)} = ?
+        AND ${escapeIdentifier(orderIdCol)} IN (${placeholders})
+    `,
+    [userId, ...normalizedOrderIds]
+  );
+
+  return rows
+    .map((row) => Number(row.orden_id || 0))
+    .filter((item) => Number.isFinite(item) && item > 0);
+};
+
 const resolverClientIdMercadoPago = () => {
   const envClientId = process.env.MERCADOPAGO_OAUTH_CLIENT_ID
     || process.env.MERCADOPAGO_APP_ID
@@ -823,13 +908,129 @@ exports.misBoletos = async (req, res) => {
 
     await connection.release();
 
+    const boletos = (resultado?.[0] || []).filter((boleto) => esBoletoConPagoConfirmado(boleto));
+
     res.json({
       success: true,
-      boletos: resultado[0]
+      boletos
     });
   } catch (error) {
     console.error('Error en misBoletos:', error);
     res.status(500).json({ error: 'Error al obtener boletos' });
+  }
+};
+
+// Validar retorno real de Mercado Pago y sincronizar estado de orden
+exports.validarRetornoMercadoPago = async (req, res) => {
+  const paymentId = String(req.query?.payment_id || req.query?.collection_id || '').trim();
+  const fallbackStatus = String(req.query?.status || req.query?.collection_status || '').trim();
+  const fallbackReference = String(req.query?.external_reference || '').trim();
+
+  const envAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || null;
+  const oauthAccessToken = await obtenerAccessTokenMercadoPago(req.user.id);
+  const accessToken = oauthAccessToken || envAccessToken;
+
+  if (!accessToken) {
+    return res.status(500).json({
+      success: false,
+      error: 'No hay token configurado para validar pagos de Mercado Pago'
+    });
+  }
+
+  let mpPayment = null;
+  if (paymentId) {
+    try {
+      const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const mpData = await mpResponse.json();
+      if (!mpResponse.ok) {
+        return res.status(502).json({
+          success: false,
+          error: mpData?.message || 'No se pudo validar el pago en Mercado Pago',
+          details: mpData
+        });
+      }
+
+      mpPayment = mpData;
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: 'Error al consultar estado de pago en Mercado Pago'
+      });
+    }
+  }
+
+  const mpStatus = normalizeMercadoPagoStatus(mpPayment?.status || fallbackStatus);
+  const externalReference = String(mpPayment?.external_reference || fallbackReference || '').trim();
+  const metadataOrderIds = Array.isArray(mpPayment?.metadata?.orden_ids) ? mpPayment.metadata.orden_ids : [];
+  const orderIdsFromReference = parseOrderIdsFromReference(externalReference);
+  const candidateOrderIds = [...new Set([...orderIdsFromReference, ...parseOrderIdsFromReference(metadataOrderIds)])];
+
+  if (!candidateOrderIds.length) {
+    return res.status(400).json({
+      success: false,
+      error: 'No se encontraron ordenes asociadas al pago recibido'
+    });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const userOrderIds = await obtenerOrdenesDelUsuario(connection, req.user.id, candidateOrderIds);
+
+    if (!userOrderIds.length) {
+      return res.status(403).json({
+        success: false,
+        error: 'Las ordenes del pago no pertenecen al usuario autenticado'
+      });
+    }
+
+    const referenciaExterna = paymentId || externalReference || null;
+    const resultados = [];
+
+    for (const orderId of userOrderIds) {
+      try {
+        const [resultado] = await connection.query(
+          'CALL sp_confirmar_pago(?, ?, ?, ?)',
+          [orderId, 'mercadopago', mpStatus, referenciaExterna]
+        );
+
+        const row = resultado?.[0]?.[0] || {};
+        resultados.push({
+          id_orden: orderId,
+          success: row.resultado === 'ok',
+          mensaje: row.mensaje || null
+        });
+      } catch (errorInterno) {
+        resultados.push({
+          id_orden: orderId,
+          success: false,
+          mensaje: 'No se pudo actualizar el estado de la orden'
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      status_final: mpStatus,
+      payment_id: paymentId || null,
+      external_reference: externalReference || null,
+      ordenes: resultados
+    });
+  } catch (error) {
+    console.error('Error en validarRetornoMercadoPago:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error al validar retorno de Mercado Pago'
+    });
+  } finally {
+    if (connection) connection.release();
   }
 };
 

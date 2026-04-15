@@ -476,8 +476,9 @@ const BoletosModule = {
       return;
     }
 
+    const ordenesCreadas = [];
+
     try {
-      const ordenes = [];
       const itemsCarrito = Object.values(this.carrito);
 
       for (const item of itemsCarrito) {
@@ -486,14 +487,14 @@ const BoletosModule = {
           throw new Error(compra?.message || 'No se pudo reservar el boleto');
         }
 
-        ordenes.push({
+        ordenesCreadas.push({
           id_orden: compra.orden.id_orden,
           total: Number(compra.orden.total || 0)
         });
       }
 
       const preferencia = await api.crearPreferenciaMercadoPago({
-        ordenes,
+        ordenes: ordenesCreadas,
         evento_titulo: this.evento?.titulo || 'Compra de boletos'
       });
 
@@ -501,13 +502,25 @@ const BoletosModule = {
         throw new Error('No se pudo iniciar el checkout de Mercado Pago');
       }
 
-      sessionStorage.setItem('mp_demo_checkout_started', '1');
       this.limpiarTodosLosCarritosEvento();
       this.resetearSeleccionBoletos();
 
       window.location.href = preferencia.init_point || preferencia.sandbox_init_point;
     } catch (error) {
       console.error('Error al procesar compra con Mercado Pago:', error);
+
+      if (ordenesCreadas.length > 0) {
+        try {
+          await Promise.allSettled(
+            ordenesCreadas
+              .map((orden) => Number(orden.id_orden || 0))
+              .filter((id) => Number.isFinite(id) && id > 0)
+              .map((idOrden) => api.cancelarOrden(idOrden))
+          );
+        } catch (_rollbackError) {
+          // Si falla el rollback, la orden quedara pendiente y el usuario podra cancelarla en Mis Ordenes.
+        }
+      }
 
       const mensaje = error.message || 'No se pudo iniciar el proceso de pago';
       const sesionExpirada = error?.status === 401 || mensaje.toLowerCase().includes('token inválido o expirado') || mensaje.toLowerCase().includes('token invalido o expirado');
