@@ -27,7 +27,7 @@
 
 .hero-spotlight {
   position: relative;
-  height: clamp(320px, 58vh, 500px);
+  height: clamp(420px, 70vh, 620px);
   margin: 0 0 26px;
   display: block;
   border-top: 1px solid rgba(172, 228, 255, 0.45);
@@ -255,7 +255,7 @@
 
 @media (max-width: 1024px) {
   .hero-spotlight {
-    height: clamp(250px, 45vh, 340px);
+    height: clamp(320px, 58vh, 460px);
   }
 
   .hero-spotlight-link img {
@@ -482,7 +482,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .hero-spotlight {
-    height: 240px;
+    height: 320px;
   }
 
   .hero-spotlight-link img {
@@ -598,6 +598,10 @@
 }
 
 @media (max-width: 480px) {
+  .hero-spotlight {
+    height: 280px;
+  }
+
   .hero-spotlight-overlay h1 {
     font-size: 21px;
   }
