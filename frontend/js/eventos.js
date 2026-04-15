@@ -12,6 +12,11 @@ const EventosModule = {
   popularIndexActual: 0,
   popularTimer: null,
   popularControlsBound: false,
+  imagenesCarruselFijas: [
+    '/publi/carrusel1.png',
+    '/publi/carrusel2.png',
+    '/publi/carrusel3.png'
+  ],
 
   async init() {
     this.inicializarDesdeURL();
@@ -416,6 +421,15 @@ const EventosModule = {
     });
   },
 
+  obtenerImagenCarrusel(index) {
+    if (!Array.isArray(this.imagenesCarruselFijas) || this.imagenesCarruselFijas.length === 0) {
+      return null;
+    }
+
+    const safeIndex = ((Number(index) || 0) % this.imagenesCarruselFijas.length + this.imagenesCarruselFijas.length) % this.imagenesCarruselFijas.length;
+    return this.imagenesCarruselFijas[safeIndex];
+  },
+
   seleccionarPopulares(eventos = []) {
     const lista = Array.isArray(eventos) ? [...eventos] : [];
 
@@ -505,6 +519,7 @@ const EventosModule = {
 
     if (!titulo || !kicker || !meta || !imagen || !link) return;
 
+    const imagenCarruselFija = this.obtenerImagenCarrusel(safeIndex);
     const imagenFallback = evento.imagen_fallback || this.obtenerImagenSemilla(evento.titulo || 'evento-popular');
     const imagenResuelta = evento.imagen_resuelta || imagenFallback;
     const fallbackLocal = this.obtenerPlaceholderSVG(evento.titulo || 'Evento destacado');
@@ -512,7 +527,7 @@ const EventosModule = {
     titulo.textContent = evento.titulo || 'Evento popular';
     kicker.textContent = (evento.categoria || 'VARIAS FECHAS').toUpperCase();
     meta.textContent = `${this.formatearFechaEvento(evento.fecha_inicio)} · ${evento.ubicacion || 'Ubicacion por confirmar'}`;
-    const candidatosImagen = [imagenResuelta, imagenFallback, fallbackLocal]
+    const candidatosImagen = [imagenCarruselFija, imagenResuelta, imagenFallback, fallbackLocal]
       .map((valor) => String(valor || '').trim())
       .filter(Boolean);
 
