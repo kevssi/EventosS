@@ -477,12 +477,18 @@ const EventosModule = {
     stripWrap.hidden = false;
 
     strip.innerHTML = this.populares
-      .map((evento, index) => `
-        <button class="hero-strip-item${index === 0 ? ' activo' : ''}" type="button" data-index="${index}" aria-label="Ver ${evento.titulo}">
-          <strong>${evento.titulo || 'Evento destacado'}</strong>
+      .map((evento, index) => {
+        const carruselInfo = this.obtenerImagenCarrusel(index);
+        const artistaCarrusel = String(carruselInfo?.artista || '').trim();
+        const nombreSlide = artistaCarrusel || evento.titulo || 'Evento destacado';
+
+        return `
+        <button class="hero-strip-item${index === 0 ? ' activo' : ''}" type="button" data-index="${index}" aria-label="Ver ${nombreSlide}">
+          <strong>${nombreSlide}</strong>
           <span>${this.formatearFechaEvento(evento.fecha_inicio)}</span>
         </button>
-      `)
+      `;
+      })
       .join('');
 
     strip.querySelectorAll('.hero-strip-item').forEach((item) => {
@@ -533,7 +539,7 @@ const EventosModule = {
     const imagenResuelta = evento.imagen_resuelta || imagenFallback;
     const fallbackLocal = this.obtenerPlaceholderSVG(evento.titulo || 'Evento destacado');
 
-    titulo.textContent = evento.titulo || 'Evento popular';
+    titulo.textContent = artistaCarrusel || evento.titulo || 'Evento popular';
     kicker.textContent = (artistaCarrusel || evento.categoria || 'VARIAS FECHAS').toUpperCase();
     meta.textContent = `${this.formatearFechaEvento(evento.fecha_inicio)} · ${evento.ubicacion || 'Ubicacion por confirmar'}`;
     const candidatosImagen = [imagenCarruselSrc, imagenResuelta, imagenFallback, fallbackLocal]
