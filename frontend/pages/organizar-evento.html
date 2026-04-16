@@ -27,6 +27,7 @@
     .status { margin-top: 14px; padding: 10px 12px; border-radius: 10px; display: none; }
     .status.ok { display: block; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); }
     .status.error { display: block; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); }
+    .status.warn { display: block; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.35); color: #854d0e; }
     .upload-wrap { position: relative; }
     .upload-label { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.3); background: rgba(0,0,0,0.15); cursor: pointer; font-size: 0.94rem; transition: border-color 0.2s; }
     .upload-label:hover { border-color: rgba(255,255,255,0.55); }
@@ -491,8 +492,8 @@
           const uploadRes = await api.subirImagen(fd);
           imagenUrl = uploadRes.imagen_url || null;
         } catch (uploadErr) {
-          showStatus('error', 'No se pudo subir la imagen: ' + (uploadErr.message || 'Error'));
-          return;
+          // Warn but do not block — event will be saved without image
+          showStatus('warn', 'No se pudo subir la imagen: ' + (uploadErr.message || 'Error') + '. El evento se guardará sin imagen.');
         }
       }
 

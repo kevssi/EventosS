@@ -140,13 +140,13 @@
               <div class="evento-actions">
                 <a class="btn btn-primary" href="detalle-evento.html?id=${evento.id}">Ver Evento</a>
                 <a class="btn btn-secondary" href="organizar-evento.html?id=${evento.id}">Editar</a>
+                <button class="btn btn-danger" onclick="MisEventosModule.eliminar(${evento.id}, '${String(evento.titulo || '').replace(/'/g, "\\'")}')">Eliminar</button>
               </div>
             </article>
           `).join('');
 
           window.NavbarModule?.renderLucideIcons?.(container);
         } catch (error) {
-          container.innerHTML = `
             <div class="card" style="padding: 18px; grid-column: 1 / -1;">
               <div class="alert alert-error">
                 <span><i data-lucide="triangle-alert"></i></span>
@@ -155,6 +155,20 @@
             </div>
           `;
           window.NavbarModule?.renderLucideIcons?.(container);
+        }
+      },
+
+      async eliminar(id, titulo) {
+        if (!confirm(`¿Eliminar el evento "${titulo}"? Esta acción no se puede deshacer.`)) return;
+        try {
+          const response = await api.cancelarEvento(id, 'Eliminado por organizador');
+          if (response?.success) {
+            await this.cargar();
+          } else {
+            alert(response?.message || 'No se pudo eliminar el evento.');
+          }
+        } catch (error) {
+          alert(error.message || 'Error al eliminar el evento.');
         }
       }
     };

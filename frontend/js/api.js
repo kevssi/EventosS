@@ -126,6 +126,17 @@ class APIClient {
     return this.request('/eventos/mis-eventos/listar');
   }
 
+  listarEventosPendientes() {
+    return this.request('/eventos/admin/pendientes');
+  }
+
+  cambiarEstadoEvento(id, estado, motivo) {
+    return this.request(`/eventos/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado, motivo })
+    });
+  }
+
   obtenerImagenArtista(artista) {
     const query = new URLSearchParams({ artista: artista || '' }).toString();
     return this.request(`/eventos/imagen-artista?${query}`);

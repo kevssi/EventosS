@@ -355,8 +355,12 @@
             const fechaEvento = formatDate(boleto.fecha_evento);
             const horaEvento  = formatTime(boleto.fecha_evento);
             const fechaCompra = formatDate(boleto.fecha_compra);
-            const codigoQR    = boleto.codigo_qr || '';
-            const qrPayload   = `https://eventos-s.vercel.app/confirmacion-compra.html?boleto=${encodeURIComponent(boleto.boleto_id || '')}`;
+            const codigoQR    = String(boleto.codigo_qr || '').trim();
+            const boletoId    = String(boleto.boleto_id || boleto.id_boleto || boleto.id || '').trim();
+            const baseUrl     = window.location.origin || 'https://eventos-s.vercel.app';
+            const qrPayload   = codigoQR
+                ? `${baseUrl}/pages/detalle-boleto.html?qr=${encodeURIComponent(codigoQR)}&src=qr`
+                : `${baseUrl}/pages/detalle-boleto.html?id=${encodeURIComponent(boletoId)}&src=qr`;
             const qrSrc       = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
 
             container.innerHTML = `

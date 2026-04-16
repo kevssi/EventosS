@@ -29,7 +29,8 @@ const AdminModule = {
     ventas: false,
     solicitudes: false,
     crearAdmin: false,
-    passwordAdmin: false
+    passwordAdmin: false,
+    revisionEventos: false
   },
 
   escapeHtml(value) {
@@ -178,6 +179,11 @@ const AdminModule = {
       await this.cargarAdministradores();
       this.loadedTabs.crearAdmin = true;
       this.loadedTabs.passwordAdmin = true;
+    }
+
+    if (tabNombre === 'revisionEventos') {
+      await this.cargarEventosPendientes();
+      this.loadedTabs.revisionEventos = true;
     }
   },
 
@@ -1551,6 +1557,93 @@ const AdminModule = {
         alert(response.message || 'Usuario eliminado correctamente');
         await this.cargarUsuarios();
       }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  },
+
+  eventosPendientes: [],
+
+  async cargarEventosPendientes() {
+    const container = document.querySelector('#contenidoRevisionEventos');
+    if (container) container.innerHTML = '<p>Cargando eventos pendientes...</p>';
+    try {
+      const response = await api.listarEventosPendientes();
+      this.eventosPendientes = response.eventos || [];
+      this.renderEventosPendientes();
+    } catch (error) {
+      if (container) container.innerHTML = `<p class="error-msg">Error al cargar: ${this.escapeHtml(error.message)}</p>`;
+    }
+  },
+
+  renderEventosPendientes() {
+    const container = document.querySelector('#contenidoRevisionEventos');
+    if (!container) return;
+
+    const eventos = this.eventosPendientes;
+    if (!eventos || eventos.length === 0) {
+      container.innerHTML = '<p style="padding:1rem;">No hay eventos pendientes de aprobacion.</p>';
+      return;
+    }
+
+    const rows = eventos.map((ev) => {
+      const id = ev.id || '';
+      const titulo = this.escapeHtml(ev.titulo || '(sin titulo)');
+      const organizador = this.escapeHtml((ev.organizador_nombre || '') + (ev.organizador_email ? ` <${ev.organizador_email}>` : ''));
+      const fecha = ev.fecha_inicio ? new Date(ev.fecha_inicio).toLocaleDateString() : '-';
+      const ubicacion = this.escapeHtml(ev.ubicacion || '-');
+      const estado = this.escapeHtml(ev.estado || 'borrador');
+
+      return `
+        <tr>
+          <td>${id}</td>
+          <td>${titulo}</td>
+          <td>${organizador}</td>
+          <td>${fecha}</td>
+          <td>${ubicacion}</td>
+          <td><span class="badge">${estado}</span></td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-success btn-sm" onclick="AdminModule.aprobarEvento(${id})">Aprobar</button>
+            <button class="btn btn-danger btn-sm" onclick="AdminModule.rechazarEvento(${id})">Rechazar</button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <h2 style="margin-bottom:1rem;">Eventos Pendientes de Aprobacion</h2>
+      <button class="btn btn-secondary btn-sm" style="margin-bottom:1rem;" onclick="AdminModule.cargarEventosPendientes()">Actualizar</button>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Titulo</th><th>Organizador</th><th>Fecha</th><th>Ubicacion</th><th>Estado</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  },
+
+  async aprobarEvento(id) {
+    if (!confirm('Aprobar este evento y publicarlo?')) return;
+    try {
+      const response = await api.cambiarEstadoEvento(id, 'publicado', 'Aprobado por admin');
+      alert(response.message || 'Evento aprobado correctamente');
+      this.loadedTabs.revisionEventos = false;
+      await this.cargarEventosPendientes();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  },
+
+  async rechazarEvento(id) {
+    const motivo = prompt('Motivo del rechazo (opcional):');
+    if (motivo === null) return; // cancelado
+    try {
+      const response = await api.cambiarEstadoEvento(id, 'rechazado', motivo || 'Rechazado por admin');
+      alert(response.message || 'Evento rechazado');
+      this.loadedTabs.revisionEventos = false;
+      await this.cargarEventosPendientes();
     } catch (error) {
       alert('Error: ' + error.message);
     }

@@ -800,14 +800,14 @@ exports.crearEvento = async (req, res) => {
         capacidad: capacidadNum,
         idCategoria: categoriaId,
         imagenUrl: imagenUrlNormalizada,
-        estado: 'publicado'
+        estado: 'borrador'
       });
     }
 
-    // Fuerza publicacion al crear, incluso si el SP deja el estado en borrador.
+    // Asegura que el evento quede en borrador hasta aprobacion del admin.
     if (idEvento > 0) {
       try {
-        await connection.query('UPDATE eventos SET estado = ? WHERE id = ?', ['publicado', idEvento]);
+        await connection.query('UPDATE eventos SET estado = ? WHERE id = ?', ['borrador', idEvento]);
       } catch (_estadoError) {
         // Si el esquema no permite actualizar estado aqui, no bloqueamos la creacion.
       }
@@ -938,6 +938,84 @@ exports.cancelarEvento = async (req, res) => {
 };
 
 // Listar categorías
+// Listar eventos en estado borrador/revision para aprobacion (solo admin)
+exports.listarEventosPendientes = async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const organizerColumn = await resolveOrganizerColumn(connection);
+
+    const [rows] = await connection.query(
+      `
+        SELECT
+          e.id,
+          e.titulo,
+          e.descripcion,
+          e.fecha_inicio,
+          e.ubicacion,
+          e.capacidad,
+          e.imagen_url,
+          e.estado,
+          c.nombre AS categoria,
+          u.nombre AS organizador_nombre,
+          u.email AS organizador_email
+        FROM eventos e
+        LEFT JOIN categorias_evento c ON c.id = e.id_categoria
+        LEFT JOIN usuarios u ON u.id = e.${organizerColumn || 'id_organizador'}
+        WHERE e.estado IN ('borrador', 'revision', 'pendiente')
+        ORDER BY e.id DESC
+      `
+    );
+
+    await connection.release();
+    return res.json({ success: true, eventos: rows || [] });
+  } catch (error) {
+    console.error('Error en listarEventosPendientes:', error);
+    return res.status(500).json({ error: 'Error al listar eventos pendientes' });
+  }
+};
+
+// Aprobar o rechazar un evento (solo admin)
+exports.cambiarEstadoEvento = async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  const { estado, motivo } = req.body;
+
+  if (!Number.isFinite(id) || id <= 0) {
+    return res.status(400).json({ error: 'ID de evento invalido' });
+  }
+
+  const estadosPermitidos = new Set(['publicado', 'rechazado', 'borrador', 'cancelado']);
+  if (!estado || !estadosPermitidos.has(estado)) {
+    return res.status(400).json({ error: 'Estado invalido. Usa: publicado, rechazado, borrador, cancelado' });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+    const [result] = await connection.query(
+      `UPDATE eventos SET estado = ? WHERE id = ?`,
+      [estado, id]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.release();
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    if (motivo) {
+      await connection.query(
+        `INSERT INTO log_actividad (id_usuario, accion, tabla_ref, id_ref, detalle)
+         VALUES (?, ?, 'eventos', ?, ?)`,
+        [req.user.id, `evento_${estado}`, id, motivo]
+      ).catch(() => {}); // log opcional, no bloquear si falla
+    }
+
+    await connection.release();
+    return res.json({ success: true, message: `Evento ${estado === 'publicado' ? 'aprobado' : 'rechazado'} correctamente` });
+  } catch (error) {
+    console.error('Error en cambiarEstadoEvento:', error);
+    return res.status(500).json({ error: 'Error al cambiar estado del evento' });
+  }
+};
+
 exports.listarCategorias = async (req, res) => {
   try {
     const connection = await pool.getConnection();
