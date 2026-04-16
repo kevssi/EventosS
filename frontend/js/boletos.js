@@ -68,17 +68,24 @@ const BoletosModule = {
       return parsed.includes('ejemplo.com') || parsed.includes('example.com');
     };
 
+    const esUrlCloudinary = (url) => /^https?:\/\//i.test(String(url || ''));
+
     const normalizedTitle = this.normalizeTitle ? this.normalizeTitle(evento.titulo) : evento.titulo?.toString().toLowerCase() || '';
     const plainTitle = evento.titulo?.toString().toLowerCase() || '';
     const localImage = this.imagenesLocal[normalizedTitle] || this.imagenesLocal[plainTitle] || this.imagenesLocal[this.normalizeTitle(plainTitle.replace(/-/g, ' '))] || null;
     const generatedImage = this.imagenPorTitulo(evento.titulo);
     const imagenSubida = normalizarImagenUrl(evento.imagen_url);
 
+    // Cloudinary/external uploaded URL always wins over local hardcoded images
+    if (esUrlCloudinary(imagenSubida) && !esPlaceholderExterno(imagenSubida)) {
+      return imagenSubida;
+    }
+
     if (esUploadLocal(imagenSubida)) {
       return imagenSubida;
     }
 
-    return localImage || (esPlaceholderExterno(imagenSubida) ? null : imagenSubida) || generatedImage || this.fallbackImage;
+    return localImage || generatedImage || this.fallbackImage;
   },
 
   async init() {

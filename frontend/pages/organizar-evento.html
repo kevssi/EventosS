@@ -197,6 +197,7 @@
     const submitBtn = form.querySelector('button[type="submit"]');
     const params = new URLSearchParams(window.location.search);
     const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
+    let existingImagenUrl = null; // preserves current image_url when editing without re-uploading
 
     // -- Zonas dinamicas --
     let zonaCounter = 0;
@@ -435,6 +436,15 @@
         document.getElementById('aceptoCondiciones').checked = true;
         document.getElementById('aceptoResponsabilidades').checked = true;
 
+        // Show existing image as preview and store it for preservation
+        if (evento.imagen_url) {
+          existingImagenUrl = evento.imagen_url;
+          const preview = document.getElementById('eventoImagenPreview');
+          const nombre = document.getElementById('eventoImagenNombre');
+          if (preview) { preview.src = evento.imagen_url; preview.style.display = 'block'; }
+          if (nombre) nombre.textContent = 'Imagen actual (cargada previamente)';
+        }
+
         if (submitBtn) {
           submitBtn.textContent = 'Guardar cambios del evento';
         }
@@ -536,6 +546,9 @@
           showStatus('warn', 'No se pudo subir la imagen: ' + (uploadErr.message || 'Error') + '. El evento se guardará sin imagen.');
         }
       }
+
+      // If editing and no new image was selected, preserve the existing one
+      if (!imagenUrl && existingImagenUrl) imagenUrl = existingImagenUrl;
 
       if (imagenUrl) payload.imagen_url = imagenUrl;
 
