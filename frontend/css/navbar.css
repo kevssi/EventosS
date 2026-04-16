@@ -273,8 +273,13 @@ body.help-modal-open {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(171, 226, 255, 0.35);
   border-radius: 12px;
-  min-width: 620px;
+  min-width: 700px;
   overflow: hidden;
+}
+
+/* Hide the navbar.js-generated search when the page already has its own static search */
+body.home-with-hero .navbar-user .navbar-search {
+  display: none;
 }
 
 .navbar-search label {

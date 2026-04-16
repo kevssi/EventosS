@@ -5,6 +5,44 @@
   align-items: center;
   min-height: 100vh;
   padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Animated floating blue orbs behind the form */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 0;
+  animation: floatOrb 9s ease-in-out infinite alternate;
+}
+
+body::before {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, #29d8ff 0%, #1860ff 60%);
+  top: -140px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+body::after {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, #18cbff 0%, #0040cc 70%);
+  bottom: -120px;
+  right: -80px;
+  animation-delay: -4.5s;
+}
+
+@keyframes floatOrb {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(55px, 45px) scale(1.18); }
 }
 
 .auth-form {

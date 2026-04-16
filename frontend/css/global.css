@@ -6,10 +6,10 @@
   --secondary: #16b34a;
   --danger: #ff5a7a;
   --warning: #f5b942;
-  --light: #0b1730;
-  --light-2: #112241;
+  --light: #1a3668;
+  --light-2: #1e4280;
   --dark: #f3f8ff;
-  --border: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.14);
   --text: #e7f0ff;
   --text-light: #a8bbdc;
   --surface: rgba(11, 24, 48, 0.86);
@@ -33,9 +33,9 @@ body {
   font-family: 'Montserrat', sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 10% 20%, rgba(24, 203, 255, 0.12), transparent 30%),
-    radial-gradient(circle at 92% 8%, rgba(22, 179, 74, 0.10), transparent 26%),
-    linear-gradient(160deg, #081224 0%, #0a1830 42%, #081325 100%);
+    radial-gradient(circle at 10% 20%, rgba(24, 203, 255, 0.18), transparent 32%),
+    radial-gradient(circle at 92% 8%, rgba(22, 179, 74, 0.12), transparent 28%),
+    linear-gradient(160deg, #1a3668 0%, #1e4a80 42%, #18386a 100%);
   line-height: 1.6;
   min-height: 100vh;
 }

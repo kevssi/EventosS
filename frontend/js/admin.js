@@ -1603,6 +1603,7 @@ const AdminModule = {
           <td>${ubicacion}</td>
           <td><span class="badge">${estado}</span></td>
           <td style="white-space:nowrap;">
+            <button class="btn btn-outline btn-sm" onclick="AdminModule.verInfoEvento(${id})">Info</button>
             <button class="btn btn-success btn-sm" onclick="AdminModule.aprobarEvento(${id})">Aprobar</button>
             <button class="btn btn-danger btn-sm" onclick="AdminModule.rechazarEvento(${id})">Rechazar</button>
           </td>
@@ -1621,7 +1622,33 @@ const AdminModule = {
           </thead>
           <tbody>${rows}</tbody>
         </table>
+      </div>
+      <div id="eventoInfoModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(4,12,28,0.78);align-items:center;justify-content:center;padding:20px;">
+        <div style="background:linear-gradient(160deg,#0f2448,#1a3a6e);border:1px solid rgba(140,213,255,0.3);border-radius:14px;max-width:700px;width:100%;max-height:85vh;overflow:auto;padding:28px;position:relative;">
+          <button onclick="document.getElementById('eventoInfoModal').style.display='none'" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;">&times;</button>
+          <h3 id="eventoInfoTitulo" style="margin-bottom:16px;color:#d8f4ff;"></h3>
+          <div id="eventoInfoCuerpo" style="color:#c8dff5;line-height:1.7;font-size:0.93rem;"></div>
+        </div>
       </div>`;
+  },
+
+  verInfoEvento(id) {
+    const ev = (this.eventosPendientes || []).find(e => Number(e.id) === Number(id));
+    if (!ev) return;
+    const modal = document.getElementById('eventoInfoModal');
+    if (!modal) return;
+    document.getElementById('eventoInfoTitulo').textContent = ev.titulo || '(sin titulo)';
+    document.getElementById('eventoInfoCuerpo').innerHTML = `
+      <p><strong>Organizador:</strong> ${this.escapeHtml((ev.organizador_nombre || '') + (ev.organizador_email ? ` <${ev.organizador_email}>` : ''))}</p>
+      <p><strong>Estado:</strong> ${this.escapeHtml(ev.estado || '-')}</p>
+      <p><strong>Fecha:</strong> ${ev.fecha_inicio ? new Date(ev.fecha_inicio).toLocaleString() : '-'}</p>
+      <p><strong>Ubicacion:</strong> ${this.escapeHtml(ev.ubicacion || '-')}</p>
+      <p><strong>Capacidad:</strong> ${this.escapeHtml(String(ev.capacidad || '-'))}</p>
+      <hr style="border-color:rgba(255,255,255,0.1);margin:12px 0;">
+      <p><strong>Descripcion completa:</strong></p>
+      <div style="background:rgba(0,0,0,0.22);border-radius:8px;padding:12px;white-space:pre-wrap;font-size:0.88rem;">${this.escapeHtml(ev.descripcion || 'Sin descripcion')}</div>
+    `;
+    modal.style.display = 'flex';
   },
 
   async aprobarEvento(id) {

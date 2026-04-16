@@ -110,6 +110,17 @@ const EventosModule = {
       btnBuscar.addEventListener('click', () => this.handleFiltro());
     }
 
+    // Hero CTA "COMPRAR BOLETOS" scrolls to events grid instead of navigating
+    const heroCta = document.querySelector('.hero-cta');
+    if (heroCta) {
+      heroCta.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = document.querySelector('#eventosContainer') || document.querySelector('.container');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
     this.configurarControlesPopulares();
   },
 

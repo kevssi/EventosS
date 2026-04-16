@@ -35,8 +35,15 @@
     .upload-label svg { flex-shrink: 0; opacity: 0.7; }
     #eventoImagenPreview { display: none; margin-top: 10px; max-height: 180px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.12); }
     .upload-filename { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.8; }
+    /* Zonas dinamicas */
+    .zona-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 10px; }
+    .btn-zona-remove { width: 36px; height: 38px; border: none; border-radius: 8px; background: rgba(255,90,122,0.18); color: #ff5a7a; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
+    .btn-zona-remove:hover { background: rgba(255,90,122,0.38); }
+    .zonas-actions { display: flex; gap: 10px; margin-top: 8px; }
     @media (max-width: 860px) {
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .zona-row { grid-template-columns: 1fr 1fr; }
+      .zona-row > div:first-child { grid-column: 1 / -1; }
     }
   </style>
 </head>
@@ -118,45 +125,9 @@
       </div>
 
       <h3 class="section-title">2) Zonas y precios (definidos por organizador/promotor)</h3>
-      <div class="grid-3">
-        <div>
-          <label for="zona1Nombre">Zona 1</label>
-          <input type="text" id="zona1Nombre" placeholder="VIP" required>
-        </div>
-        <div>
-          <label for="zona1Cupo">Cupo</label>
-          <input type="number" id="zona1Cupo" min="0" step="1" placeholder="200" required>
-        </div>
-        <div>
-          <label for="zona1Precio">Precio</label>
-          <input type="number" id="zona1Precio" min="0" step="0.01" placeholder="1800" required>
-        </div>
-
-        <div>
-          <label for="zona2Nombre">Zona 2</label>
-          <input type="text" id="zona2Nombre" placeholder="General" required>
-        </div>
-        <div>
-          <label for="zona2Cupo">Cupo</label>
-          <input type="number" id="zona2Cupo" min="0" step="1" placeholder="800" required>
-        </div>
-        <div>
-          <label for="zona2Precio">Precio</label>
-          <input type="number" id="zona2Precio" min="0" step="0.01" placeholder="750" required>
-        </div>
-
-        <div>
-          <label for="zona3Nombre">Zona 3 (opcional)</label>
-          <input type="text" id="zona3Nombre" placeholder="Grada alta">
-        </div>
-        <div>
-          <label for="zona3Cupo">Cupo</label>
-          <input type="number" id="zona3Cupo" min="0" step="1" placeholder="400">
-        </div>
-        <div>
-          <label for="zona3Precio">Precio</label>
-          <input type="number" id="zona3Precio" min="0" step="0.01" placeholder="450">
-        </div>
+      <div id="zonasContainer"></div>
+      <div class="zonas-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btnAgregarZona">+ Agregar zona</button>
       </div>
 
       <h3 class="section-title">3) Permisos y legalidad</h3>
@@ -226,6 +197,72 @@
     const submitBtn = form.querySelector('button[type="submit"]');
     const params = new URLSearchParams(window.location.search);
     const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
+
+    // -- Zonas dinamicas --
+    let zonaCounter = 0;
+
+    function zonaLabel(idx) {
+      const rows = document.querySelectorAll('.zona-row');
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].dataset.zonaIdx === String(idx)) return `Zona ${i + 1}`;
+      }
+      return 'Zona';
+    }
+
+    function agregarZona(nombre = '', cupo = '', precio = '') {
+      zonaCounter++;
+      const idx = zonaCounter;
+      const container = document.getElementById('zonasContainer');
+      const div = document.createElement('div');
+      div.className = 'zona-row';
+      div.dataset.zonaIdx = idx;
+      div.innerHTML = `
+        <div>
+          <label>Nombre</label>
+          <input type="text" id="zonaNombre_${idx}" placeholder="Ej. VIP" value="${String(nombre).replace(/"/g,'&quot;')}">
+        </div>
+        <div>
+          <label>Cupo</label>
+          <input type="number" id="zonaCupo_${idx}" min="0" step="1" placeholder="200" value="${cupo}">
+        </div>
+        <div>
+          <label>Precio</label>
+          <input type="number" id="zonaPrecio_${idx}" min="0" step="0.01" placeholder="500" value="${precio}">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button type="button" class="btn-zona-remove" onclick="eliminarZona(${idx})" title="Quitar zona">&times;</button>
+        </div>
+      `;
+      container.appendChild(div);
+      updateZonaLabels();
+    }
+
+    function eliminarZona(idx) {
+      const row = document.querySelector(`.zona-row[data-zona-idx="${idx}"]`);
+      if (row) { row.remove(); updateZonaLabels(); }
+    }
+
+    function updateZonaLabels() {
+      // No strictly needed but keeps headings in order
+    }
+
+    function getZonas() {
+      const rows = document.querySelectorAll('.zona-row');
+      return Array.from(rows).map(row => {
+        const idx = row.dataset.zonaIdx;
+        return {
+          nombre: document.getElementById(`zonaNombre_${idx}`)?.value?.trim() || '',
+          cupo: Number(document.getElementById(`zonaCupo_${idx}`)?.value || 0),
+          precio: Number(document.getElementById(`zonaPrecio_${idx}`)?.value || 0)
+        };
+      }).filter(z => z.nombre);
+    }
+
+    document.getElementById('btnAgregarZona').addEventListener('click', () => agregarZona());
+
+    // Start with 2 default zones
+    agregarZona('VIP', '', '');
+    agregarZona('General', '', '');
 
     // Preview de imagen
     document.getElementById('eventoImagenFile').addEventListener('change', (e) => {
@@ -366,10 +403,26 @@
         [0, 1, 2].forEach((index) => {
           const zona = parsed.zonas[index] || null;
           if (!zona) return;
-          setValue(`zona${index + 1}Nombre`, zona.nombre || '');
-          setValue(`zona${index + 1}Cupo`, zona.cupo || '');
-          setValue(`zona${index + 1}Precio`, zona.precio || '');
+          // Fill existing zone rows in order
+          const rows = document.querySelectorAll('.zona-row');
+          if (rows[index]) {
+            const idx = rows[index].dataset.zonaIdx;
+            const nEl = document.getElementById(`zonaNombre_${idx}`);
+            const cEl = document.getElementById(`zonaCupo_${idx}`);
+            const pEl = document.getElementById(`zonaPrecio_${idx}`);
+            if (nEl) nEl.value = zona.nombre || '';
+            if (cEl) cEl.value = zona.cupo || '';
+            if (pEl) pEl.value = zona.precio || '';
+          } else {
+            agregarZona(zona.nombre || '', zona.cupo || '', zona.precio || '');
+          }
         });
+
+        // Add extra zones if more than 3
+        for (let i = 3; i < parsed.zonas.length; i++) {
+          const zona = parsed.zonas[i];
+          agregarZona(zona.nombre || '', zona.cupo || '', zona.precio || '');
+        }
 
         setValue('permisoFolio', parsed.permisoFolio || '');
         setValue('permisoAutoridad', parsed.permisoAutoridad || '');
@@ -388,15 +441,6 @@
       } catch (_error) {
         // Si falla la precarga, dejamos el formulario en modo creacion.
       }
-    };
-
-    const parseZone = (nombreId, cupoId, precioId, required = false) => {
-      const nombre = document.getElementById(nombreId).value.trim();
-      const cupo = Number(document.getElementById(cupoId).value || 0);
-      const precio = Number(document.getElementById(precioId).value || 0);
-
-      if (!nombre && !required) return null;
-      return { nombre, cupo, precio };
     };
 
     form.addEventListener('submit', async (e) => {
@@ -432,11 +476,7 @@
         return;
       }
 
-      const zonas = [
-        parseZone('zona1Nombre', 'zona1Cupo', 'zona1Precio', true),
-        parseZone('zona2Nombre', 'zona2Cupo', 'zona2Precio', true),
-        parseZone('zona3Nombre', 'zona3Cupo', 'zona3Precio', false)
-      ].filter(Boolean);
+      const zonas = getZonas();
 
       if (zonas.length === 0 || zonas.some((z) => !z.nombre || z.cupo <= 0 || z.precio < 0)) {
         showStatus('error', 'Configura al menos una zona valida con cupo mayor a 0 y precio valido.');

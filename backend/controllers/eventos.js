@@ -253,7 +253,12 @@ const recalcularDisponibilidadEventos = async (connection, eventos = []) => {
   return actualizados;
 };
 
+// In-memory caches for schema introspection (avoids repeated INFORMATION_SCHEMA queries)
+const _schemaCache = {};
+
 const resolveOrganizerColumn = async (connection) => {
+  if (_schemaCache.organizerColumn !== undefined) return _schemaCache.organizerColumn;
+
   const candidateColumns = ['id_organizador', 'id_usuario', 'id_creador', 'id_usuario_creador'];
 
   const [rows] = await connection.query(
@@ -266,10 +271,14 @@ const resolveOrganizerColumn = async (connection) => {
   );
 
   const available = new Set((rows || []).map((row) => row.COLUMN_NAME));
-  return candidateColumns.find((col) => available.has(col)) || null;
+  const result = candidateColumns.find((col) => available.has(col)) || null;
+  _schemaCache.organizerColumn = result;
+  return result;
 };
 
 const resolveCategoriaColumn = async (connection) => {
+  if (_schemaCache.categoriaColumn !== undefined) return _schemaCache.categoriaColumn;
+
   const candidateColumns = ['id_categoria', 'categoria_id'];
 
   const [rows] = await connection.query(
@@ -282,7 +291,9 @@ const resolveCategoriaColumn = async (connection) => {
   );
 
   const available = new Set((rows || []).map((row) => row.COLUMN_NAME));
-  return candidateColumns.find((col) => available.has(col)) || null;
+  const result = candidateColumns.find((col) => available.has(col)) || null;
+  _schemaCache.categoriaColumn = result;
+  return result;
 };
 
 const resolveCategoriaIdForCreate = async (connection, rawCategoriaId) => {
