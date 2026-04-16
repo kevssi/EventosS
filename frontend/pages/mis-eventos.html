@@ -147,6 +147,7 @@
 
           window.NavbarModule?.renderLucideIcons?.(container);
         } catch (error) {
+          container.innerHTML = `
             <div class="card" style="padding: 18px; grid-column: 1 / -1;">
               <div class="alert alert-error">
                 <span><i data-lucide="triangle-alert"></i></span>
