@@ -300,7 +300,8 @@ const AdminModule = {
 
   async cargarEventosAdmin() {
     try {
-      const response = await api.listarEventos({ realtime: 1 });
+      // Usar la API de eventos del organizador autenticado
+      const response = await api.listarMisEventos();
       this.eventos = response.eventos || [];
       this.renderEventosAdmin();
       if (this.tab_activo === 'ventas') {
