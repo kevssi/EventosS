@@ -28,6 +28,10 @@ app.use('/api/reportes', reportesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/imagenes', require('./routes/imagenes.route'));
 
+// Nueva ruta para subir imágenes a Cloudinary
+const uploadRouter = require('./routes/upload');
+app.use('/api/upload', uploadRouter);
+
 // Ruta de bienvenida
 app.get('/api', (req, res) => {
   res.json({

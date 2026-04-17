@@ -229,13 +229,17 @@ class APIClient {
     });
   }
 
+  verificarPagoOrden(id) {
+    return this.request(`/boletos/ordenes/${id}/verificar-pago`);
+  }
+
   // REPORTES
   reporteVentasEvento(id_evento) {
     return this.request(`/reportes/evento/${id_evento}`);
   }
 
   subirImagen(formData) {
-    return fetch(`${API_URL.replace('/api', '')}/api/imagenes/upload`, {
+    return fetch(`${API_URL}/upload/imagen`, {
       method: 'POST',
       headers: {
         Authorization: this.token ? `Bearer ${this.token}` : ''
@@ -246,6 +250,7 @@ class APIClient {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Error al subir imagen');
       }
+      // Cloudinary responde con { success: true, url: ... }
       return response.json();
     });
   }

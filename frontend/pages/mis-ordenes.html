@@ -217,7 +217,7 @@
                         <td data-label="Pago">${orden.estado_pago ? orden.estado_pago : '-'}</td>
                         <td data-label="Acciones">
                             ${orden.estado === 'pendiente' ? `
-                                <div style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
+                                <div style="display:flex; align-items:center; gap:8px; white-space:nowrap; flex-wrap:wrap;">
                                     <button class="btn btn-primary" style="padding:8px 18px; font-size:14px; font-weight:700;" onclick="MisOrdenesModule.continuarPago(${orden.orden_id}, ${parseFloat(orden.total)}, '${String(orden.evento || '').replace(/'/g, "\\'")}')">Continuar pago</button>
                                     <button class="btn btn-danger btn-accion" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>
                                 </div>
@@ -294,7 +294,29 @@
             }
         };
 
-        // Inicializar
+        // Inicializar y auto-refrescar mientras haya órdenes pendientes
+        let _autoRefreshInterval = null;
+
+        const _startAutoRefresh = () => {
+            if (_autoRefreshInterval) return;
+            _autoRefreshInterval = setInterval(async () => {
+                const pendientes = document.querySelectorAll('#ordenesTable .badge-pending');
+                if (pendientes.length === 0) {
+                    clearInterval(_autoRefreshInterval);
+                    _autoRefreshInterval = null;
+                    return;
+                }
+                await MisOrdenesModule.cargarOrdenes();
+            }, 8000);
+        };
+
+        const _origCargar = MisOrdenesModule.cargarOrdenes.bind(MisOrdenesModule);
+        MisOrdenesModule.cargarOrdenes = async function() {
+            await _origCargar();
+            const pendientes = document.querySelectorAll('#ordenesTable .badge-pending');
+            if (pendientes.length > 0) _startAutoRefresh();
+        };
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => MisOrdenesModule.cargarOrdenes());
         } else {

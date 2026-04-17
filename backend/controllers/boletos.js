@@ -1,3 +1,68 @@
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// Webhook MercadoPago
+exports.webhookMercadoPago = async (req, res) => {
+  // MercadoPago puede enviar GET (verificación) o POST (notificación real)
+  const method = req.method;
+  if (method === 'GET') {
+    // Para validación de webhook
+    return res.status(200).send('OK');
+  }
+
+  // POST: notificación real
+  const { type, action, data } = req.body;
+  if (type !== 'payment' || !data?.id) {
+    return res.status(200).json({ received: true });
+  }
+
+  const paymentId = data.id;
+  try {
+    // Buscar el pago en MercadoPago
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    const mpData = await mpResponse.json();
+    if (!mpResponse.ok) {
+      console.error('Error consultando pago MP desde webhook:', mpData);
+      return res.status(200).json({ error: 'No se pudo consultar pago', received: true });
+    }
+
+    // Extraer orden(es) asociada(s)
+    const externalReference = String(mpData?.external_reference || '').trim();
+    const orderIds = externalReference.split(',').map(x => parseInt(x)).filter(Boolean);
+    if (!orderIds.length) {
+      return res.status(200).json({ error: 'No hay orden asociada', received: true });
+    }
+
+    // Normalizar estado
+    const mpStatus = normalizeMercadoPagoStatus(mpData.status);
+
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      for (const orderId of orderIds) {
+        await connection.query(
+          'CALL sp_confirmar_pago(?, ?, ?, ?)',
+          [orderId, 'mercadopago', mpStatus, String(paymentId)]
+        );
+      }
+    } catch (err) {
+      console.error('Error actualizando orden desde webhook:', err);
+    } finally {
+      if (connection) connection.release();
+    }
+
+    return res.status(200).json({ updated: true, orderIds });
+  } catch (err) {
+    console.error('Error en webhook MP:', err);
+    return res.status(200).json({ error: 'Error general', received: true });
+  }
+};
 const pool = require('../config/database');
 const MAX_BOLETOS_POR_EVENTO_Y_USUARIO = 10;
 
@@ -764,6 +829,69 @@ exports.confirmarPago = async (req, res) => {
   }
 };
 
+// Verificar pago de una orden buscando en Mercado Pago por external_reference
+exports.verificarPagoOrden = async (req, res) => {
+  const idOrden = parseInt(req.params.id_orden);
+  if (!idOrden) return res.status(400).json({ success: false, error: 'ID de orden inválido' });
+
+  const accessToken = await obtenerAccessTokenMercadoPago(req.user.id);
+  if (!accessToken) {
+    return res.status(500).json({ success: false, error: 'No hay token de Mercado Pago configurado' });
+  }
+
+  let connection;
+  try {
+    // Buscar en MP por external_reference = idOrden
+    const searchRes = await fetch(
+      `https://api.mercadopago.com/v1/payments/search?external_reference=${encodeURIComponent(String(idOrden))}&sort=date_created&criteria=desc&limit=5`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const searchData = await searchRes.json();
+
+    if (!searchRes.ok) {
+      return res.status(502).json({ success: false, error: searchData?.message || 'Error al buscar en Mercado Pago', details: searchData });
+    }
+
+    const results = Array.isArray(searchData?.results) ? searchData.results : [];
+    // Buscar el pago más reciente aprobado, si no hay tomar el más reciente
+    const pagosAprobados = results.filter(p => p.status === 'approved');
+    const pago = pagosAprobados[0] || results[0] || null;
+
+    if (!pago) {
+      return res.json({ success: false, error: 'No se encontró ningún pago para esta orden en Mercado Pago' });
+    }
+
+    const mpStatus = normalizeMercadoPagoStatus(pago.status);
+
+    connection = await pool.getConnection();
+
+    // Verificar que la orden pertenece al usuario
+    const userOrderIds = await obtenerOrdenesDelUsuario(connection, req.user.id, [idOrden]);
+    if (!userOrderIds.length) {
+      return res.status(403).json({ success: false, error: 'La orden no pertenece al usuario autenticado' });
+    }
+
+    const [resultado] = await connection.query(
+      'CALL sp_confirmar_pago(?, ?, ?, ?)',
+      [idOrden, 'mercadopago', mpStatus, String(pago.id)]
+    );
+
+    const row = resultado?.[0]?.[0] || {};
+    return res.json({
+      success: row.resultado === 'ok',
+      mensaje: row.mensaje || null,
+      status_mp: pago.status,
+      status_normalizado: mpStatus,
+      payment_id: pago.id
+    });
+  } catch (error) {
+    console.error('Error en verificarPagoOrden:', error);
+    return res.status(500).json({ success: false, error: 'Error al verificar el pago' });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 // Crear preferencia de pago en Mercado Pago
 exports.crearPreferenciaMercadoPago = async (req, res) => {
   const { ordenes = [], evento_titulo } = req.body;
@@ -810,29 +938,38 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       pending: `${appBaseUrl}/pages/mis-ordenes.html?pago=pending`
     };
 
+    // En sandbox siempre activar auto_return para que redirija automáticamente al pagar.
+    // En producción solo con HTTPS y dominio no-localhost.
     let autoReturnEnabled = false;
     try {
       const successUrl = new URL(backUrls.success);
       const host = String(successUrl.hostname || '').toLowerCase();
       const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-      autoReturnEnabled = successUrl.protocol === 'https:' && !isLocalHost;
+      autoReturnEnabled = isTestToken || (successUrl.protocol === 'https:' && !isLocalHost);
     } catch (_error) {
       autoReturnEnabled = false;
     }
 
+    const isTestToken = String(accessToken || '').startsWith('TEST-');
+
     const preferencePayload = {
       items,
-      payer: {
-        email: req.user.email || undefined,
-        name: req.user.nombre || undefined
-      },
+      // En sandbox no se debe enviar el email del vendedor como payer (MP lo bloquea).
+      // Solo incluir payer si es producción y el email está disponible.
+      ...(!isTestToken && req.user.email ? {
+        payer: {
+          email: req.user.email,
+          name: req.user.nombre || undefined
+        }
+      } : {}),
       back_urls: backUrls,
       ...(autoReturnEnabled ? { auto_return: 'approved' } : {}),
       external_reference: ordenes.map((orden) => orden.id_orden).filter(Boolean).join(','),
       metadata: {
         usuario_id: req.user.id,
         orden_ids: ordenes.map((orden) => orden.id_orden).filter(Boolean)
-      }
+      },
+      notification_url: `${appBaseUrl}/api/boletos/webhook/mercadopago`
     };
 
     let response = await fetch('https://api.mercadopago.com/checkout/preferences', {
@@ -887,7 +1024,6 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
     }
 
     // Para tokens de prueba (TEST-...) usar sandbox_init_point para que el checkout funcione correctamente
-    const isTestToken = String(accessToken || '').startsWith('TEST-');
     const checkoutUrl = isTestToken
       ? (data.sandbox_init_point || data.init_point)
       : (data.init_point || data.sandbox_init_point);

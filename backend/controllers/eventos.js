@@ -488,6 +488,7 @@ const crearEventoDirectoFallback = async (connection, payload) => {
   }
 
   const categoriaColumn = await resolveCategoriaColumn(connection);
+
   const columns = [
     organizerColumn,
     'titulo',
@@ -500,6 +501,7 @@ const crearEventoDirectoFallback = async (connection, payload) => {
     'estado'
   ];
 
+  // Forzar estado publicado
   const values = [
     payload.idUsuario,
     payload.titulo,
@@ -509,7 +511,7 @@ const crearEventoDirectoFallback = async (connection, payload) => {
     payload.ubicacion,
     payload.capacidad,
     payload.imagenUrl,
-    payload.estado
+    'publicado'
   ];
 
   if (categoriaColumn) {
@@ -527,6 +529,7 @@ const crearEventoDirectoFallback = async (connection, payload) => {
 };
 
 const fetchEventosFallback = async (connection, idCategoria) => {
+
   const [rows] = await connection.query(
     `
       SELECT
@@ -546,7 +549,6 @@ const fetchEventosFallback = async (connection, idCategoria) => {
       LEFT JOIN categorias_evento c ON c.id = e.id_categoria
       LEFT JOIN tipos_boleto tb ON tb.id_evento = e.id
       WHERE (? IS NULL OR e.id_categoria = ?)
-        AND e.estado IN ('publicado', 'activo', 'borrador')
       GROUP BY
         e.id,
         e.titulo,
