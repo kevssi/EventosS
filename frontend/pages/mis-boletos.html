@@ -252,12 +252,21 @@
                 this.boletosPorId = {};
                 
                 if (boletos.length === 0) {
+                    const params = new URLSearchParams(window.location.search);
+                    const pago = params.get('pago');
                     container.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                            <p style="color: var(--text-light); font-size: 16px;">No tienes boletos aún</p>
+                            <p style="color: var(--text-light); font-size: 16px;">
+                                ${pago === 'success'
+                                    ? 'Tu pago fue recibido, pero aún no aparecen tus boletos. Esto puede tardar unos segundos.<br><button id="reintentarBoletos" class="btn btn-primary" style="margin-top: 20px;">Reintentar</button>'
+                                    : 'No tienes boletos aún'}
+                            </p>
                             <a href="../index.html" class="btn btn-primary" style="margin-top: 20px;">Comprar boletos</a>
                         </div>
                     `;
+                    if (pago === 'success') {
+                        document.getElementById('reintentarBoletos').onclick = () => this.cargarBoletos();
+                    }
                     return;
                 }
 
