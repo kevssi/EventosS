@@ -66,7 +66,7 @@ exports.webhookStripe = async (req, res) => {
       for (const id_orden of ordenIds) {
         await connection.query('CALL sp_confirmar_pago(?, ?, ?, ?)', [id_orden, 'stripe', 'approved', paymentIntent]);
       }
-      console.log('Stripe webhook: órdenes confirmadas', ordenIds);
+        console.log('Stripe webhook: ordenes confirmadas', ordenIds);
     } catch (err) {
       console.error('Error confirmando pago Stripe:', err);
     } finally {
@@ -1106,10 +1106,10 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       data = await response.json();
     }
 
+
     if (!response.ok) {
-      console.error('Error MP status:', response.status);
-      console.error('Error MP data:', JSON.stringify(data));
-      console.error('Error Mercado Pago:', data);
+      // Puedes dejar solo un log si lo deseas, pero se eliminan los temporales:
+      // console.error('Error Mercado Pago:', data);
       return res.status(502).json({
         success: false,
         error: data?.message || data?.error || 'No se pudo crear preferencia en Mercado Pago',
@@ -1123,18 +1123,11 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       : (data.init_point || data.sandbox_init_point);
 
     res.json({
-      // LOGS TEMPORALES PARA DEPURACIÓN
-      console.log('Preferencia creada:', JSON.stringify(data));
-      console.log('Checkout URL:', checkoutUrl);
-      console.log('notification_url:', preferencePayload.notification_url);
-      console.log('back_urls:', JSON.stringify(backUrls));
-
-      res.json({
-        success: true,
-        preference_id: data.id,
-        init_point: checkoutUrl,
-        sandbox_init_point: data.sandbox_init_point
-      });
+      success: true,
+      preference_id: data.id,
+      init_point: checkoutUrl,
+      sandbox_init_point: data.sandbox_init_point
+    });
   } catch (error) {
     console.error('Error en crearPreferenciaMercadoPago:', error);
     res.status(500).json({
