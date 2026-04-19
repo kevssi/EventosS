@@ -1,5 +1,5 @@
 // Configuración de API
-const API_URL = '/api';
+const API_URL = window.ENV_API_URL || 'https://eventoss-production.up.railway.app/api';
 
 class APIClient {
   constructor() {
