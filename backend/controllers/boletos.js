@@ -1,6 +1,6 @@
 // --- STRIPE INTEGRACIÓN ---
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripe = () => Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Crear sesión de Stripe Checkout
 exports.crearSesionStripe = async (req, res) => {
@@ -28,7 +28,7 @@ exports.crearSesionStripe = async (req, res) => {
     const ordenIds = ordenes.map(o => o.id_orden).filter(Boolean).join(',');
     const appBaseUrl = (process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       line_items: items,
@@ -51,7 +51,7 @@ exports.webhookStripe = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = getStripe().webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Error verificando firma Stripe:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
