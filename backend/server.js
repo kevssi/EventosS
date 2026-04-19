@@ -5,7 +5,14 @@ const cors = require('cors');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://eventos-s.vercel.app',
+    'http://localhost:5000',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Servir archivos estáticos del frontend solo en desarrollo local
