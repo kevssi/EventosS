@@ -1,4 +1,5 @@
 require('dotenv').config();
+console.log('🚀 Iniciando backend EventosS...');
 const express = require('express');
 const cors = require('cors');
 
@@ -71,5 +72,15 @@ if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`✓ Servidor ejecutándose en puerto ${PORT}`);
     console.log(`✓ URL: http://localhost:${PORT}`);
+  });
+
+  // Manejo global de errores no capturados
+  process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+    process.exit(1);
+  });
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection:', reason);
+    process.exit(1);
   });
 }
