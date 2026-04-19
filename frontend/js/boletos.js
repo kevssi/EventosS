@@ -88,7 +88,7 @@ const BoletosModule = {
     return localImage || generatedImage || this.fallbackImage;
   },
 
-  async init() {
+ async init() {
     this.idEventoActual = this.obtenerIdEvento();
     this.cargarCarritoEvento();
 
@@ -96,7 +96,6 @@ const BoletosModule = {
       await this.cargarEventoDetalle();
       this.setupEventListeners();
       this.iniciarAutoRefreshDisponibilidad();
-
     }
   },
 
@@ -155,7 +154,6 @@ const BoletosModule = {
   },
 
   cargarCarritoEvento() {
-    // Siempre iniciamos en 0 al entrar a la pantalla de compra.
     this.carrito = {};
     this.total = 0;
     localStorage.removeItem(this.getCarritoKey());
@@ -208,7 +206,6 @@ const BoletosModule = {
     const raw = String(descripcion || '').trim();
     if (!raw) return 'Sin descripcion disponible';
 
-    // En eventos enviados por formulario operativo, solo mostramos la descripcion principal.
     const principal = raw.split(/\n\s*---\s*\n/)[0].trim() || raw;
     const safe = this.escapeHtml(principal);
     return safe.replace(/\n/g, '<br>');
@@ -295,18 +292,15 @@ const BoletosModule = {
 
     this.renderTiposBoletos(tiposBoletos);
     window.NavbarModule?.renderLucideIcons?.(container);
-    // Stripe button listener
     setTimeout(() => {
       const btnStripe = document.querySelector('#btnStripe');
       if (btnStripe) {
         btnStripe.addEventListener('click', () => this.procesarCompraStripe());
       }
     }, 0);
-
-  }, // fin de renderEventoDetalle
+  },
 
   async procesarCompraStripe() {
-    // Verificar si el usuario está logueado
     const token = api.obtenerToken();
     if (!token) {
       alert('Necesitas iniciar sesión para comprar boletos');
@@ -316,83 +310,79 @@ const BoletosModule = {
 
     if (Object.keys(this.carrito).length === 0) {
       alert('Por favor selecciona al menos un boleto');
+      return;
+    }
+
+    const ordenesCreadas = [];
+
+    try {
+      const itemsCarrito = Object.values(this.carrito);
+
+      for (const item of itemsCarrito) {
+        const compra = await api.comprarBoletos(item.tipo.id, item.cantidad);
+        if (!compra?.success || !compra?.orden) {
+          throw new Error(compra?.message || 'No se pudo reservar el boleto');
+        }
+
+        ordenesCreadas.push({
+          id_orden: compra.orden.id_orden,
+          total: Number(compra.orden.total || 0)
+        });
+      }
+
+      const sesion = await api.crearSesionStripe({
+        ordenes: ordenesCreadas,
+        evento_titulo: this.evento?.titulo || 'Compra de boletos'
+      });
+
+      if (!sesion?.success || !sesion?.url) {
+        throw new Error('No se pudo iniciar el checkout de Stripe');
+      }
+
+      this.limpiarTodosLosCarritosEvento();
+      this.resetearSeleccionBoletos();
+
+      const btnStripe = document.querySelector('#btnStripe');
+      if (btnStripe) {
+        btnStripe.disabled = true;
+        btnStripe.textContent = 'Redirigiendo a Stripe...';
+      }
+      const resumen = document.querySelector('#resumenDetalle');
+      if (resumen) {
+        resumen.innerHTML = `
+          <div style="text-align:center; padding:16px 0;">
+            <p style="margin-bottom:12px; color:var(--text-light);">Si no eres redirigido automáticamente, haz clic aquí:</p>
+            <a href="${sesion.url}" class="btn btn-stripe" style="font-size:16px; padding:12px 28px; background:#635bff; color:#fff;">
+              Ir a pagar con Stripe →
+            </a>
+          </div>`;
+      }
+      window.location.href = sesion.url;
+    } catch (error) {
+      console.error('Error al procesar compra con Stripe:', error);
+
+      if (ordenesCreadas.length > 0) {
+        try {
+          await Promise.allSettled(
+            ordenesCreadas
+              .map((orden) => Number(orden.id_orden || 0))
+              .filter((id) => Number.isFinite(id) && id > 0)
+              .map((idOrden) => api.cancelarOrden(idOrden))
+          );
+        } catch (_rollbackError) {}
+      }
+
+      const mensaje = error.message || 'No se pudo iniciar el proceso de pago con Stripe';
+      const sesionExpirada = error?.status === 401;
+
+      if (sesionExpirada) {
+        api.limpiarToken();
+        alert('Tu sesion expiro. Inicia sesion para continuar con la compra.');
+        window.location.href = 'login.html';
         return;
       }
 
-      const ordenesCreadas = [];
-
-      try {
-        const itemsCarrito = Object.values(this.carrito);
-
-        for (const item of itemsCarrito) {
-          const compra = await api.comprarBoletos(item.tipo.id, item.cantidad);
-          if (!compra?.success || !compra?.orden) {
-            throw new Error(compra?.message || 'No se pudo reservar el boleto');
-          }
-
-          ordenesCreadas.push({
-            id_orden: compra.orden.id_orden,
-            total: Number(compra.orden.total || 0)
-          });
-        }
-
-        const sesion = await api.crearSesionStripe({
-          ordenes: ordenesCreadas,
-          evento_titulo: this.evento?.titulo || 'Compra de boletos'
-        });
-
-        if (!sesion?.success || !sesion?.url) {
-          throw new Error('No se pudo iniciar el checkout de Stripe');
-        }
-
-        this.limpiarTodosLosCarritosEvento();
-        this.resetearSeleccionBoletos();
-
-        // Mostrar botón de pago por si la redirección automática es bloqueada
-        const btnStripe = document.querySelector('#btnStripe');
-        if (btnStripe) {
-          btnStripe.disabled = true;
-          btnStripe.textContent = 'Redirigiendo a Stripe...';
-        }
-        const resumen = document.querySelector('#resumenDetalle');
-        if (resumen) {
-          resumen.innerHTML = `
-            <div style="text-align:center; padding:16px 0;">
-              <p style="margin-bottom:12px; color:var(--text-light);">Si no eres redirigido automáticamente, haz clic aquí:</p>
-              <a href="${sesion.url}" class="btn btn-stripe" style="font-size:16px; padding:12px 28px; background:#635bff; color:#fff;">
-                Ir a pagar con Stripe →
-              </a>
-            </div>`;
-        }
-        window.location.href = sesion.url;
-      } catch (error) {
-        console.error('Error al procesar compra con Stripe:', error);
-
-        if (ordenesCreadas.length > 0) {
-          try {
-            await Promise.allSettled(
-              ordenesCreadas
-                .map((orden) => Number(orden.id_orden || 0))
-                .filter((id) => Number.isFinite(id) && id > 0)
-                .map((idOrden) => api.cancelarOrden(idOrden))
-            );
-          } catch (_rollbackError) {
-            // Si falla el rollback, la orden quedara pendiente y el usuario podra cancelarla en Mis Ordenes.
-          }
-        }
-
-        const mensaje = error.message || 'No se pudo iniciar el proceso de pago con Stripe';
-        const sesionExpirada = error?.status === 401 || mensaje.toLowerCase().includes('token inválido o expirado') || mensaje.toLowerCase().includes('token invalido o expirado');
-
-        if (sesionExpirada) {
-          api.limpiarToken();
-          alert('Tu sesion expiro. Inicia sesion para continuar con la compra.');
-          window.location.href = 'login.html';
-          return;
-        }
-
-        alert(mensaje);
-      }
+      alert(mensaje);
     }
   },
 
@@ -426,23 +416,9 @@ const BoletosModule = {
         <div class="tipo-boleto-precio">$${parseFloat(tipo.precio).toFixed(2)}</div>
         <div class="tipo-boleto-cantidad">
           <div class="cantidad-control">
-            <button type="button"
-              class="cantidad-arrow cantidad-arrow-left"
-              aria-label="Quitar boleto"
-              onclick="BoletosModule.cambiarCantidad(${tipo.id}, -1)"><i data-lucide="chevron-left"></i></button>
-            <input type="number" 
-             class="cantidad-input cantidad-${tipo.id}" 
-             data-tipo-id="${tipo.id}"
-             autocomplete="off"
-             min="0" 
-             max="${disponibles}"
-             value="${this.carrito[tipo.id]?.cantidad || 0}"
-             onchange="BoletosModule.validarCantidadInput(${tipo.id})"
-             placeholder="0">
-            <button type="button"
-              class="cantidad-arrow cantidad-arrow-right"
-              aria-label="Agregar boleto"
-              onclick="BoletosModule.cambiarCantidad(${tipo.id}, 1)"><i data-lucide="chevron-right"></i></button>
+            <button type="button" class="cantidad-arrow cantidad-arrow-left" aria-label="Quitar boleto" onclick="BoletosModule.cambiarCantidad(${tipo.id}, -1)"><i data-lucide="chevron-left"></i></button>
+            <input type="number" class="cantidad-input cantidad-${tipo.id}" data-tipo-id="${tipo.id}" autocomplete="off" min="0" max="${disponibles}" value="${this.carrito[tipo.id]?.cantidad || 0}" onchange="BoletosModule.validarCantidadInput(${tipo.id})" placeholder="0">
+            <button type="button" class="cantidad-arrow cantidad-arrow-right" aria-label="Agregar boleto" onclick="BoletosModule.cambiarCantidad(${tipo.id}, 1)"><i data-lucide="chevron-right"></i></button>
           </div>
           <small>boletos</small>
         </div>
@@ -524,7 +500,7 @@ const BoletosModule = {
       const cantidad = parseInt(input.value) || 0;
       const tipoId = input.dataset.tipoId;
       const tipo = this.evento.tipos_boleto?.find(t => t.id == tipoId);
-      
+
       if (tipo && cantidad > 0) {
         this.carrito[tipoId] = { tipo, cantidad };
         this.total += tipo.precio * cantidad;
@@ -573,7 +549,6 @@ const BoletosModule = {
   },
 
   async procesarCompra() {
-    // Verificar si el usuario está logueado
     const token = api.obtenerToken();
     if (!token) {
       alert('Necesitas iniciar sesión para comprar boletos');
@@ -616,7 +591,6 @@ const BoletosModule = {
       this.limpiarTodosLosCarritosEvento();
       this.resetearSeleccionBoletos();
 
-      // Mostrar botón de pago por si la redirección automática es bloqueada (iOS Safari, popup blocker, etc.)
       const btnComprar = document.querySelector('#btnComprar');
       if (btnComprar) {
         btnComprar.disabled = true;
@@ -644,9 +618,7 @@ const BoletosModule = {
               .filter((id) => Number.isFinite(id) && id > 0)
               .map((idOrden) => api.cancelarOrden(idOrden))
           );
-        } catch (_rollbackError) {
-          // Si falla el rollback, la orden quedara pendiente y el usuario podra cancelarla en Mis Ordenes.
-        }
+        } catch (_rollbackError) {}
       }
 
       const mensaje = error.message || 'No se pudo iniciar el proceso de pago';
@@ -688,7 +660,6 @@ const BoletosModule = {
   }
 };
 
-// Inicializar
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => BoletosModule.init());
 } else {
