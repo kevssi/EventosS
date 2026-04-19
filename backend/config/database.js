@@ -37,11 +37,11 @@ if (databaseUrl) {
   }
 
   poolConfig = {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME,
+    host: process.env.DB_HOST || process.env.MYSQLHOST || process.env.MYSQL_HOST,
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : (process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT, 10) : (process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306)),
+    user: process.env.DB_USER || process.env.MYSQLUSER || process.env.MYSQL_USER,
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || '',
+    database: process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
