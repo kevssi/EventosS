@@ -96,6 +96,7 @@ const BoletosModule = {
       await this.cargarEventoDetalle();
       this.setupEventListeners();
       this.iniciarAutoRefreshDisponibilidad();
+
     }
   },
 
