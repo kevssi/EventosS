@@ -285,12 +285,111 @@ const BoletosModule = {
       </div>
 
       <button class="btn btn-primary btn-comprar" id="btnComprar">
-        Proceder al Pago
+        Proceder al Pago (Mercado Pago)
+      </button>
+      <button class="btn btn-stripe" id="btnStripe" style="margin-top: 12px; background: #635bff; color: #fff;">
+        Pagar con Stripe
       </button>
     `;
 
     this.renderTiposBoletos(tiposBoletos);
     window.NavbarModule?.renderLucideIcons?.(container);
+    // Stripe button listener
+    setTimeout(() => {
+      const btnStripe = document.querySelector('#btnStripe');
+      if (btnStripe) {
+        btnStripe.addEventListener('click', () => this.procesarCompraStripe());
+      }
+    }, 0);
+    async procesarCompraStripe() {
+      // Verificar si el usuario está logueado
+      const token = api.obtenerToken();
+      if (!token) {
+        alert('Necesitas iniciar sesión para comprar boletos');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      if (Object.keys(this.carrito).length === 0) {
+        alert('Por favor selecciona al menos un boleto');
+        return;
+      }
+
+      const ordenesCreadas = [];
+
+      try {
+        const itemsCarrito = Object.values(this.carrito);
+
+        for (const item of itemsCarrito) {
+          const compra = await api.comprarBoletos(item.tipo.id, item.cantidad);
+          if (!compra?.success || !compra?.orden) {
+            throw new Error(compra?.message || 'No se pudo reservar el boleto');
+          }
+
+          ordenesCreadas.push({
+            id_orden: compra.orden.id_orden,
+            total: Number(compra.orden.total || 0)
+          });
+        }
+
+        const sesion = await api.crearSesionStripe({
+          ordenes: ordenesCreadas,
+          evento_titulo: this.evento?.titulo || 'Compra de boletos'
+        });
+
+        if (!sesion?.success || !sesion?.url) {
+          throw new Error('No se pudo iniciar el checkout de Stripe');
+        }
+
+        this.limpiarTodosLosCarritosEvento();
+        this.resetearSeleccionBoletos();
+
+        // Mostrar botón de pago por si la redirección automática es bloqueada
+        const btnStripe = document.querySelector('#btnStripe');
+        if (btnStripe) {
+          btnStripe.disabled = true;
+          btnStripe.textContent = 'Redirigiendo a Stripe...';
+        }
+        const resumen = document.querySelector('#resumenDetalle');
+        if (resumen) {
+          resumen.innerHTML = `
+            <div style="text-align:center; padding:16px 0;">
+              <p style="margin-bottom:12px; color:var(--text-light);">Si no eres redirigido automáticamente, haz clic aquí:</p>
+              <a href="${sesion.url}" class="btn btn-stripe" style="font-size:16px; padding:12px 28px; background:#635bff; color:#fff;">
+                Ir a pagar con Stripe →
+              </a>
+            </div>`;
+        }
+        window.location.href = sesion.url;
+      } catch (error) {
+        console.error('Error al procesar compra con Stripe:', error);
+
+        if (ordenesCreadas.length > 0) {
+          try {
+            await Promise.allSettled(
+              ordenesCreadas
+                .map((orden) => Number(orden.id_orden || 0))
+                .filter((id) => Number.isFinite(id) && id > 0)
+                .map((idOrden) => api.cancelarOrden(idOrden))
+            );
+          } catch (_rollbackError) {
+            // Si falla el rollback, la orden quedara pendiente y el usuario podra cancelarla en Mis Ordenes.
+          }
+        }
+
+        const mensaje = error.message || 'No se pudo iniciar el proceso de pago con Stripe';
+        const sesionExpirada = error?.status === 401 || mensaje.toLowerCase().includes('token inválido o expirado') || mensaje.toLowerCase().includes('token invalido o expirado');
+
+        if (sesionExpirada) {
+          api.limpiarToken();
+          alert('Tu sesion expiro. Inicia sesion para continuar con la compra.');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        alert(mensaje);
+      }
+    }
   },
 
   renderTiposBoletos(tipos) {

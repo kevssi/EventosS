@@ -1,3 +1,80 @@
+// --- STRIPE INTEGRACIÓN ---
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Crear sesión de Stripe Checkout
+exports.crearSesionStripe = async (req, res) => {
+  try {
+    const { ordenes = [], evento_titulo } = req.body;
+    if (!Array.isArray(ordenes) || ordenes.length === 0) {
+      return res.status(400).json({ success: false, error: 'Debes enviar al menos una orden para pagar' });
+    }
+
+    const items = ordenes.map((orden, idx) => ({
+      price_data: {
+        currency: 'mxn',
+        product_data: {
+          name: evento_titulo ? `${evento_titulo} - Orden #${orden.id_orden || idx + 1}` : `Boletos - Orden #${orden.id_orden || idx + 1}`
+        },
+        unit_amount: Math.round(Number(orden.total || 0) * 100), // Stripe usa centavos
+      },
+      quantity: 1
+    })).filter(item => item.price_data.unit_amount > 0);
+
+    if (items.length === 0) {
+      return res.status(400).json({ success: false, error: 'No se pudieron construir items válidos para Stripe' });
+    }
+
+    const ordenIds = ordenes.map(o => o.id_orden).filter(Boolean).join(',');
+    const appBaseUrl = (process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: items,
+      success_url: `${appBaseUrl}/pages/mis-boletos.html?pago=success`,
+      cancel_url: `${appBaseUrl}/pages/detalle-evento.html?pago=failure`,
+      metadata: {
+        orden_ids: ordenIds
+      }
+    });
+
+    return res.json({ success: true, url: session.url });
+  } catch (error) {
+    console.error('Error crearSesionStripe:', error);
+    return res.status(500).json({ success: false, error: 'Error al crear sesión de Stripe' });
+  }
+};
+
+// Webhook Stripe
+exports.webhookStripe = async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Error verificando firma Stripe:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const ordenIds = (session.metadata?.orden_ids || '').split(',').map(id => id.trim()).filter(Boolean);
+    const paymentIntent = session.payment_intent;
+    const connection = await pool.getConnection();
+    try {
+      for (const id_orden of ordenIds) {
+        await connection.query('CALL sp_confirmar_pago(?, ?, ?, ?)', [id_orden, 'stripe', 'approved', paymentIntent]);
+      }
+      console.log('Stripe webhook: órdenes confirmadas', ordenIds);
+    } catch (err) {
+      console.error('Error confirmando pago Stripe:', err);
+    } finally {
+      await connection.release();
+    }
+  }
+  res.status(200).json({ received: true });
+};
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // Webhook MercadoPago
@@ -17,6 +94,9 @@ exports.webhookMercadoPago = async (req, res) => {
 
   const paymentId = data.id;
   try {
+    // Log temporal: inicio del webhook
+    console.log('Webhook recibido:', JSON.stringify(req.body));
+
     // Buscar el pago en MercadoPago
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
@@ -32,9 +112,13 @@ exports.webhookMercadoPago = async (req, res) => {
       return res.status(200).json({ error: 'No se pudo consultar pago', received: true });
     }
 
-    // Extraer orden(es) asociada(s)
+    // Logs después de obtener mpData
+    console.log('MP status raw:', mpData.status);
+    console.log('MP status normalizado:', normalizeMercadoPagoStatus(mpData.status));
+    console.log('external_reference:', mpData.external_reference);
     const externalReference = String(mpData?.external_reference || '').trim();
     const orderIds = externalReference.split(',').map(x => parseInt(x)).filter(Boolean);
+    console.log('orderIds:', orderIds);
     if (!orderIds.length) {
       return res.status(200).json({ error: 'No hay orden asociada', received: true });
     }
@@ -50,6 +134,8 @@ exports.webhookMercadoPago = async (req, res) => {
           'CALL sp_confirmar_pago(?, ?, ?, ?)',
           [orderId, 'mercadopago', mpStatus, String(paymentId)]
         );
+        // Log después del CALL
+        console.log('SP ejecutado para orden:', orderId, 'con estado:', mpStatus);
       }
     } catch (err) {
       console.error('Error actualizando orden desde webhook:', err);
@@ -452,14 +538,19 @@ const parseOrderIdsFromReference = (value) => {
     .filter((item) => Number.isFinite(item) && item > 0);
 };
 
-const normalizeMercadoPagoStatus = (value) => {
-  const status = String(value || '').trim().toLowerCase();
-
-  if (['approved', 'accredited', 'paid', 'success'].includes(status)) return 'aprobado';
-  if (['pending', 'in_process', 'inprocess', 'authorized', 'waiting_payment', 'pending_contingency'].includes(status)) return 'pendiente';
-  if (['rejected', 'cancelled', 'canceled', 'refunded', 'charged_back', 'failure', 'failed'].includes(status)) return 'rechazado';
-
-  return status || 'pendiente';
+const normalizeMercadoPagoStatus = (status) => {
+  const map = {
+    approved: 'approved',
+    authorized: 'approved',
+    pending: 'pending',
+    in_process: 'pending',
+    in_mediation: 'pending',
+    rejected: 'rejected',
+    cancelled: 'cancelled',
+    refunded: 'refunded',
+    charged_back: 'refunded',
+  };
+  return map[String(status || '').trim().toLowerCase()] ?? 'pending';
 };
 
 const esBoletoConPagoConfirmado = (boleto = {}) => {
@@ -483,10 +574,11 @@ const esBoletoConPagoConfirmado = (boleto = {}) => {
   const hasRejected = values.some((value) => /cancelad|rechazad|fallid|expired|vencid/.test(value));
   if (hasRejected) return false;
 
-  // 'reservado' = orden creada pero pago pendiente; 'pendiente' = orden pendiente de cobro
-  const hasPending = values.some((value) => /pendient|reservad|in_process|inprocess|processing|waiting/.test(value));
-  // Solo consideramos pagado/aprobado/usado como estados que confirman el pago
-  const hasApproved = values.some((value) => /pagad|aprobad|approved|accredited|usad|validad|canjead|consumid/.test(value));
+
+  // Ahora 'reservado' se considera pagado/aprobado
+  const hasApproved = values.some((value) => /pagad|aprobad|approved|accredited|usad|validad|canjead|consumid|reservad/.test(value));
+  // 'pendiente' = orden pendiente de cobro
+  const hasPending = values.some((value) => /pendient|in_process|inprocess|processing|waiting/.test(value));
 
   if (hasApproved) return true;
   if (hasPending) return false;
@@ -935,7 +1027,7 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
     const backUrls = {
       success: `${appBaseUrl}/pages/mis-boletos.html?pago=success`,
       failure: `${appBaseUrl}/pages/detalle-evento.html?pago=failure`,
-      pending: `${appBaseUrl}/pages/mis-ordenes.html?pago=pending`
+      pending: `${appBaseUrl}/pages/mis-boletos.html?pago=pending`
     };
 
     // En sandbox siempre activar auto_return para que redirija automáticamente al pagar.
@@ -1015,6 +1107,8 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
     }
 
     if (!response.ok) {
+      console.error('Error MP status:', response.status);
+      console.error('Error MP data:', JSON.stringify(data));
       console.error('Error Mercado Pago:', data);
       return res.status(502).json({
         success: false,
@@ -1029,11 +1123,18 @@ exports.crearPreferenciaMercadoPago = async (req, res) => {
       : (data.init_point || data.sandbox_init_point);
 
     res.json({
-      success: true,
-      preference_id: data.id,
-      init_point: checkoutUrl,
-      sandbox_init_point: data.sandbox_init_point
-    });
+      // LOGS TEMPORALES PARA DEPURACIÓN
+      console.log('Preferencia creada:', JSON.stringify(data));
+      console.log('Checkout URL:', checkoutUrl);
+      console.log('notification_url:', preferencePayload.notification_url);
+      console.log('back_urls:', JSON.stringify(backUrls));
+
+      res.json({
+        success: true,
+        preference_id: data.id,
+        init_point: checkoutUrl,
+        sandbox_init_point: data.sandbox_init_point
+      });
   } catch (error) {
     console.error('Error en crearPreferenciaMercadoPago:', error);
     res.status(500).json({
@@ -1379,9 +1480,17 @@ exports.misOrdenes = async (req, res) => {
 
     await connection.release();
 
+    // Normalizar estado: si es 'reservado', mostrar como 'pagada'
+    const ordenes = (resultado[0] || []).map(orden => {
+      if (orden.estado === 'reservado') {
+        return { ...orden, estado: 'pagada' };
+      }
+      return orden;
+    });
+
     res.json({
       success: true,
-      ordenes: resultado[0]
+      ordenes
     });
   } catch (error) {
     console.error('Error en misOrdenes:', error);

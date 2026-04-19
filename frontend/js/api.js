@@ -1,3 +1,10 @@
+  // STRIPE
+  crearSesionStripe(payload) {
+    return this.request('/boletos/pago/stripe/sesion', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
 // Configuración de API
 const API_URL = window.ENV_API_URL || 'https://eventoss-production.up.railway.app/api';
 

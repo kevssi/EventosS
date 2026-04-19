@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const app = express();
 
+
 // Middleware
 app.use(cors({
   origin: [
@@ -13,6 +14,9 @@ app.use(cors({
   ],
   credentials: true
 }));
+
+// Webhook Stripe necesita body RAW antes de express.json
+app.use('/api/boletos/webhook/stripe', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 // Servir archivos estáticos del frontend solo en desarrollo local

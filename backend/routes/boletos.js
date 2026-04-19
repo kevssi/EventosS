@@ -7,6 +7,9 @@ const { authMiddleware } = require('../middleware/auth');
 // Webhook MercadoPago (no requiere auth)
 router.post('/webhook/mercadopago', boletosController.webhookMercadoPago);
 
+// Webhook Stripe (no requiere auth ni express.json)
+router.post('/webhook/stripe', boletosController.webhookStripe);
+
 // Rutas públicas
 router.get('/tipos/:id_evento', boletosController.listarTiposBoleto);
 router.get('/detalle-qr', boletosController.detalleBoletoPorQR);
@@ -17,6 +20,7 @@ router.post('/verificar-disponibilidad', boletosController.verificarDisponibilid
 router.post('/comprar', authMiddleware, boletosController.comprarBoletos);
 router.post('/pago/mercadopago/preferencia', authMiddleware, boletosController.crearPreferenciaMercadoPago);
 router.get('/pago/mercadopago/retorno', authMiddleware, boletosController.validarRetornoMercadoPago);
+router.post('/pago/stripe/sesion', authMiddleware, boletosController.crearSesionStripe);
 router.post('/pago/confirmar', authMiddleware, boletosController.confirmarPago);
 router.get('/ordenes/:id_orden/verificar-pago', authMiddleware, boletosController.verificarPagoOrden);
 router.get('/mis-boletos', authMiddleware, boletosController.misBoletos);
