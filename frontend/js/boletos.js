@@ -301,17 +301,20 @@ const BoletosModule = {
         btnStripe.addEventListener('click', () => this.procesarCompraStripe());
       }
     }, 0);
-    async procesarCompraStripe() {
-      // Verificar si el usuario está logueado
-      const token = api.obtenerToken();
-      if (!token) {
-        alert('Necesitas iniciar sesión para comprar boletos');
-        window.location.href = 'login.html';
-        return;
-      }
 
-      if (Object.keys(this.carrito).length === 0) {
-        alert('Por favor selecciona al menos un boleto');
+  }, // fin de renderEventoDetalle
+
+  async procesarCompraStripe() {
+    // Verificar si el usuario está logueado
+    const token = api.obtenerToken();
+    if (!token) {
+      alert('Necesitas iniciar sesión para comprar boletos');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    if (Object.keys(this.carrito).length === 0) {
+      alert('Por favor selecciona al menos un boleto');
         return;
       }
 
