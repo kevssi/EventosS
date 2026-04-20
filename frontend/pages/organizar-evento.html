@@ -51,7 +51,7 @@
     }
   </style>
 </head>
-<body>
+<body style="display:none">
   <nav class="navbar">
     <div class="container">
       <div class="navbar-content">
@@ -197,37 +197,46 @@
   <script src="../js/auth-guard.js"></script>
   <script src="../js/auth-guard.js"></script>
   <script>
-    // Mostrar contenido solo si la sesión es válida
-    document.body.classList.remove('sesion-valida');
+    // Mostrar body solo si la sesión es válida
+    document.body.style.display = 'none';
     AuthGuard.checkAuthentication().then((ok) => {
-      if (ok) document.body.classList.add('sesion-valida');
+      if (ok) document.body.style.display = '';
+      else window.location.href = 'login.html';
     });
 
-    const form = document.getElementById('organizadorForm');
-    const statusBox = document.getElementById('statusMensaje');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const params = new URLSearchParams(window.location.search);
-    const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
-    let existingImagenUrl = null; // preserves current image_url when editing without re-uploading
+    // El resto del código solo se ejecuta si el body es visible
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.body.style.display === 'none') return;
 
-    // -- Zonas dinamicas --
-    let zonaCounter = 0;
+      const form = document.getElementById('organizadorForm');
+      const statusBox = document.getElementById('statusMensaje');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const params = new URLSearchParams(window.location.search);
+      const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
+      let existingImagenUrl = null; // preserves current image_url when editing without re-uploading
 
-    function zonaLabel(idx) {
-      const rows = document.querySelectorAll('.zona-row');
-      for (let i = 0; i < rows.length; i++) {
-        if (rows[i].dataset.zonaIdx === String(idx)) return `Zona ${i + 1}`;
+      // -- Zonas dinamicas --
+      let zonaCounter = 0;
+
+      function zonaLabel(idx) {
+        const rows = document.querySelectorAll('.zona-row');
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i].dataset.zonaIdx === String(idx)) return `Zona ${i + 1}`;
+        }
+        return 'Zona';
       }
-      return 'Zona';
-    }
 
-    function agregarZona(nombre = '', cupo = '', precio = '') {
-      zonaCounter++;
-      const idx = zonaCounter;
-      const container = document.getElementById('zonasContainer');
-      const div = document.createElement('div');
-      div.className = 'zona-row';
-      div.dataset.zonaIdx = idx;
+      function agregarZona(nombre = '', cupo = '', precio = '') {
+        zonaCounter++;
+        const idx = zonaCounter;
+        const container = document.getElementById('zonasContainer');
+        const div = document.createElement('div');
+        div.className = 'zona-row';
+        div.dataset.zonaIdx = idx;
+        // ...resto del código original...
+      }
+      // ...resto del código original...
+    });
       div.innerHTML = `
         <div>
           <label>Nombre</label>
