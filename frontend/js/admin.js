@@ -835,26 +835,6 @@ const AdminModule = {
         </div>
       </div>
 
-      <div class="card qr-validacion-card-wrap" style="margin-bottom: 16px;">
-        <div class="card-header">
-          <h2>Validador QR de acceso</h2>
-        </div>
-        <p style="margin: 0 0 12px; color: var(--text-light);">Cada boleto es de uso único. Si se intenta escanear de nuevo, se marcará como ya utilizado.</p>
-        <div class="qr-validacion-controls">
-          <input
-            id="qrValidatorInput"
-            type="text"
-            autocomplete="off"
-            placeholder="Escanea o pega aquí el código QR"
-            value="${this.escapeHtml(this.ultimoQRIngresado || '')}"
-            onkeydown="AdminModule.handleQRValidatorKeydown(event)"
-          >
-          <button class="btn btn-primary" onclick="AdminModule.validarBoletoQR()" ${this.validandoQR ? 'disabled' : ''}>${this.validandoQR ? 'Validando...' : 'Validar boleto'}</button>
-        </div>
-        <div class="qr-validacion-result">
-          ${this.renderResultadoValidacionQR()}
-        </div>
-      </div>
 
       <div class="card">
         <div class="card-header">
