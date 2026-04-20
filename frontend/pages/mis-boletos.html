@@ -327,7 +327,7 @@
                                 <code style="display: block; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #1d3557;">${boleto.codigo_qr || 'SIN-CODIGO'}</code>
                             </div>
                             <div class="boleto-actions">
-                                <button class="btn btn-primary" onclick="MisBoletosModule.descargarBoletoPDF('${String(boleto.boleto_id || boleto.id_boleto || boleto.id || boleto.codigo_qr || '').replace(/'/g, "\\'")}")">Descargar boleto PDF</button>
+                                <button class="btn btn-primary" onclick="MisBoletosModule.descargarBoletoPDF(${boleto.boleto_id || boleto.id_boleto || boleto.id || ''})">Descargar boleto PDF</button>
                                 ${this.esMovil() ? `<button class="btn btn-secondary" onclick="MisBoletosModule.guardarQREnGaleria('${qrEscaped}', '${String(boleto.evento || '').replace(/'/g, "\\'")}')">Guardar QR en galería</button>` : ''}
                                 <button class="btn btn-secondary" onclick="location.href='detalle-boleto.html?id=${boleto.boleto_id || boleto.id_boleto || boleto.id}'">Ver Detalle</button>
                             </div>
