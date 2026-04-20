@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="../css/boletos.css">
 </head>
 <body>
-    <nav class="navbar">
+    <nav class="navbar" id="navbarMenu">
         <div class="container">
             <div class="navbar-content">
                 <a href="../index.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
@@ -23,11 +23,10 @@
         </div>
     </nav>
 
-    <div class="container compra-container" style="padding-top: 24px; padding-bottom: 32px;">
-        <div style="margin-bottom: 20px;">
+    <div class="container compra-container" id="mainContainer" style="padding-top: 24px; padding-bottom: 32px;">
+        <div id="volverLink" style="margin-bottom: 20px;">
             <a href="mis-boletos.html" style="color: var(--primary); text-decoration: none;"><span class="icon-label"><i data-lucide="arrow-left"></i><span>Volver a mis boletos</span></span></a>
         </div>
-
         <div id="detalleBoletoContainer" class="card">
             <div style="text-align: center; padding: 30px;">
                 <div class="loading"></div>
@@ -204,74 +203,77 @@
                 const container = document.querySelector('#detalleBoletoContainer');
                 if (!container) return;
                 const qrPayload = this.construirPayloadQR(boleto);
-
                 const estado = String(boleto.estado || 'desconocido').toLowerCase();
                 const estadoClass = estado === 'pagado' || estado === 'activo' ? 'success' : 'warning';
                 const fechaEvento = boleto.fecha_evento || boleto.fecha_inicio || boleto.fecha;
                 const fechaCompra = boleto.fecha_compra || boleto.fecha_pago || boleto.fecha_emision;
                 const referencia = boleto.referencia_externa || boleto.id_orden || boleto.orden_id || 'No disponible';
 
+                // Si viene de QR, ocultar menú y volver
+                if (this.abiertoDesdeQR) {
+                    document.getElementById('navbarMenu')?.classList.add('oculto-qr');
+                    document.getElementById('mainContainer')?.classList.add('solo-qr');
+                    document.getElementById('volverLink')?.classList.add('oculto-qr');
+                }
+
                 container.innerHTML = `
                     ${this.abiertoDesdeQR ? `
-                    <div style="margin: 20px 20px 0; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(108, 213, 255, 0.34); background: linear-gradient(140deg, rgba(8, 29, 61, 0.88), rgba(6, 22, 48, 0.88));">
-                        <h1 style="margin: 0 0 6px; font-size: 26px; color: #f4fbff;">Gracias por comprar en eventos+</h1>
-                        <p style="margin: 0; color: rgba(221, 240, 255, 0.9);">Aquí tienes la información de tu boleto.</p>
+                    <div style="margin: 0 auto 24px; max-width: 420px; padding: 24px 18px 18px 18px; border-radius: 18px; border: 1.5px solid #6dd5ff44; background: linear-gradient(140deg, #0a2a4d 90%, #0e223a 100%); box-shadow: 0 4px 24px #0002; text-align: center;">
+                        <h1 style="margin: 0 0 10px; font-size: 2.1rem; color: #f4fbff; font-weight: 800; letter-spacing: 1px;">¡Gracias por tu compra!</h1>
+                        <p style="margin: 0 0 18px; color: #b6eaff; font-size: 1.1rem;">Aquí tienes la información de tu boleto para el evento:</p>
+                        <h2 style="margin: 0 0 10px; color: #fff; font-size: 1.5rem; font-weight: 700;">${boleto.evento || 'Boleto'}</h2>
                     </div>
                     ` : ''}
 
-                    <div class="card-header">
-                        <h2 style="margin-bottom: 8px;">${boleto.evento || 'Boleto'}</h2>
-                        <p style="color: var(--text-light); margin: 0;">Detalle completo de tu compra</p>
-                    </div>
-
-                    <div style="padding: 20px; display: grid; gap: 10px;">
-                        <p><strong>Tipo de boleto:</strong> ${boleto.tipo_boleto || 'No disponible'}</p>
-                        <p><strong>Ubicación:</strong> ${boleto.ubicacion || 'No disponible'}</p>
-                        <p><strong>Fecha del evento:</strong> ${this.formatDate(fechaEvento)}</p>
-                        <p><strong>Hora del evento:</strong> ${this.formatTime(fechaEvento)}</p>
-                        <p><strong>Fecha de compra:</strong> ${this.formatDate(fechaCompra)}</p>
-                        <p><strong>Hora de compra:</strong> ${this.formatTime(fechaCompra)}</p>
-                        <p><strong>Precio pagado:</strong> $${Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2)}</p>
-                        <p><strong>Estado:</strong> <span class="badge badge-${estadoClass}">${boleto.estado || 'No disponible'}</span></p>
-                        <p><strong>Referencia:</strong> ${referencia}</p>
-                    </div>
-
-                    <div style="margin: 0 20px 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); text-align: center;">
-                        <p style="margin-bottom: 10px; color: var(--text-light);">Código QR del boleto</p>
-                        <img
-                            src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload || boleto.codigo_qr || '')}"
-                            alt="QR del boleto"
-                            style="width: 180px; height: 180px; display: block; margin: 0 auto 10px; border-radius: 8px; background: #fff; padding: 8px;"
-                        />
-                        <code style="display: block; font-size: 15px; font-weight: 700; letter-spacing: 1px;">${boleto.codigo_qr || 'No disponible'}</code>
-                    </div>
-
-                    <div style="margin: 0 20px 20px; display: flex; justify-content: center;">
-                        <button class="btn btn-primary" id="btnDescargarBoletoPdf">Descargar boleto PDF</button>
-                        ${this.esMovil() ? `<button class="btn btn-secondary" id="btnGuardarQRGaleria" style="margin-left: 10px;">Guardar QR en galería</button>` : ''}
+                    <div style="margin: 0 auto; max-width: 420px; background: #fff; border-radius: 16px; box-shadow: 0 2px 16px #0001; padding: 24px 18px 18px 18px;">
+                        <div style="text-align: center; margin-bottom: 18px;">
+                            <img
+                                src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload || boleto.codigo_qr || '')}"
+                                alt="QR del boleto"
+                                style="width: 170px; height: 170px; display: block; margin: 0 auto 10px; border-radius: 8px; background: #fff; padding: 8px; box-shadow: 0 2px 8px #0002;"
+                            />
+                            <code style="display: block; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; color: #0a2a4d; margin-bottom: 8px;">${boleto.codigo_qr || 'No disponible'}</code>
+                        </div>
+                        <div style="display: grid; gap: 8px; font-size: 1.08rem; color: #0a2a4d;">
+                            <div><strong>Tipo:</strong> ${boleto.tipo_boleto || 'No disponible'}</div>
+                            <div><strong>Ubicación:</strong> ${boleto.ubicacion || 'No disponible'}</div>
+                            <div><strong>Fecha evento:</strong> ${this.formatDate(fechaEvento)}</div>
+                            <div><strong>Hora evento:</strong> ${this.formatTime(fechaEvento)}</div>
+                            <div><strong>Precio pagado:</strong> $${Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2)}</div>
+                            <div><strong>Estado:</strong> <span class="badge badge-${estadoClass}">${boleto.estado || 'No disponible'}</span></div>
+                            <div><strong>Referencia:</strong> ${referencia}</div>
+                        </div>
                     </div>
                 `;
 
-                const btnPdf = document.getElementById('btnDescargarBoletoPdf');
-                if (btnPdf) {
-                    btnPdf.addEventListener('click', async () => {
-                        try {
-                            await window.BoletoPdf.abrirPdfBoleto(boleto);
-                        } catch (error) {
-                            alert(error.message || 'No se pudo generar el PDF del boleto');
-                        }
-                    });
-                }
+                // No botones ni PDF ni QR en modo QR
+                if (!this.abiertoDesdeQR) {
+                    const btnPdf = document.getElementById('btnDescargarBoletoPdf');
+                    if (btnPdf) {
+                        btnPdf.addEventListener('click', async () => {
+                            try {
+                                await window.BoletoPdf.abrirPdfBoleto(boleto);
+                            } catch (error) {
+                                alert(error.message || 'No se pudo generar el PDF del boleto');
+                            }
+                        });
+                    }
 
-                const btnQR = document.getElementById('btnGuardarQRGaleria');
-                if (btnQR) {
-                    btnQR.addEventListener('click', async () => {
-                        await this.guardarQREnGaleria(qrPayload || boleto.codigo_qr || '', boleto.evento || 'evento');
-                    });
+                    const btnQR = document.getElementById('btnGuardarQRGaleria');
+                    if (btnQR) {
+                        btnQR.addEventListener('click', async () => {
+                            await this.guardarQREnGaleria(qrPayload || boleto.codigo_qr || '', boleto.evento || 'evento');
+                        });
+                    }
                 }
 
                 window.NavbarModule?.renderLucideIcons?.(container);
             },
+    <style>
+    .oculto-qr { display: none !important; }
+    .solo-qr { padding-top: 0 !important; padding-bottom: 0 !important; }
+    body { background: #0a2a4d !important; }
+    </style>
 
             mostrarError(mensaje) {
                 const container = document.querySelector('#detalleBoletoContainer');
