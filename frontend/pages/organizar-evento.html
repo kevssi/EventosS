@@ -8,10 +8,6 @@
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/navbar.css">
   <style>
-    .organizar-contenido { display: none; }
-    body.sesion-valida .organizar-contenido { display: block; }
-  </style>
-  <style>
     .organizar-contenido { max-width: 980px; margin: 40px auto; padding: 24px; background: var(--bg-soft); border-radius: 14px; color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
     .organizar-contenido h2 { margin-bottom: 8px; }
     .organizar-contenido p { margin-bottom: 14px; }
@@ -51,7 +47,7 @@
     }
   </style>
 </head>
-<body style="display:none">
+<body>
   <nav class="navbar">
     <div class="container">
       <div class="navbar-content">
@@ -194,47 +190,33 @@
 
   <script src="../js/api.js"></script>
   <script src="../js/navbar.js"></script>
+  <script src="../js/auth-guard.js"></script>
   <script>
-    // Mostrar body solo si la sesión es válida
-    document.body.style.display = 'none';
-    AuthGuard.checkAuthentication().then((ok) => {
-      if (ok) document.body.style.display = '';
-      else window.location.href = 'login.html';
-    });
+    const form = document.getElementById('organizadorForm');
+    const statusBox = document.getElementById('statusMensaje');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const params = new URLSearchParams(window.location.search);
+    const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
+    let existingImagenUrl = null; // preserves current image_url when editing without re-uploading
 
-    // El resto del código solo se ejecuta si el body es visible
-    document.addEventListener('DOMContentLoaded', () => {
-      if (document.body.style.display === 'none') return;
+    // -- Zonas dinamicas --
+    let zonaCounter = 0;
 
-      const form = document.getElementById('organizadorForm');
-      const statusBox = document.getElementById('statusMensaje');
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const params = new URLSearchParams(window.location.search);
-      const editingEventId = Number(params.get('id') || params.get('id_evento') || 0) || 0;
-      let existingImagenUrl = null; // preserves current image_url when editing without re-uploading
-
-      // -- Zonas dinamicas --
-      let zonaCounter = 0;
-
-      function zonaLabel(idx) {
-        const rows = document.querySelectorAll('.zona-row');
-        for (let i = 0; i < rows.length; i++) {
-          if (rows[i].dataset.zonaIdx === String(idx)) return `Zona ${i + 1}`;
-        }
-        return 'Zona';
+    function zonaLabel(idx) {
+      const rows = document.querySelectorAll('.zona-row');
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].dataset.zonaIdx === String(idx)) return `Zona ${i + 1}`;
       }
+      return 'Zona';
+    }
 
-      function agregarZona(nombre = '', cupo = '', precio = '') {
-        zonaCounter++;
-        const idx = zonaCounter;
-        const container = document.getElementById('zonasContainer');
-        const div = document.createElement('div');
-        div.className = 'zona-row';
-        div.dataset.zonaIdx = idx;
-        // ...resto del código original...
-      }
-      // ...resto del código original...
-    });
+    function agregarZona(nombre = '', cupo = '', precio = '') {
+      zonaCounter++;
+      const idx = zonaCounter;
+      const container = document.getElementById('zonasContainer');
+      const div = document.createElement('div');
+      div.className = 'zona-row';
+      div.dataset.zonaIdx = idx;
       div.innerHTML = `
         <div>
           <label>Nombre</label>
@@ -558,8 +540,7 @@
           const fd = new FormData();
           fd.append('imagen', imagenFile);
           const uploadRes = await api.subirImagen(fd);
-          // Cloudinary responde con { success: true, url: ... }
-          imagenUrl = uploadRes.url || uploadRes.imagen_url || null;
+          imagenUrl = uploadRes.imagen_url || null;
         } catch (uploadErr) {
           // Warn but do not block — event will be saved without image
           showStatus('warn', 'No se pudo subir la imagen: ' + (uploadErr.message || 'Error') + '. El evento se guardará sin imagen.');
@@ -593,7 +574,5 @@
 
     prefillFormIfEditing();
   </script>
-<script src="../js/auth-guard.js"></script>
 </body>
 </html>
-
