@@ -1,5 +1,7 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || null;
 
