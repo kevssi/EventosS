@@ -294,6 +294,17 @@
                 container.innerHTML = boletos.map((boleto) => {
                     const qrPayload = this.construirPayloadQR(boleto);
                     const qrEscaped = qrPayload.replace(/'/g, "\\'");
+                    const yaUsado = (boleto.estado || '').toLowerCase().includes('usad') || (boleto.estado || '').toLowerCase().includes('canjead');
+                    let estadoHtml = '';
+                    if (yaUsado) {
+                        estadoHtml = '<span class="badge badge-danger">usado</span> <span style="color:#e63946;font-weight:600;">(Este boleto ya fue utilizado)</span>';
+                    } else if ((boleto.estado || '').toLowerCase() === 'pagado') {
+                        estadoHtml = '<span class="badge badge-success">pagado</span>';
+                    } else if ((boleto.estado || '').toLowerCase() === 'reservado') {
+                        estadoHtml = '<span class="badge badge-warning">reservado</span>';
+                    } else {
+                        estadoHtml = `<span class="badge badge-pending">${boleto.estado}</span>`;
+                    }
 
                     return `
                     <div class="card boleto-card">
@@ -305,8 +316,7 @@
                             <p><strong>Tipo:</strong> ${boleto.tipo_boleto}</p>
                             <p><strong>Ubicación:</strong> ${boleto.ubicacion}</p>
                             <p><strong>Precio:</strong> $${parseFloat(boleto.precio_pagado).toFixed(2)}</p>
-                            <p><strong>Estado:</strong> <span class="badge badge-${boleto.estado === 'pagado' ? 'success' : 'pending'}">${boleto.estado}</span></p>
-                            
+                            <p><strong>Estado:</strong> ${estadoHtml}</p>
                             <div class="boleto-qr-box">
                                 <p style="margin-bottom: 10px; color: #445a7f;">Tu código QR:</p>
                                 <img
@@ -316,9 +326,8 @@
                                 />
                                 <code style="display: block; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #1d3557;">${boleto.codigo_qr || 'SIN-CODIGO'}</code>
                             </div>
-
                             <div class="boleto-actions">
-                                <button class="btn btn-primary" onclick="MisBoletosModule.descargarBoletoPDF('${String(boleto.boleto_id || boleto.id_boleto || boleto.id || boleto.codigo_qr || '').replace(/'/g, "\\'")}')">Descargar boleto PDF</button>
+                                <button class="btn btn-primary" onclick="MisBoletosModule.descargarBoletoPDF('${String(boleto.boleto_id || boleto.id_boleto || boleto.id || boleto.codigo_qr || '').replace(/'/g, "\\'")}")">Descargar boleto PDF</button>
                                 ${this.esMovil() ? `<button class="btn btn-secondary" onclick="MisBoletosModule.guardarQREnGaleria('${qrEscaped}', '${String(boleto.evento || '').replace(/'/g, "\\'")}')">Guardar QR en galería</button>` : ''}
                                 <button class="btn btn-secondary" onclick="location.href='detalle-boleto.html?id=${boleto.boleto_id || boleto.id_boleto || boleto.id}'">Ver Detalle</button>
                             </div>
