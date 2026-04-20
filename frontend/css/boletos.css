@@ -1,3 +1,22 @@
+/* Botón grande de Stripe */
+.btn-stripe-big {
+  background: #635bff !important;
+  color: #fff !important;
+  font-size: 22px !important;
+  padding: 28px 0 !important;
+  width: 100% !important;
+  max-width: 600px !important;
+  display: inline-block !important;
+  border-radius: 32px !important;
+  font-weight: bold !important;
+  letter-spacing: 1px !important;
+  box-shadow: 0 4px 24px 0 rgba(99,91,255,0.18);
+  transition: background 0.2s;
+}
+.btn-stripe-big:hover, .btn-stripe-big:focus {
+  background: #5146e1 !important;
+  color: #fff !important;
+}
 /* Compra de boletos */
 .detalle-evento-page-bg {
   position: fixed;
