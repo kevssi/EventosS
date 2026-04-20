@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Boleto - Eventos+</title>
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="../css/global.css">
@@ -33,12 +34,12 @@
             </div>
         </div>
     </div>
-    <!-- El contenido del boleto se renderiza dinámicamente por JS -->
+
     <script src="../js/api.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="../js/boleto-pdf.js"></script>
-    <!-- El contenido del boleto se renderiza dinámicamente por JS -->
+    <script>
         const DetalleBoletoModule = {
             abiertoDesdeQR: false,
 
