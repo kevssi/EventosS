@@ -6,7 +6,7 @@ const AdminModule = {
   administradores: [],
   eventos: [],
   categoriasEvento: [],
-  topEventosVentas: [],
+  // topEventosVentas: [],
   historialComprasUsuarioActual: null,
   historialCompras: [],
   reporteEventoSeleccionado: null,
@@ -26,7 +26,7 @@ const AdminModule = {
     dashboard: false,
     eventos: false,
     usuarios: false,
-    ventas: false,
+    // ventas: false,
     solicitudes: false,
     crearAdmin: false,
     passwordAdmin: false,
@@ -157,17 +157,17 @@ const AdminModule = {
       return;
     }
 
-    if (tabNombre === 'ventas') {
-      if (!this.loadedTabs.eventos) {
-        await this.cargarEventosAdmin();
-        this.loadedTabs.eventos = true;
-      }
-      await this.cargarReportesAdmin();
-      this.renderVentas();
-      this.loadedTabs.ventas = true;
-      this.loadedTabs.dashboard = true;
-      return;
-    }
+    // if (tabNombre === 'ventas') {
+    //   if (!this.loadedTabs.eventos) {
+    //     await this.cargarEventosAdmin();
+    //     this.loadedTabs.eventos = true;
+    //   }
+    //   await this.cargarReportesAdmin();
+    //   this.renderVentas();
+    //   this.loadedTabs.ventas = true;
+    //   this.loadedTabs.dashboard = true;
+    //   return;
+    // }
 
     if (tabNombre === 'solicitudes') {
       await this.cargarSolicitudesOrganizador();
@@ -192,9 +192,9 @@ const AdminModule = {
       const response = await api.reporteGeneralAdmin();
       this.topEventosVentas = response.top_eventos || [];
       this.renderDashboard(response);
-      if (this.tab_activo === 'ventas') {
-        this.renderVentas();
-      }
+      // if (this.tab_activo === 'ventas') {
+      //   this.renderVentas();
+      // }
     } catch (error) {
       console.error('Error al cargar reportes:', error);
     }
@@ -304,9 +304,9 @@ const AdminModule = {
       const response = await api.listarEventos({ realtime: 1 });
       this.eventos = response.eventos || [];
       this.renderEventosAdmin();
-      if (this.tab_activo === 'ventas') {
-        this.renderVentas();
-      }
+      // if (this.tab_activo === 'ventas') {
+      //   this.renderVentas();
+      // }
     } catch (error) {
       console.error('Error al cargar eventos admin:', error);
     }
@@ -686,7 +686,7 @@ const AdminModule = {
         resumen: response.resumen || null,
         desglose: response.desglose || []
       };
-      this.renderVentas();
+      // this.renderVentas();
     } catch (error) {
       alert('No se pudo cargar reporte del evento: ' + error.message);
     }
@@ -785,103 +785,9 @@ const AdminModule = {
     }
   },
 
-  renderVentas() {
-    const container = document.querySelector('#tabVentas');
-    if (!container) return;
+  // renderVentas() { /* Eliminado para ocultar ventas en admin */ },
 
-    const selectedId = Number(this.reporteEventoSeleccionado?.id_evento || 0);
-    const options = this.eventos.map((evento) => (
-      `<option value="${evento.id}" ${Number(evento.id) === selectedId ? 'selected' : ''}>${this.escapeHtml(evento.titulo)}</option>`
-    )).join('');
-
-    const resumen = this.reporteEventoSeleccionado?.resumen;
-    const desglose = this.reporteEventoSeleccionado?.desglose || [];
-
-    const resolveValue = (source, keys, fallback = '') => {
-      if (!source || typeof source !== 'object') return fallback;
-      for (const key of keys) {
-        const value = source[key];
-        if (value !== undefined && value !== null && String(value).trim() !== '') {
-          return value;
-        }
-      }
-      return fallback;
-    };
-
-    const totalIngresos = Number(resolveValue(resumen, ['ingresos_totales', 'ingresos', 'total_ingresos', 'monto_total', 'total'], 0));
-    const totalVendidos = Number(resolveValue(resumen, ['boletos_vendidos', 'vendidos', 'cantidad_vendida', 'total_boletos'], 0));
-    const totalOrdenes = Number(resolveValue(resumen, ['total_ordenes', 'ordenes', 'ordenes_total', 'cantidad_ordenes'], 0));
-    const tituloEvento = resolveValue(resumen, ['titulo', 'evento', 'nombre_evento'], '-');
-
-    const detalleRows = desglose.map((item) => ({
-      tipo: resolveValue(item, ['tipo_boleto', 'tipo', 'nombre', 'tipo_nombre', 'categoria', 'descripcion'], '-'),
-      vendidos: Number(resolveValue(item, ['vendidos', 'boletos_vendidos', 'cantidad_vendida', 'cantidad', 'total_vendidos'], 0)),
-      ingresos: Number(resolveValue(item, ['ingresos', 'total', 'monto', 'importe', 'ingreso_total'], 0))
-    }));
-
-    container.innerHTML = `
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-header">
-          <h2>Monitoreo de ventas en tiempo real</h2>
-        </div>
-        <p style="margin: 0 0 12px; color: var(--text-light);">Este modulo se actualiza automaticamente cada ${Math.round(this.autoRefreshMs / 1000)} segundos cuando esta pestaña esta activa.</p>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <select id="ventasEventoSelect" style="min-width: 280px;">
-            <option value="">Selecciona un evento para reporte detallado</option>
-            ${options}
-          </select>
-          <button class="btn btn-primary" onclick="AdminModule.cargarReporteEventoDesdeSelect()">Ver reporte evento</button>
-          <button class="btn btn-outline" onclick="AdminModule.cargarReportesAdmin()">Actualizar panel</button>
-        </div>
-      </div>
-
-
-      <div class="card">
-        <div class="card-header">
-          <h2>Reporte detallado por evento</h2>
-        </div>
-        ${!resumen ? '<p style="color: var(--text-light); margin: 0;">Selecciona un evento para ver desglose de ingresos y boletos vendidos.</p>' : `
-          <div class="resumen-cards" style="margin-bottom: 14px;">
-            <div class="resumen-card success"><h3>Ingresos</h3><div class="valor">${this.formatCurrency(totalIngresos)}</div></div>
-            <div class="resumen-card warning"><h3>Boletos vendidos</h3><div class="valor">${totalVendidos}</div></div>
-            <div class="resumen-card"><h3>Ordenes</h3><div class="valor">${totalOrdenes}</div></div>
-            <div class="resumen-card"><h3>Evento</h3><div class="valor" style="font-size:1rem;">${this.escapeHtml(tituloEvento)}</div></div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Tipo boleto</th>
-                <th>Vendidos</th>
-                <th>Ingreso</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${detalleRows.length === 0
-                ? '<tr><td colspan="3" style="text-align:center; color: var(--text-light);">Sin detalle disponible para este evento.</td></tr>'
-                : detalleRows.map((item) => `
-                  <tr>
-                    <td>${this.escapeHtml(item.tipo)}</td>
-                    <td>${item.vendidos}</td>
-                    <td>${this.formatCurrency(item.ingresos)}</td>
-                  </tr>
-                `).join('')
-              }
-            </tbody>
-          </table>
-        `}
-      </div>
-    `;
-  },
-
-  cargarReporteEventoDesdeSelect() {
-    const selectedId = Number(document.querySelector('#ventasEventoSelect')?.value || 0);
-    if (!selectedId) {
-      alert('Selecciona un evento para generar el reporte.');
-      return;
-    }
-
-    this.cargarReporteEventoSeleccionado(selectedId);
-  },
+  // cargarReporteEventoDesdeSelect() { /* Eliminado para ocultar ventas en admin */ },
 
   async cargarSolicitudesOrganizador(estado = this.filtroSolicitudes) {
     try {
