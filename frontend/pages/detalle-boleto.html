@@ -2,14 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-                // Compatibilidad con variantes de nombres de campos
-                const estado = String(boleto.estado || boleto.estado_boleto || boleto.estatus || 'desconocido').toLowerCase();
     <title>Detalle de Boleto - Eventos+</title>
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/navbar.css">
-                const tipoBoleto = boleto.tipo_boleto || boleto.tipo || boleto.nombre_tipo || 'No disponible';
-                const ubicacion = boleto.ubicacion || boleto.lugar || boleto.sede || '-';
     <link rel="stylesheet" href="../css/boletos.css">
 </head>
 <body>
@@ -37,12 +33,12 @@
             </div>
         </div>
     </div>
-                            <div><strong>Tipo:</strong> ${tipoBoleto}</div>
+    <!-- El contenido del boleto se renderiza dinámicamente por JS -->
     <script src="../js/api.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="../js/boleto-pdf.js"></script>
-                            <div><strong>Estado:</strong> <span class="badge badge-${estadoClass}">${boleto.estado || boleto.estado_boleto || boleto.estatus || 'No disponible'}</span></div>
+    <!-- El contenido del boleto se renderiza dinámicamente por JS -->
         const DetalleBoletoModule = {
             abiertoDesdeQR: false,
 
