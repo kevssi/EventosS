@@ -255,10 +255,17 @@
             },
 
             renderBoletos(boletos) {
-                const container = document.querySelector('#boletosList');
-                this.boletosPorId = {};
-                
-                if (boletos.length === 0) {
+                                const container = document.querySelector('#boletosList');
+                                this.boletosPorId = {};
+
+                                // Ordenar: pagados primero, luego reservados
+                                boletos.sort((a, b) => {
+                                    if (a.estado === 'pagado' && b.estado !== 'pagado') return -1;
+                                    if (a.estado !== 'pagado' && b.estado === 'pagado') return 1;
+                                    return new Date(b.fecha_compra) - new Date(a.fecha_compra);
+                                });
+
+                                if (boletos.length === 0) {
                     const params = new URLSearchParams(window.location.search);
                     const pago = params.get('pago');
                     container.innerHTML = `
