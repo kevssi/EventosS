@@ -79,6 +79,17 @@ const AuthGuard = {
       return false;
     }
 
+    // Validar token contra el backend
+    try {
+      await api.obtenerPerfil();
+    } catch (error) {
+      // Si el token es inválido o expiró, limpiar y redirigir
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = 'login.html';
+      return false;
+    }
+
     const allowedRoles = this.roleProtectedPages[currentPage] || null;
     if (!allowedRoles) {
       return true;
