@@ -437,21 +437,10 @@ const EventosModule = {
             <button class="btn btn-primary" onclick="location.href='${detalleBase}?id=${evento.id}'">
               Ver Detalles
             </button>
-            <button class="btn btn-danger" onclick="EventosModule.eliminarEvento(${evento.id})">Eliminar</button>
           </div>
         </div>
       </div>
     `).join('');
-  async eliminarEvento(id) {
-    if (!id) return;
-    if (!confirm('¿Seguro que deseas eliminar este evento? Esta acción no se puede deshacer.')) return;
-    try {
-      await api.cancelarEvento(id, 'Eliminado por el organizador');
-      await this.cargarEventos();
-    } catch (error) {
-      alert('No se pudo eliminar el evento: ' + (error?.message || 'Error desconocido'));
-    }
-  },
 
     this.actualizarResumenExplora(eventosAMostrar.length);
     this.renderCarruselPopulares(eventosAMostrar);
