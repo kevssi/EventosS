@@ -160,26 +160,16 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.8);
     doc.setTextColor(220, 231, 255);
+
     const eventDate = formatDateTime(boleto.fecha_evento || boleto.fecha_inicio || boleto.fecha);
-    const buyDate = formatDateTime(boleto.fecha_compra || boleto.fecha_pago || boleto.fecha_emision);
     doc.text(`Tipo: ${boleto.tipo_boleto || 'General'}`, outerX + 7, outerY + 42);
     doc.text(`Lugar: ${boleto.ubicacion || 'No disponible'}`, outerX + 7, outerY + 48.4, { maxWidth: outerW - stubW - 18 });
     doc.text(`Fecha: ${eventDate}`, outerX + 7, outerY + 54.8, { maxWidth: outerW - stubW - 18 });
-    doc.text(`Compra: ${buyDate}`, outerX + 7, outerY + 61.2, { maxWidth: outerW - stubW - 18 });
-
-    const referencia = boleto.referencia_externa || boleto.id_orden || boleto.orden_id || 'No disponible';
+    // Se eliminan: estado, referencia, precio pagado
     const codigo = boleto.codigo_qr || 'SIN-CODIGO';
     const qrPayload = buildQrPayload(boleto) || codigo;
-    const precio = Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2);
-
     doc.setTextColor(149, 203, 255);
-    doc.text(`Ref: ${referencia}`, outerX + 7, outerY + 69);
-    doc.text(`Codigo: ${codigo}`, outerX + 7, outerY + 75.2, { maxWidth: outerW - stubW - 18 });
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(47, 255, 157);
-    doc.setFontSize(13);
-    doc.text(`$${precio} MXN`, outerX + 7, outerY + outerH - 7.3);
+    doc.text(`Codigo: ${codigo}`, outerX + 7, outerY + 69, { maxWidth: outerW - stubW - 18 });
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
