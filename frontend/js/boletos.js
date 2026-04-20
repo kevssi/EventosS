@@ -285,6 +285,14 @@ const BoletosModule = {
       <button class="btn btn-stripe-big" id="btnStripe" style="margin-top: 32px;">
         Pagar con Stripe
       </button>
+      <style>
+        #btnStripe {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          margin-bottom: 40px !important;
+        }
+      </style>
     `;
 
     this.renderTiposBoletos(tiposBoletos);
