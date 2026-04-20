@@ -66,10 +66,12 @@ const AuthGuard = {
   },
 
   async checkAuthentication() {
+    document.body.style.display = 'none';
     const token = api.obtenerToken();
     const currentPage = this.getCurrentPage();
 
     if (!this.isProtectedPage(currentPage)) {
+      document.body.style.display = '';
       return true;
     }
 
@@ -92,6 +94,7 @@ const AuthGuard = {
 
     const allowedRoles = this.roleProtectedPages[currentPage] || null;
     if (!allowedRoles) {
+      document.body.style.display = '';
       return true;
     }
 
@@ -105,6 +108,7 @@ const AuthGuard = {
       return false;
     }
 
+    document.body.style.display = '';
     return true;
   },
 
