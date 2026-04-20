@@ -1,5 +1,13 @@
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 console.log('🚀 Iniciando backend EventosS...');
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY);
+console.log('Variables de entorno visibles para Node.js:', Object.keys(process.env));
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('MYSQLDATABASE:', process.env.MYSQLDATABASE);
+console.log('MYSQL_DATABASE:', process.env.MYSQL_DATABASE);
 const express = require('express');
 const cors = require('cors');
 
