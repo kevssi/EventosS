@@ -46,8 +46,13 @@
             construirPayloadQR(boleto) {
                 const qrCode = String(boleto?.codigo_qr || '').trim();
                 const id = String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || '').trim();
-                // Siempre usar la URL pública de producción
-                const baseUrl = 'https://eventos-s.vercel.app';
+                // Detectar entorno: si es localhost, usar local, si no, usar producción
+                let baseUrl = window.location.origin;
+                if (!baseUrl || baseUrl.includes('localhost')) {
+                    baseUrl = 'http://localhost:5500'; // Ajusta el puerto si usas otro
+                } else {
+                    baseUrl = 'https://eventos-s.vercel.app';
+                }
 
                 if (qrCode) {
                     return `${baseUrl}/pages/detalle-boleto.html?qr=${encodeURIComponent(qrCode)}&src=qr`;
