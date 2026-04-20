@@ -251,9 +251,6 @@
                             <div><strong>Ubicación:</strong> ${boleto.ubicacion || 'No disponible'}</div>
                             <div><strong>Fecha evento:</strong> ${this.formatDate(fechaEvento)}</div>
                             <div><strong>Hora evento:</strong> ${this.formatTime(fechaEvento)}</div>
-                            <div><strong>Precio pagado:</strong> $${Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2)}</div>
-                            <div><strong>Estado:</strong> <span class="badge badge-${estadoClass}">${boleto.estado || 'No disponible'}</span></div>
-                            <div><strong>Referencia:</strong> ${referencia}</div>
                         </div>
                     </div>
                 `;
