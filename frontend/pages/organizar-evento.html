@@ -540,7 +540,7 @@
           const fd = new FormData();
           fd.append('imagen', imagenFile);
           const uploadRes = await api.subirImagen(fd);
-          imagenUrl = uploadRes.imagen_url || null;
+          imagenUrl = uploadRes.url || uploadRes.imagen_url || null;
         } catch (uploadErr) {
           // Warn but do not block — event will be saved without image
           showStatus('warn', 'No se pudo subir la imagen: ' + (uploadErr.message || 'Error') + '. El evento se guardará sin imagen.');
