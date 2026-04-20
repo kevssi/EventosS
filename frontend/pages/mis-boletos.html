@@ -127,8 +127,15 @@
                 return `${baseUrl}/pages/detalle-boleto.html?id=${encodeURIComponent(id)}&src=qr`;
             },
 
+
             async procesarRetornoMercadoPagoSiAplica() {
                 const params = new URLSearchParams(window.location.search);
+                // Si viene de Stripe, no validar con MP
+                const esStripe = params.get('stripe') === 'success' || 
+                                 (!params.get('collection_id') && 
+                                  !params.get('payment_id') && 
+                                  !params.get('external_reference'));
+                if (esStripe) return;
                 const pago = (params.get('pago') || '').toLowerCase();
                 const status = (params.get('status') || '').toLowerCase();
                 const collectionStatus = (params.get('collection_status') || '').toLowerCase();
