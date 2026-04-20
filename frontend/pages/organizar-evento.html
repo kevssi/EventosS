@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/navbar.css">
   <style>
+    .organizar-contenido { display: none; }
+    body.sesion-valida .organizar-contenido { display: block; }
+  </style>
+  <style>
     .organizar-contenido { max-width: 980px; margin: 40px auto; padding: 24px; background: var(--bg-soft); border-radius: 14px; color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
     .organizar-contenido h2 { margin-bottom: 8px; }
     .organizar-contenido p { margin-bottom: 14px; }
@@ -193,6 +197,12 @@
   <script src="../js/auth-guard.js"></script>
   <script src="../js/auth-guard.js"></script>
   <script>
+    // Mostrar contenido solo si la sesión es válida
+    document.body.classList.remove('sesion-valida');
+    AuthGuard.checkAuthentication().then((ok) => {
+      if (ok) document.body.classList.add('sesion-valida');
+    });
+
     const form = document.getElementById('organizadorForm');
     const statusBox = document.getElementById('statusMensaje');
     const submitBtn = form.querySelector('button[type="submit"]');
