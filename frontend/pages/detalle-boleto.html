@@ -9,14 +9,253 @@
     <link rel="stylesheet" href="../css/boletos.css">
 </head>
 <body>
+    <nav class="navbar" id="navbarMenu">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="../index.html" class="navbar-brand"><span class="navbar-logo-mark" aria-hidden="true"></span><span class="navbar-logo-text">eventos+</span></a>
+                <ul class="navbar-menu">
+                    <li><a href="../index.html">Inicio</a></li>
+                    <li><a href="mis-boletos.html" style="color: var(--primary);">Mis Boletos</a></li>
+                </ul>
+                <div class="navbar-user"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container compra-container" id="mainContainer" style="padding-top: 24px; padding-bottom: 32px;">
+        <div id="volverLink" style="margin-bottom: 20px;">
+            <a href="mis-boletos.html" style="color: var(--primary); text-decoration: none;"><span class="icon-label"><i data-lucide="arrow-left"></i><span>Volver a mis boletos</span></span></a>
+        </div>
+        <div id="detalleBoletoContainer" class="card">
+            <div style="text-align: center; padding: 30px;">
+                <div class="loading"></div>
+                <p>Cargando detalle del boleto...</p>
+            </div>
+        </div>
+    </div>
+    <!-- El contenido del boleto se renderiza dinámicamente por JS -->
     <script src="../js/api.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="../js/boleto-pdf.js"></script>
-    <script>
-    // ... Código de DetalleBoletoModule aquí ...
-    // (Pega aquí el código JS de DetalleBoletoModule, pero solo dentro de <script>)
-    </script>
+    <!-- El contenido del boleto se renderiza dinámicamente por JS -->
+        const DetalleBoletoModule = {
+            abiertoDesdeQR: false,
+
+            construirPayloadQR(boleto) {
+                const qrCode = String(boleto?.codigo_qr || '').trim();
+                const id = String(boleto?.boleto_id || boleto?.id_boleto || boleto?.id || '').trim();
+                // Detectar entorno: si es localhost, usar local, si no, usar producción
+                let baseUrl = window.location.origin;
+                if (!baseUrl || baseUrl.includes('localhost')) {
+                    baseUrl = 'http://localhost:5500'; // Ajusta el puerto si usas otro
+                } else {
+                    baseUrl = 'https://eventos-s.vercel.app';
+                }
+
+                if (qrCode) {
+                    return `${baseUrl}/pages/detalle-boleto.html?qr=${encodeURIComponent(qrCode)}&src=qr`;
+                }
+
+                if (!id) return '';
+                return `${baseUrl}/pages/detalle-boleto.html?id=${encodeURIComponent(id)}&src=qr`;
+            },
+
+            esMovil() {
+                return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+            },
+
+            async guardarQREnGaleria(qrPayload, nombreEvento) {
+                if (!this.esMovil()) {
+                    alert('Esta opción solo está disponible en celular.');
+                    return;
+                }
+
+                try {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=900x900&data=${encodeURIComponent(qrPayload || '')}`;
+                    const response = await fetch(qrUrl);
+                    if (!response.ok) {
+                        throw new Error('No se pudo generar la imagen QR');
+                    }
+
+                    const blob = await response.blob();
+                    const safeName = String(nombreEvento || 'evento')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                    const fileName = `qr-${safeName || 'boleto'}.png`;
+
+                    if (navigator.canShare && navigator.share && window.File) {
+                        const qrFile = new File([blob], fileName, { type: 'image/png' });
+                        const canShareFiles = navigator.canShare({ files: [qrFile] });
+
+                        if (canShareFiles) {
+                            await navigator.share({
+                                title: 'QR de boleto',
+                                text: 'Guarda este QR en tu galeria',
+                                files: [qrFile]
+                            });
+                            return;
+                        }
+                    }
+
+                    const imageUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(imageUrl);
+                } catch (error) {
+                    alert(error.message || 'No se pudo guardar el QR');
+                }
+            },
+
+            getBoletoId() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('id');
+            },
+
+            getBoletoQR() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('qr') || params.get('codigo_qr') || '';
+            },
+
+            getOrigenQR() {
+                const params = new URLSearchParams(window.location.search);
+                return String(params.get('src') || '').toLowerCase() === 'qr';
+            },
+
+            formatDate(value) {
+                if (!value) return 'No disponible';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 'No disponible';
+                return date.toLocaleDateString('es-MX', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            },
+
+            formatTime(value) {
+                if (!value) return 'No disponible';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return 'No disponible';
+                return date.toLocaleTimeString('es-MX', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
+
+            init() {
+                const id = this.getBoletoId();
+                const qr = this.getBoletoQR();
+                const vieneDeQR = this.getOrigenQR();
+                const tieneToken = Boolean(localStorage.getItem('token'));
+
+                if (qr) {
+                    this.abiertoDesdeQR = true;
+                    this.cargarDetallePorQR(qr);
+                    return;
+                }
+
+                if (vieneDeQR && id) {
+                    this.abiertoDesdeQR = true;
+                    this.cargarDetallePublicoPorId(id);
+                    return;
+                }
+
+                if (!id) {
+                    this.mostrarError('No se recibió el ID del boleto.');
+                    return;
+                }
+
+                // Si hay token, usa la ruta protegida; si no, usa la pública
+                if (tieneToken) {
+                    this.cargarDetalle(id);
+                } else {
+                    this.cargarDetallePublicoPorId(id);
+                }
+            },
+
+            async cargarDetalle(id) {
+                try {
+                    const response = await api.detalleBoleto(id);
+                    this.render(response.boleto || {});
+                } catch (error) {
+                    console.error('Error cargando detalle del boleto:', error);
+                    this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto.');
+                }
+            },
+
+            async cargarDetallePorQR(qr) {
+                try {
+                    const response = await api.detalleBoletoPorQR(qr);
+                    this.render(response.boleto || {});
+                } catch (error) {
+                    console.error('Error cargando detalle del boleto por QR:', error);
+                    this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto por QR.');
+                }
+            },
+
+            async cargarDetallePublicoPorId(id) {
+                try {
+                    const response = await api.detalleBoletoPublico(id);
+                    this.render(response.boleto || {});
+                } catch (error) {
+                    console.error('Error cargando detalle publico del boleto:', error);
+                    this.mostrarError(error.message || 'No se pudo cargar el detalle del boleto.');
+                }
+            },
+
+            render(boleto) {
+                const container = document.querySelector('#detalleBoletoContainer');
+                if (!container) return;
+                const qrPayload = this.construirPayloadQR(boleto);
+                const estado = String(boleto.estado || 'desconocido').toLowerCase();
+                const estadoClass = estado === 'pagado' || estado === 'activo' ? 'success' : 'warning';
+                const fechaEvento = boleto.fecha_evento || boleto.fecha_inicio || boleto.fecha;
+                const fechaCompra = boleto.fecha_compra || boleto.fecha_pago || boleto.fecha_emision;
+                const referencia = boleto.referencia_externa || boleto.id_orden || boleto.orden_id || 'No disponible';
+
+                // Si viene de QR, ocultar menú y volver
+                if (this.abiertoDesdeQR) {
+                    document.getElementById('navbarMenu')?.classList.add('oculto-qr');
+                    document.getElementById('mainContainer')?.classList.add('solo-qr');
+                    document.getElementById('volverLink')?.classList.add('oculto-qr');
+                }
+
+                container.innerHTML = `
+                    ${this.abiertoDesdeQR ? `
+                    <div style="margin: 0 auto 24px; max-width: 420px; padding: 24px 18px 18px 18px; border-radius: 18px; border: 1.5px solid #6dd5ff44; background: linear-gradient(140deg, #0a2a4d 90%, #0e223a 100%); box-shadow: 0 4px 24px #0002; text-align: center;">
+                        <h1 style="margin: 0 0 10px; font-size: 2.1rem; color: #f4fbff; font-weight: 800; letter-spacing: 1px;">¡Gracias por tu compra!</h1>
+                        <p style="margin: 0 0 18px; color: #b6eaff; font-size: 1.1rem;">Aquí tienes la información de tu boleto para el evento:</p>
+                        <h2 style="margin: 0 0 10px; color: #fff; font-size: 1.5rem; font-weight: 700;">${boleto.evento || 'Boleto'}</h2>
+                    </div>
+                    ` : ''}
+
+                    <div style="margin: 0 auto; max-width: 420px; background: #fff; border-radius: 16px; box-shadow: 0 2px 16px #0001; padding: 24px 18px 18px 18px;">
+                        <div style="text-align: center; margin-bottom: 18px;">
+                            <img
+                                src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload || boleto.codigo_qr || '')}"
+                                alt="QR del boleto"
+                                style="width: 170px; height: 170px; display: block; margin: 0 auto 10px; border-radius: 8px; background: #fff; padding: 8px; box-shadow: 0 2px 8px #0002;"
+                            />
+                            <code style="display: block; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; color: #0a2a4d; margin-bottom: 8px;">${boleto.codigo_qr || 'No disponible'}</code>
+                        </div>
+                        <div style="display: grid; gap: 8px; font-size: 1.08rem; color: #0a2a4d;">
+                            <div><strong>Tipo:</strong> ${boleto.tipo_boleto || 'No disponible'}</div>
+                            <div><strong>Ubicación:</strong> ${boleto.ubicacion || 'No disponible'}</div>
+                            <div><strong>Fecha evento:</strong> ${this.formatDate(fechaEvento)}</div>
+                            <div><strong>Hora evento:</strong> ${this.formatTime(fechaEvento)}</div>
+                            <div><strong>Precio pagado:</strong> $${Number(boleto.precio_pagado || boleto.precio || 0).toFixed(2)}</div>
+                            <div><strong>Estado:</strong> <span class="badge badge-${estadoClass}">${boleto.estado || 'No disponible'}</span></div>
+                            <div><strong>Referencia:</strong> ${referencia}</div>
+                        </div>
+                    </div>
+                `;
 
                 // No botones ni PDF ni QR en modo QR
                 if (!this.abiertoDesdeQR) {
