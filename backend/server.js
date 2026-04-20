@@ -18,9 +18,12 @@ const app = express();
 app.use(cors({
   origin: [
     'https://eventos-s.vercel.app',
+    'https://eventos-s-git-main-kevssis-projects.vercel.app',
     'http://localhost:5000',
     'http://localhost:3000'
   ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
