@@ -154,6 +154,7 @@
                 const id = this.getBoletoId();
                 const qr = this.getBoletoQR();
                 const vieneDeQR = this.getOrigenQR();
+                const tieneToken = Boolean(localStorage.getItem('token'));
 
                 if (qr) {
                     this.abiertoDesdeQR = true;
@@ -172,7 +173,12 @@
                     return;
                 }
 
-                this.cargarDetalle(id);
+                // Si hay token, usa la ruta protegida; si no, usa la pública
+                if (tieneToken) {
+                    this.cargarDetalle(id);
+                } else {
+                    this.cargarDetallePublicoPorId(id);
+                }
             },
 
             async cargarDetalle(id) {
