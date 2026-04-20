@@ -282,10 +282,7 @@ const BoletosModule = {
         <div id="resumenDetalle"></div>
       </div>
 
-      <button class="btn btn-primary btn-comprar" id="btnComprar">
-        Proceder al Pago (Mercado Pago)
-      </button>
-      <button class="btn btn-stripe" id="btnStripe" style="margin-top: 12px; background: #635bff; color: #fff;">
+      <button class="btn btn-stripe-big" id="btnStripe" style="margin-top: 32px;">
         Pagar con Stripe
       </button>
     `;
