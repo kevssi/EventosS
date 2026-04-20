@@ -1,6 +1,9 @@
 // --- STRIPE INTEGRACIÓN ---
 const Stripe = require('stripe');
-const getStripe = () => Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripe = () => {
+  console.log('STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'EXISTE' : 'UNDEFINED', process.env.STRIPE_SECRET_KEY);
+  return Stripe(process.env.STRIPE_SECRET_KEY);
+};
 
 // Crear sesión de Stripe Checkout
 exports.crearSesionStripe = async (req, res) => {
