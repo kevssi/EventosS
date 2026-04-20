@@ -202,7 +202,12 @@
                     return;
                 }
 
-                tbody.innerHTML = ordenesOrdenadas.map(orden => `
+
+                tbody.innerHTML = ordenesOrdenadas.map(orden => {
+                    // Mostrar 'reservado' como 'pagada' y badge verde
+                    let estadoMostrar = (orden.estado === 'reservado' || orden.estado === 'pagada') ? 'pagada' : orden.estado;
+                    let badgeClass = (orden.estado === 'pagada' || orden.estado === 'reservado') ? 'success' : (orden.estado === 'pendiente' ? 'pending' : 'danger');
+                    return `
                     <tr>
                         <td data-label="Orden #"><strong>#${orden.orden_id}</strong></td>
                         <td data-label="Evento">${orden.evento || 'Sin evento'}</td>
@@ -210,13 +215,13 @@
                         <td data-label="Boletos">${orden.cantidad_boletos}</td>
                         <td data-label="Total"><strong>$${parseFloat(orden.total).toFixed(2)}</strong></td>
                         <td data-label="Estado Orden">
-                            <span class="badge badge-${orden.estado === 'pagada' ? 'success' : orden.estado === 'pendiente' ? 'pending' : 'danger'}">
-                                ${orden.estado}
+                            <span class="badge badge-${badgeClass}">
+                                ${estadoMostrar}
                             </span>
                         </td>
                         <td data-label="Pago">${orden.estado_pago ? orden.estado_pago : '-'}</td>
                         <td data-label="Acciones">
-                            ${orden.estado === 'pendiente' ? `
+                            ${(orden.estado === 'pendiente') ? `
                                 <div style="display:flex; align-items:center; gap:8px; white-space:nowrap; flex-wrap:wrap;">
                                     <button class="btn btn-primary" style="padding:8px 18px; font-size:14px; font-weight:700;" onclick="MisOrdenesModule.continuarPago(${orden.orden_id}, ${parseFloat(orden.total)}, '${String(orden.evento || '').replace(/'/g, "\\'")}')">Continuar pago</button>
                                     <button class="btn btn-danger btn-accion" onclick="MisOrdenesModule.cancelar(${orden.orden_id})">Cancelar</button>
@@ -224,7 +229,8 @@
                             ` : '<span style="color: var(--text-light);">-</span>'}
                         </td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
 
                 window.NavbarModule?.renderLucideIcons?.(tbody);
             },
@@ -326,6 +332,7 @@
 
     <script src="../js/api.js"></script>
     <script src="../js/navbar.js"></script>
+    <script src="../js/auth-guard.js"></script>
     <script src="../js/auth-guard.js"></script>
 </body>
 </html>
